@@ -50,12 +50,20 @@
 import Dashboard from './pages/Dashboard';
 import Habits from './pages/Habits';
 import CreateHabit from './pages/CreateHabit';
+import Tasks from './pages/Tasks';
+import Goals from './pages/Goals';
+import CreateGoal from './pages/CreateGoal';
+import GoalDetail from './pages/GoalDetail';
 
 
 export const PAGES = {
     "Dashboard": Dashboard,
     "Habits": Habits,
     "CreateHabit": CreateHabit,
+    "Tasks": Tasks,
+    "Goals": Goals,
+    "CreateGoal": CreateGoal,
+    "GoalDetail": GoalDetail,
 }
 
 export const pagesConfig = {
