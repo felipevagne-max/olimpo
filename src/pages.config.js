@@ -54,6 +54,9 @@ import Tasks from './pages/Tasks';
 import Goals from './pages/Goals';
 import CreateGoal from './pages/CreateGoal';
 import GoalDetail from './pages/GoalDetail';
+import Community from './pages/Community';
+import Finance from './pages/Finance';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -64,9 +67,12 @@ export const PAGES = {
     "Goals": Goals,
     "CreateGoal": CreateGoal,
     "GoalDetail": GoalDetail,
+    "Community": Community,
+    "Finance": Finance,
 }
 
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
+    Layout: __Layout,
 };
