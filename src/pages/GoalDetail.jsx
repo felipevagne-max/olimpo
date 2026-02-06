@@ -9,7 +9,9 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
+import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { ArrowLeft, Check, Target, Calendar, Zap, Trophy } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function GoalDetail() {
   const navigate = useNavigate();
@@ -34,6 +36,14 @@ export default function GoalDetail() {
     enabled: !!goalId
   });
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
+  });
+
   const updateProgressMutation = useMutation({
     mutationFn: async (newValue) => {
       return base44.entities.Goal.update(goalId, { currentValue: newValue });
@@ -46,24 +56,33 @@ export default function GoalDetail() {
 
   const toggleMilestoneMutation = useMutation({
     mutationFn: async (milestone) => {
-      const newCompleted = !milestone.completed;
+      // Block uncomplete after confirmation
+      if (milestone.completed) {
+        toast.error('Conclusão confirmada. Não é possível desfazer.');
+        throw new Error('Cannot uncomplete milestone');
+      }
+      
       await base44.entities.GoalMilestone.update(milestone.id, { 
-        completed: newCompleted,
-        completedAt: newCompleted ? new Date().toISOString() : null
+        completed: true,
+        completedAt: new Date().toISOString()
       });
       
-      if (newCompleted) {
-        await base44.entities.XPTransaction.create({
-          sourceType: 'milestone',
-          sourceId: milestone.id,
-          amount: milestone.xpReward || 30,
-          note: `Etapa: ${milestone.title}`
-        });
-      }
+      await base44.entities.XPTransaction.create({
+        sourceType: 'milestone',
+        sourceId: milestone.id,
+        amount: milestone.xpReward || 30,
+        note: `Etapa: ${milestone.title}`
+      });
+      
+      return milestone.xpReward || 30;
     },
-    onSuccess: () => {
+    onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['milestones', goalId]);
       queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP gain effect
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 
@@ -76,11 +95,19 @@ export default function GoalDetail() {
         amount: goal.xpOnComplete || 200,
         note: `Meta concluída: ${goal.title}`
       });
+      
+      return goal.xpOnComplete || 200;
     },
-    onSuccess: () => {
+    onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['goal', goalId]);
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP gain effect
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(xpGained, sfxEnabled);
+      
+      toast.success(`Meta concluída! +${xpGained} XP`);
     }
   });
 
@@ -257,6 +284,8 @@ export default function GoalDetail() {
           </OlimpoButton>
         )}
       </div>
+
+      <XPGainManager />
     </div>
   );
 }

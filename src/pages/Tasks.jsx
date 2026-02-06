@@ -10,7 +10,9 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
 import TaskModal from '@/components/tasks/TaskModal';
+import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,26 +51,43 @@ export default function Tasks() {
     queryFn: () => base44.entities.XPTransaction.list()
   });
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
+  });
+
   const completeTaskMutation = useMutation({
     mutationFn: async (task) => {
-      const newCompleted = !task.completed;
+      // Block uncomplete after confirmation
+      if (task.completed) {
+        toast.error('Conclusão confirmada. Não é possível desfazer.');
+        throw new Error('Cannot uncomplete task');
+      }
+      
       await base44.entities.Task.update(task.id, { 
-        completed: newCompleted,
-        completedAt: newCompleted ? new Date().toISOString() : null
+        completed: true,
+        completedAt: new Date().toISOString()
       });
       
-      if (newCompleted) {
-        await base44.entities.XPTransaction.create({
-          sourceType: 'task',
-          sourceId: task.id,
-          amount: task.xpReward || 10,
-          note: `Tarefa: ${task.title}`
-        });
-      }
+      await base44.entities.XPTransaction.create({
+        sourceType: 'task',
+        sourceId: task.id,
+        amount: task.xpReward || 10,
+        note: `Tarefa: ${task.title}`
+      });
+      
+      return task.xpReward || 10;
     },
-    onSuccess: () => {
+    onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP gain effect
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 
@@ -324,6 +343,7 @@ export default function Tasks() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <XPGainManager />
       <BottomNav />
     </div>
   );

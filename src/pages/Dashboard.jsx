@@ -13,8 +13,10 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import MatrixRain from '@/components/olimpo/MatrixRain';
 import DashboardCharts from '@/components/olimpo/DashboardCharts';
-import { Zap, Target, CheckSquare, Calendar, TrendingUp, Moon, Brain, Smile, Plus, Check } from 'lucide-react';
+import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
+import { Zap, Target, CheckSquare, Calendar, TrendingUp, Moon, Brain, Smile, Plus, Check, Lock } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -72,6 +74,7 @@ export default function Dashboard() {
   });
 
   const todayCheckIn = checkIns.find(c => c.date === today);
+  const hasCheckedInToday = !!todayCheckIn;
 
   useEffect(() => {
     if (todayCheckIn) {
@@ -85,34 +88,66 @@ export default function Dashboard() {
 
   const saveCheckInMutation = useMutation({
     mutationFn: async (data) => {
+      // Block if already checked in today
       if (todayCheckIn) {
-        return base44.entities.CheckIn.update(todayCheckIn.id, data);
+        toast.error('Você já registrou o check-in de hoje.');
+        throw new Error('Check-in already done today');
       }
-      return base44.entities.CheckIn.create({ ...data, date: today });
+      
+      const checkIn = await base44.entities.CheckIn.create({ ...data, date: today });
+      
+      // Award XP for daily check-in
+      const CHECKIN_XP_REWARD = 15;
+      await base44.entities.XPTransaction.create({
+        sourceType: 'checkin',
+        sourceId: checkIn.id,
+        amount: CHECKIN_XP_REWARD,
+        note: 'Daily check-in'
+      });
+      
+      return { checkIn, xpGained: CHECKIN_XP_REWARD };
     },
-    onSuccess: () => queryClient.invalidateQueries(['checkIns'])
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['checkIns']);
+      queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP gain effect
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(data.xpGained, sfxEnabled);
+      
+      toast.success(`Check-in registrado! +${data.xpGained} XP`);
+    }
   });
 
   const completeTaskMutation = useMutation({
     mutationFn: async (task) => {
-      const newCompleted = !task.completed;
+      // Block uncomplete after confirmation
+      if (task.completed) {
+        toast.error('Conclusão confirmada. Não é possível desfazer.');
+        throw new Error('Cannot uncomplete task');
+      }
+      
       await base44.entities.Task.update(task.id, { 
-        completed: newCompleted,
-        completedAt: newCompleted ? new Date().toISOString() : null
+        completed: true,
+        completedAt: new Date().toISOString()
       });
       
-      if (newCompleted) {
-        await base44.entities.XPTransaction.create({
-          sourceType: 'task',
-          sourceId: task.id,
-          amount: task.xpReward || 10,
-          note: `Tarefa: ${task.title}`
-        });
-      }
+      await base44.entities.XPTransaction.create({
+        sourceType: 'task',
+        sourceId: task.id,
+        amount: task.xpReward || 10,
+        note: `Tarefa: ${task.title}`
+      });
+      
+      return task.xpReward || 10;
     },
-    onSuccess: () => {
+    onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP gain effect
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 
@@ -235,12 +270,20 @@ export default function Dashboard() {
 
         {/* Check-in */}
         <OlimpoCard className="mb-4">
-          <h3 
-            className="text-sm font-semibold text-[#E8E8E8] mb-4"
-            style={{ fontFamily: 'Orbitron, sans-serif' }}
-          >
-            Check-in Diário
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 
+              className="text-sm font-semibold text-[#E8E8E8]"
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
+            >
+              Check-in Diário
+            </h3>
+            {hasCheckedInToday && (
+              <div className="flex items-center gap-1 text-xs text-[#00FF66]">
+                <Lock className="w-3 h-3" />
+                <span>Registrado</span>
+              </div>
+            )}
+          </div>
           
           <div className="space-y-4">
             <div>
@@ -253,9 +296,10 @@ export default function Dashboard() {
               </div>
               <Slider
                 value={[checkInData.sleepScore]}
-                onValueChange={([v]) => setCheckInData(prev => ({ ...prev, sleepScore: v }))}
+                onValueChange={([v]) => !hasCheckedInToday && setCheckInData(prev => ({ ...prev, sleepScore: v }))}
                 max={10}
                 step={1}
+                disabled={hasCheckedInToday}
                 className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
               />
             </div>
@@ -270,9 +314,10 @@ export default function Dashboard() {
               </div>
               <Slider
                 value={[checkInData.productivityScore]}
-                onValueChange={([v]) => setCheckInData(prev => ({ ...prev, productivityScore: v }))}
+                onValueChange={([v]) => !hasCheckedInToday && setCheckInData(prev => ({ ...prev, productivityScore: v }))}
                 max={10}
                 step={1}
+                disabled={hasCheckedInToday}
                 className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
               />
             </div>
@@ -287,20 +332,27 @@ export default function Dashboard() {
               </div>
               <Slider
                 value={[checkInData.moodScore]}
-                onValueChange={([v]) => setCheckInData(prev => ({ ...prev, moodScore: v }))}
+                onValueChange={([v]) => !hasCheckedInToday && setCheckInData(prev => ({ ...prev, moodScore: v }))}
                 max={10}
                 step={1}
+                disabled={hasCheckedInToday}
                 className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
               />
             </div>
 
-            <OlimpoButton
-              onClick={() => saveCheckInMutation.mutate(checkInData)}
-              className="w-full"
-              variant={todayCheckIn ? 'secondary' : 'primary'}
-            >
-              {todayCheckIn ? 'Atualizar Check-in' : 'Salvar Check-in'}
-            </OlimpoButton>
+            {hasCheckedInToday ? (
+              <div className="text-center p-3 bg-[rgba(0,255,102,0.1)] rounded-lg border border-[rgba(0,255,102,0.18)]">
+                <p className="text-xs text-[#00FF66]">Check-in de hoje registrado. Volte amanhã.</p>
+              </div>
+            ) : (
+              <OlimpoButton
+                onClick={() => saveCheckInMutation.mutate(checkInData)}
+                className="w-full"
+                disabled={saveCheckInMutation.isPending}
+              >
+                {saveCheckInMutation.isPending ? 'Salvando...' : 'Salvar Check-in (+15 XP)'}
+              </OlimpoButton>
+            )}
           </div>
         </OlimpoCard>
 
@@ -364,6 +416,7 @@ export default function Dashboard() {
         </OlimpoCard>
       </div>
 
+      <XPGainManager />
       <BottomNav />
     </div>
   );

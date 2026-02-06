@@ -10,7 +10,9 @@ import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
+import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Flame, Zap, MoreVertical, Pencil, Archive, Trash2, CheckSquare } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,26 +47,26 @@ export default function Habits() {
     queryFn: () => base44.entities.HabitLog.list()
   });
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
+  });
+
   const toggleHabitMutation = useMutation({
     mutationFn: async (habit) => {
       const todayLog = habitLogs.find(l => l.habitId === habit.id && l.date === today);
       
+      // Block uncomplete after confirmation
       if (todayLog?.completed) {
-        await base44.entities.HabitLog.update(todayLog.id, { completed: false, xpEarned: 0 });
-        await base44.entities.XPTransaction.create({
-          sourceType: 'habit',
-          sourceId: habit.id,
-          amount: -(habit.xpReward || 8),
-          note: `Desfeito: ${habit.name}`
-        });
-      } else if (todayLog) {
+        toast.error('Conclusão confirmada. Não é possível desfazer.');
+        throw new Error('Cannot uncomplete habit');
+      }
+      
+      if (todayLog) {
         await base44.entities.HabitLog.update(todayLog.id, { completed: true, xpEarned: habit.xpReward || 8 });
-        await base44.entities.XPTransaction.create({
-          sourceType: 'habit',
-          sourceId: habit.id,
-          amount: habit.xpReward || 8,
-          note: `Hábito: ${habit.name}`
-        });
       } else {
         await base44.entities.HabitLog.create({
           habitId: habit.id,
@@ -72,17 +74,24 @@ export default function Habits() {
           completed: true,
           xpEarned: habit.xpReward || 8
         });
-        await base44.entities.XPTransaction.create({
-          sourceType: 'habit',
-          sourceId: habit.id,
-          amount: habit.xpReward || 8,
-          note: `Hábito: ${habit.name}`
-        });
       }
+      
+      await base44.entities.XPTransaction.create({
+        sourceType: 'habit',
+        sourceId: habit.id,
+        amount: habit.xpReward || 8,
+        note: `Hábito: ${habit.name}`
+      });
+      
+      return habit.xpReward || 8;
     },
-    onSuccess: () => {
+    onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP gain effect
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 
@@ -312,6 +321,7 @@ export default function Habits() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <XPGainManager />
       <BottomNav />
     </div>
   );
