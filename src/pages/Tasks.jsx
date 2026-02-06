@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, addDays, subDays, isToday, isBefore, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BottomNav from '@/components/olimpo/BottomNav';
+import TopBar from '@/components/olimpo/TopBar';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
@@ -115,7 +116,8 @@ export default function Tasks() {
 
   return (
     <div className="min-h-screen bg-black pb-20">
-      <div className="px-4 pt-6">
+      <TopBar />
+      <div className="px-4 pt-20">
         {/* HUD Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

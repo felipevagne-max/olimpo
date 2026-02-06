@@ -6,11 +6,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BottomNav from '@/components/olimpo/BottomNav';
+import TopBar, { getLevelFromXP } from '@/components/olimpo/TopBar';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import MatrixRain from '@/components/olimpo/MatrixRain';
+import DashboardCharts from '@/components/olimpo/DashboardCharts';
 import { Zap, Target, CheckSquare, Calendar, TrendingUp, Moon, Brain, Smile, Plus, Check } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
@@ -116,10 +118,7 @@ export default function Dashboard() {
 
   // Calculations
   const totalXP = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-  const level = Math.floor(totalXP / 500) + 1;
-  const xpBaseLevel = (level - 1) * 500;
-  const xpNextLevel = level * 500;
-  const progressToNextLevel = ((totalXP - xpBaseLevel) / 500) * 100;
+  const levelInfo = getLevelFromXP(totalXP);
 
   const monthlyXP = xpTransactions
     .filter(t => t.created_date?.startsWith(currentMonth))
@@ -149,63 +148,55 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-black pb-20 relative">
+      <TopBar />
       <MatrixRain opacity={0.05} side="left" />
       
-      <div className="relative z-10 px-4 pt-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-[#9AA0A6] text-sm">Bem-vindo,</p>
-            <h1 
-              className="text-2xl font-bold text-[#00FF66]"
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
-              {user?.full_name || 'Herói'}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-[#9AA0A6] text-xs">Nível</p>
-              <p className="text-[#00FF66] text-xl font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                {level}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[#9AA0A6] text-xs">XP Total</p>
-              <p className="text-[#00FF66] text-xl font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                {totalXP}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="relative z-10 px-4 pt-20">
+        {/* Welcome & Level Progress */}
+        <div className="mb-6">
+          <p className="text-[#9AA0A6] text-sm">Bem-vindo,</p>
+          <h1 
+            className="text-2xl font-bold text-[#00FF66] mb-4"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            {user?.full_name || 'Herói'}
+          </h1>
+          
           <OlimpoCard>
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-[#00FF66]" />
-              <span className="text-xs text-[#9AA0A6]">Progresso do Mês</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#00FF66]" />
+                <span className="text-xs text-[#9AA0A6]">Progresso para {levelInfo.levelIndex < 6 ? getLevelFromXP(totalXP + levelInfo.xpToNextLevel).levelName : 'nível máximo'}</span>
+              </div>
+              <span className="text-xs font-mono text-[#00FF66]">{totalXP} XP</span>
             </div>
-            <OlimpoProgress value={monthlyXP} max={monthlyTargetXP} />
-            <p className="text-xs text-[#9AA0A6] mt-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-              {monthlyXP}/{monthlyTargetXP} XP
-            </p>
-          </OlimpoCard>
-
-          <OlimpoCard>
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-4 h-4 text-[#00FF66]" />
-              <span className="text-xs text-[#9AA0A6]">Próximo Nível</span>
-            </div>
-            <OlimpoProgress value={totalXP - xpBaseLevel} max={500} />
-            <p className="text-xs text-[#9AA0A6] mt-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-              {totalXP}/{xpNextLevel} XP
-            </p>
+            <OlimpoProgress 
+              value={levelInfo.xpCurrentLevel} 
+              max={levelInfo.xpCurrentLevel + levelInfo.xpToNextLevel} 
+              showLabel={false}
+            />
+            {levelInfo.xpToNextLevel > 0 && (
+              <p className="text-xs text-[#9AA0A6] mt-1 text-right">
+                Faltam {levelInfo.xpToNextLevel} XP
+              </p>
+            )}
           </OlimpoCard>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        {/* Quick Stats */}
+        <OlimpoCard className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-[#00FF66]" />
+            <span className="text-xs text-[#9AA0A6]">Meta Mensal de XP</span>
+          </div>
+          <OlimpoProgress value={monthlyXP} max={monthlyTargetXP} />
+          <p className="text-xs text-[#9AA0A6] mt-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+            {monthlyXP}/{monthlyTargetXP} XP ({((monthlyXP/monthlyTargetXP)*100).toFixed(0)}%)
+          </p>
+        </OlimpoCard>
+
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-4 gap-2 mb-6">
           <OlimpoCard className="p-3 text-center">
             <CheckSquare className="w-5 h-5 text-[#00FF66] mx-auto mb-1" />
             <p className="text-lg font-bold text-[#E8E8E8]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
@@ -238,6 +229,9 @@ export default function Dashboard() {
             <p className="text-[10px] text-[#9AA0A6]">XP Hoje</p>
           </OlimpoCard>
         </div>
+
+        {/* Evolution Charts */}
+        <DashboardCharts />
 
         {/* Check-in */}
         <OlimpoCard className="mb-4">

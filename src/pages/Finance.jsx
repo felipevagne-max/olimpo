@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BottomNav from '@/components/olimpo/BottomNav';
+import TopBar from '@/components/olimpo/TopBar';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
@@ -123,11 +124,12 @@ export default function Finance() {
 
   return (
     <div className="min-h-screen bg-black pb-20">
-      <div className="px-4 pt-6">
+      <TopBar />
+      <div className="px-4 pt-20">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <h1 
-            className="text-2xl font-bold text-[#00FF66]"
+            className="text-xl font-bold text-[#00FF66]"
             style={{ fontFamily: 'Orbitron, sans-serif' }}
           >
             FINANÇAS
