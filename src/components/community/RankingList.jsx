@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import LevelCrest from '@/components/olimpo/LevelCrest';
-import { getLevelFromXP } from '@/lib/levelSystem';
+import { getLevelFromXP } from '@/components/olimpo/levelSystem';
 import { Trophy, Medal, Award } from 'lucide-react';
 
 // Mock users for ranking (seed data)

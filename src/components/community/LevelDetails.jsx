@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import LevelCrest from '@/components/olimpo/LevelCrest';
-import { LEVEL_TIERS } from '@/lib/levelSystem';
+import { LEVEL_TIERS } from '@/components/olimpo/levelSystem';
 import { ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { useState } from 'react';
 

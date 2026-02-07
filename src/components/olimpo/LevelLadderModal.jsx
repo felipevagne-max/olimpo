@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LEVEL_TIERS } from '@/lib/levelSystem';
+import { LEVEL_TIERS } from './levelSystem';
 import LevelCrest from './LevelCrest';
 import OlimpoProgress from './OlimpoProgress';
 import { Lock } from 'lucide-react';
