@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { LayoutDashboard, CheckSquare, Calendar, Target, Swords, Wallet } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar, Target, TrendingUp, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -8,8 +8,8 @@ const navItems = [
   { name: 'Hábitos', page: 'Habits', icon: CheckSquare },
   { name: 'Tarefas', page: 'Tasks', icon: Calendar },
   { name: 'Metas', page: 'Goals', icon: Target },
+  { name: 'Progresso', page: 'Progress', icon: TrendingUp },
   { name: 'Comunidade', page: 'Community', icon: Swords },
-  { name: 'Finanças', page: 'Finance', icon: Wallet },
 ];
 
 export default function BottomNav() {

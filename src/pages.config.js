@@ -56,6 +56,7 @@ import GoalDetail from './pages/GoalDetail';
 import Goals from './pages/Goals';
 import Habits from './pages/Habits';
 import Tasks from './pages/Tasks';
+import Progress from './pages/Progress';
 import __Layout from './Layout.jsx';
 
 
@@ -69,6 +70,7 @@ export const PAGES = {
     "Goals": Goals,
     "Habits": Habits,
     "Tasks": Tasks,
+    "Progress": Progress,
 }
 
 export const pagesConfig = {

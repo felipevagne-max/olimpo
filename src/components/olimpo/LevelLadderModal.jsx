@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LEVEL_TIERS } from './levelSystem';
+import { RANK_TIERS } from './levelSystem';
 import LevelCrest from './LevelCrest';
 import OlimpoProgress from './OlimpoProgress';
 import { Lock } from 'lucide-react';
@@ -48,8 +48,9 @@ export default function LevelLadderModal({ open, onClose, currentLevelIndex, xpT
 
         {/* Level List */}
         <div className="space-y-2">
-          {LEVEL_TIERS.map((tier) => {
-            const isUnlocked = xpTotal >= tier.minXP;
+          {RANK_TIERS.map((tier) => {
+            const userLevel = Math.floor(xpTotal / 200) + 1;
+            const isUnlocked = userLevel >= tier.minLevel;
             const isCurrent = tier.index === currentLevelIndex;
             
             return (
@@ -77,7 +78,7 @@ export default function LevelLadderModal({ open, onClose, currentLevelIndex, xpT
                       className="text-xs text-[#9AA0A6]"
                       style={{ fontFamily: 'JetBrains Mono, monospace' }}
                     >
-                      {tier.minXP}–{tier.maxXP || '∞'} XP
+                      Níveis {tier.minLevel}–{tier.maxLevel}
                     </p>
                   </div>
 

@@ -1,14 +1,12 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Bell, BellOff } from 'lucide-react';
 import OlimpoLogo from './OlimpoLogo';
-import LevelLadderModal from './LevelLadderModal';
+import LevelPopover from './LevelPopover';
 import { getLevelFromXP } from './levelSystem';
 import { toast } from 'sonner';
 
 export default function TopBar() {
-  const [showLevelModal, setShowLevelModal] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: xpTransactions = [] } = useQuery({
@@ -51,19 +49,26 @@ export default function TopBar() {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-[rgba(0,255,102,0.18)]">
       <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto">
-        {/* Left: Level Badge (Clickable) */}
-        <button
-          onClick={() => setShowLevelModal(true)}
-          className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1 rounded-full border border-[rgba(0,255,102,0.18)] hover:bg-[rgba(0,255,102,0.1)] transition-all"
-        >
-          <span className="text-[10px] text-[#9AA0A6] uppercase tracking-wide">Nível:</span>
-          <span 
-            className="text-xs font-semibold text-[#00FF66]"
-            style={{ fontFamily: 'Orbitron, sans-serif' }}
-          >
-            {levelInfo.levelName}
-          </span>
-        </button>
+        {/* Left: Level Badge with Popover */}
+        <LevelPopover levelInfo={levelInfo} xpTotal={xpTotal}>
+          <button className="flex flex-col items-start gap-0.5 bg-[#0B0F0C] px-3 py-1.5 rounded-lg border border-[rgba(0,255,102,0.18)] hover:bg-[rgba(0,255,102,0.1)] transition-all">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-[#9AA0A6] uppercase tracking-wide">Nível:</span>
+              <span 
+                className="text-xs font-semibold text-[#00FF66]"
+                style={{ fontFamily: 'Orbitron, sans-serif' }}
+              >
+                {levelInfo.rankName}
+              </span>
+            </div>
+            <span 
+              className="text-[10px] text-[#9AA0A6]"
+              style={{ fontFamily: 'JetBrains Mono, monospace' }}
+            >
+              Lv {levelInfo.nivelNum}
+            </span>
+          </button>
+        </LevelPopover>
 
         {/* Center: Logo */}
         <div style={{ filter: 'drop-shadow(0 0 10px rgba(0,255,102,0.3))' }}>
@@ -87,15 +92,6 @@ export default function TopBar() {
           )}
         </button>
       </div>
-
-      <LevelLadderModal
-        open={showLevelModal}
-        onClose={() => setShowLevelModal(false)}
-        currentLevelIndex={levelInfo.levelIndex}
-        xpTotal={xpTotal}
-        xpToNextLevel={levelInfo.xpToNextLevel}
-        nextLevelName={levelInfo.nextLevelName}
-      />
     </div>
   );
 }

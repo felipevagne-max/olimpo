@@ -8,14 +8,8 @@ export default function Layout({ children, currentPageName }) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const isAuth = await base44.auth.isAuthenticated();
-      if (!isAuth && currentPageName !== 'Login') {
-        base44.auth.redirectToLogin(createPageUrl('Dashboard'));
-      }
-      setIsChecking(false);
-    };
-    checkAuth();
+    // Auto-login local (sem autenticação)
+    setIsChecking(false);
   }, [currentPageName, navigate]);
 
   if (isChecking) {

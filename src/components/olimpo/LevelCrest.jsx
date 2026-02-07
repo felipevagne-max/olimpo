@@ -1,6 +1,7 @@
 export default function LevelCrest({ levelIndex, size = 40, locked = false }) {
   const color = locked ? '#9AA0A6' : '#00FF66';
   const opacity = locked ? 0.4 : 1;
+  const glow = !locked;
 
   const crests = {
     1: ( // Iniciado - raio simples
@@ -57,7 +58,11 @@ export default function LevelCrest({ levelIndex, size = 40, locked = false }) {
   };
 
   return (
-    <div style={{ filter: !locked ? 'drop-shadow(0 0 6px rgba(0,255,102,0.3))' : 'none' }}>
+    <div style={{ 
+      filter: glow ? 'drop-shadow(0 0 8px rgba(0,255,102,0.4))' : 'none',
+      transform: glow ? 'scale(1.05)' : 'scale(1)',
+      transition: 'all 0.2s'
+    }}>
       {crests[levelIndex] || crests[1]}
     </div>
   );

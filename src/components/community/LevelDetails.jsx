@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import LevelCrest from '@/components/olimpo/LevelCrest';
-import { LEVEL_TIERS } from '@/components/olimpo/levelSystem';
+import { RANK_TIERS } from '@/components/olimpo/levelSystem';
 import { ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,9 +25,14 @@ export default function LevelDetails() {
         NÍVEIS E RECOMPENSAS
       </h3>
 
+      <p className="text-xs text-[#9AA0A6] mb-4">
+        Ranks são conquistados a cada 5 níveis
+      </p>
+
       <div className="space-y-2">
-        {LEVEL_TIERS.map((tier) => {
-          const isUnlocked = userXP >= tier.minXP;
+        {RANK_TIERS.map((tier) => {
+          const userLevelInfo = { nivelNum: Math.floor(userXP / 200) + 1 };
+          const isUnlocked = userLevelInfo.nivelNum >= tier.minLevel;
           const isExpanded = expandedLevel === tier.index;
 
           return (
@@ -56,7 +61,7 @@ export default function LevelDetails() {
                     className="text-xs text-[#9AA0A6]"
                     style={{ fontFamily: 'JetBrains Mono, monospace' }}
                   >
-                    {tier.minXP}–{tier.maxXP || '∞'} XP
+                    Níveis {tier.minLevel}–{tier.maxLevel}
                   </p>
                 </div>
 
@@ -75,7 +80,7 @@ export default function LevelDetails() {
 
                   <div>
                     <p className="text-xs text-[#9AA0A6] mb-2 uppercase tracking-wide">
-                      Recompensas:
+                      Recompensa Extraordinária:
                     </p>
                     {isUnlocked ? (
                       <div className="space-y-1">
@@ -89,8 +94,8 @@ export default function LevelDetails() {
                     ) : (
                       <div className="flex items-center gap-2 p-2 bg-[rgba(0,255,102,0.05)] rounded-lg">
                         <Lock className="w-4 h-4 text-[#9AA0A6]" />
-                        <p className="text-sm text-[#9AA0A6] blur-[2px]">
-                          Recompensa oculta - desbloqueie este nível
+                        <p className="text-sm text-[#9AA0A6]" style={{ filter: 'blur(2px)' }}>
+                          Recompensa extraordinária (secreta)
                         </p>
                       </div>
                     )}
