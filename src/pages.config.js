@@ -47,28 +47,28 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Dashboard from './pages/Dashboard';
-import Habits from './pages/Habits';
-import CreateHabit from './pages/CreateHabit';
-import Tasks from './pages/Tasks';
-import Goals from './pages/Goals';
-import CreateGoal from './pages/CreateGoal';
-import GoalDetail from './pages/GoalDetail';
 import Community from './pages/Community';
+import CreateGoal from './pages/CreateGoal';
+import CreateHabit from './pages/CreateHabit';
+import Dashboard from './pages/Dashboard';
 import Finance from './pages/Finance';
+import GoalDetail from './pages/GoalDetail';
+import Goals from './pages/Goals';
+import Habits from './pages/Habits';
+import Tasks from './pages/Tasks';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Habits": Habits,
-    "CreateHabit": CreateHabit,
-    "Tasks": Tasks,
-    "Goals": Goals,
-    "CreateGoal": CreateGoal,
-    "GoalDetail": GoalDetail,
     "Community": Community,
+    "CreateGoal": CreateGoal,
+    "CreateHabit": CreateHabit,
+    "Dashboard": Dashboard,
     "Finance": Finance,
+    "GoalDetail": GoalDetail,
+    "Goals": Goals,
+    "Habits": Habits,
+    "Tasks": Tasks,
 }
 
 export const pagesConfig = {
