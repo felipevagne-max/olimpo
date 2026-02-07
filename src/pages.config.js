@@ -57,6 +57,7 @@ import Goals from './pages/Goals';
 import Habits from './pages/Habits';
 import Tasks from './pages/Tasks';
 import Progress from './pages/Progress';
+import Oracle from './pages/Oracle';
 import __Layout from './Layout.jsx';
 
 
@@ -71,6 +72,7 @@ export const PAGES = {
     "Habits": Habits,
     "Tasks": Tasks,
     "Progress": Progress,
+    "Oracle": Oracle,
 }
 
 export const pagesConfig = {
