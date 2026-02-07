@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BottomNav from '@/components/olimpo/BottomNav';
-import TopBar, { getLevelFromXP } from '@/components/olimpo/TopBar';
+import TopBar from '@/components/olimpo/TopBar';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
