@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Bell, BellOff } from 'lucide-react';
 import OlimpoLogo from './OlimpoLogo';
 import LevelLadderModal from './LevelLadderModal';
-import { getLevelFromXP } from '@/utils/levelSystem';
+import { getLevelFromXP } from '@/lib/levelSystem';
 import { toast } from 'sonner';
 
 export default function TopBar() {
