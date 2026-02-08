@@ -32,7 +32,7 @@ const WEEKDAYS = [
   { value: 'dom', label: 'Dom' },
 ];
 
-export default function TaskModal({ open, onClose, task, defaultDate }) {
+export default function TaskModal({ open, onClose, task, defaultDate, goalId }) {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -44,7 +44,8 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
     difficulty: 'medium',
     isRecurring: false,
     recurringDays: [],
-    xpReward: 10
+    xpReward: 10,
+    goalId: goalId || null
   });
 
   useEffect(() => {
@@ -58,7 +59,8 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
         difficulty: task.difficulty || 'medium',
         isRecurring: task.isRecurring || false,
         recurringDays: task.recurringDays || [],
-        xpReward: task.xpReward || 10
+        xpReward: task.xpReward || 10,
+        goalId: task.goalId || goalId || null
       });
     } else {
       setFormData({
@@ -70,7 +72,8 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
         difficulty: 'medium',
         isRecurring: false,
         recurringDays: [],
-        xpReward: 10
+        xpReward: 10,
+        goalId: goalId || null
       });
     }
   }, [task, defaultDate, open]);

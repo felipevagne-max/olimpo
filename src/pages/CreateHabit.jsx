@@ -42,6 +42,7 @@ export default function CreateHabit() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
+  const goalId = searchParams.get('goalId');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -55,7 +56,8 @@ export default function CreateHabit() {
     category: '',
     goalText: '',
     reminderEnabled: false,
-    reminderTime: '09:00'
+    reminderTime: '09:00',
+    goalId: goalId || null
   });
 
   const { data: editHabit, isLoading: loadingEdit } = useQuery({
@@ -82,7 +84,8 @@ export default function CreateHabit() {
         category: editHabit.category || '',
         goalText: editHabit.goalText || '',
         reminderEnabled: editHabit.reminderEnabled || false,
-        reminderTime: editHabit.reminderTime || '09:00'
+        reminderTime: editHabit.reminderTime || '09:00',
+        goalId: editHabit.goalId || goalId || null
       });
     }
   }, [editHabit]);
