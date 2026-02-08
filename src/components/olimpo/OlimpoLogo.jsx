@@ -16,12 +16,19 @@ export default function OlimpoLogo({ size = 40, glow = true, className = '' }) {
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
-          d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"
-          fill="#00FF66"
+          d="M14 2L4 12h6l-2 10 12-14h-7l3-6z"
+          fill="none"
+          stroke="#00FF66"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M14 2l-1.5 4M10 12l-0.8 2.5M20 12l-2 2"
           stroke="#00FF66"
           strokeWidth="1.5"
           strokeLinecap="round"
-          strokeLinejoin="round"
+          opacity="0.6"
         />
       </svg>
     </div>

@@ -15,9 +15,48 @@ import MatrixRain from '@/components/olimpo/MatrixRain';
 import DashboardCharts from '@/components/olimpo/DashboardCharts';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
-import { Zap, Target, CheckSquare, Calendar, TrendingUp, Moon, Brain, Smile, Plus, Check, Lock } from 'lucide-react';
+import { Zap, Target, CheckSquare, Calendar, TrendingUp, Moon, Brain, Smile, Plus, Check, Lock, CheckCircle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
+
+function CheckInCompleted() {
+  const [timeLeft, setTimeLeft] = useState('');
+  
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      
+      const diff = tomorrow - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="text-center p-4 bg-[rgba(0,255,102,0.1)] rounded-lg border border-[rgba(0,255,102,0.18)]">
+      <CheckCircle className="w-8 h-8 text-[#00FF66] mx-auto mb-2" />
+      <p className="text-sm text-[#00FF66] mb-1">Check-in realizado com sucesso</p>
+      <p className="text-xs text-[#9AA0A6] mb-2">Próximo check-in em:</p>
+      <p 
+        className="text-2xl font-bold text-[#00FF66]"
+        style={{ fontFamily: 'JetBrains Mono, monospace' }}
+      >
+        {timeLeft}
+      </p>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -342,9 +381,7 @@ export default function Dashboard() {
             </div>
 
             {hasCheckedInToday ? (
-              <div className="text-center p-3 bg-[rgba(0,255,102,0.1)] rounded-lg border border-[rgba(0,255,102,0.18)]">
-                <p className="text-xs text-[#00FF66]">Check-in de hoje registrado. Volte amanhã.</p>
-              </div>
+              <CheckInCompleted />
             ) : (
               <OlimpoButton
                 onClick={() => saveCheckInMutation.mutate(checkInData)}

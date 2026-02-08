@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import { X, Repeat } from 'lucide-react';
+import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -40,6 +41,7 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
     date: defaultDate,
     dueDate: '',
     priority: 'medium',
+    difficulty: 'medium',
     isRecurring: false,
     recurringDays: [],
     xpReward: 10
@@ -53,6 +55,7 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
         date: task.date || defaultDate,
         dueDate: task.dueDate || '',
         priority: task.priority || 'medium',
+        difficulty: task.difficulty || 'medium',
         isRecurring: task.isRecurring || false,
         recurringDays: task.recurringDays || [],
         xpReward: task.xpReward || 10
@@ -64,6 +67,7 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
         date: defaultDate,
         dueDate: '',
         priority: 'medium',
+        difficulty: 'medium',
         isRecurring: false,
         recurringDays: [],
         xpReward: 10
@@ -93,10 +97,42 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
     }));
   };
 
+  const calculateTaskXP = (difficulty, priority, dueDate) => {
+    const baseXP = {
+      easy: 5,
+      medium: 10,
+      hard: 15,
+      epic: 25
+    }[difficulty] || 10;
+    
+    let bonus = 0;
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    if (priority === 'high') {
+      bonus = 0.5;
+    } else if (priority === 'medium') {
+      bonus = 0.2;
+    }
+    
+    if (dueDate) {
+      const daysUntilDue = Math.ceil((new Date(dueDate) - new Date(today)) / (1000 * 60 * 60 * 24));
+      if (daysUntilDue <= 1) {
+        bonus = Math.max(bonus, 0.5);
+      }
+      if (daysUntilDue < 0) {
+        bonus = 0.7;
+      }
+    }
+    
+    return Math.round(baseXP * (1 + bonus));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
-    saveMutation.mutate(formData);
+    
+    const calculatedXP = calculateTaskXP(formData.difficulty, formData.priority, formData.dueDate);
+    saveMutation.mutate({ ...formData, xpReward: calculatedXP });
   };
 
   return (
@@ -174,6 +210,24 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
             )}
           </div>
 
+          <div>
+            <Label className="text-[#9AA0A6] text-xs">Dificuldade *</Label>
+            <Select
+              value={formData.difficulty}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, difficulty: v }))}
+            >
+              <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                <SelectItem value="easy" className="text-[#E8E8E8]">Fácil (5 XP base)</SelectItem>
+                <SelectItem value="medium" className="text-[#E8E8E8]">Médio (10 XP base)</SelectItem>
+                <SelectItem value="hard" className="text-[#E8E8E8]">Difícil (15 XP base)</SelectItem>
+                <SelectItem value="epic" className="text-[#E8E8E8]">Épico (25 XP base)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-[#9AA0A6] text-xs">Prioridade</Label>
@@ -202,26 +256,14 @@ export default function TaskModal({ open, onClose, task, defaultDate }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-[#9AA0A6] text-xs">Data da Tarefa</Label>
-              <OlimpoInput
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div>
-              <Label className="text-[#9AA0A6] text-xs">XP</Label>
-              <OlimpoInput
-                type="number"
-                min={1}
-                value={formData.xpReward}
-                onChange={(e) => setFormData(prev => ({ ...prev, xpReward: parseInt(e.target.value) || 10 }))}
-              />
-            </div>
+          <div>
+            <Label className="text-[#9AA0A6] text-xs">Data da Tarefa</Label>
+            <OlimpoInput
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              required
+            />
           </div>
 
           <div className="flex gap-3 pt-4">

@@ -55,9 +55,10 @@ import Finance from './pages/Finance';
 import GoalDetail from './pages/GoalDetail';
 import Goals from './pages/Goals';
 import Habits from './pages/Habits';
-import Tasks from './pages/Tasks';
-import Progress from './pages/Progress';
 import Oracle from './pages/Oracle';
+import Progress from './pages/Progress';
+import Tasks from './pages/Tasks';
+import Titles from './pages/Titles';
 import __Layout from './Layout.jsx';
 
 
@@ -70,9 +71,10 @@ export const PAGES = {
     "GoalDetail": GoalDetail,
     "Goals": Goals,
     "Habits": Habits,
-    "Tasks": Tasks,
-    "Progress": Progress,
     "Oracle": Oracle,
+    "Progress": Progress,
+    "Tasks": Tasks,
+    "Titles": Titles,
 }
 
 export const pagesConfig = {

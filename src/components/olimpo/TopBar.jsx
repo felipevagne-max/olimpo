@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Bell, BellOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { Bell, BellOff, Award } from 'lucide-react';
 import OlimpoLogo from './OlimpoLogo';
 import LevelPopover from './LevelPopover';
 import { getLevelFromXP } from './levelSystem';
@@ -8,6 +10,7 @@ import { toast } from 'sonner';
 
 export default function TopBar() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
@@ -75,22 +78,30 @@ export default function TopBar() {
           <OlimpoLogo size={32} glow={false} />
         </div>
 
-        {/* Right: Notification Bell */}
-        <button
-          onClick={() => toggleNotificationsMutation.mutate(!notificationsEnabled)}
-          className={`p-2 rounded-full transition-all ${
-            notificationsEnabled 
-              ? 'text-[#00FF66]' 
-              : 'text-[#9AA0A6]'
-          }`}
-          style={{ filter: notificationsEnabled ? 'drop-shadow(0 0 8px rgba(0,255,102,0.4))' : 'none' }}
-        >
-          {notificationsEnabled ? (
-            <Bell className="w-5 h-5" />
-          ) : (
-            <BellOff className="w-5 h-5" />
-          )}
-        </button>
+        {/* Right: Titles + Notification Bell */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate(createPageUrl('Titles'))}
+            className="p-2 rounded-full text-[#9AA0A6] hover:text-[#00FF66] transition-all"
+          >
+            <Award className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => toggleNotificationsMutation.mutate(!notificationsEnabled)}
+            className={`p-2 rounded-full transition-all ${
+              notificationsEnabled 
+                ? 'text-[#00FF66]' 
+                : 'text-[#9AA0A6]'
+            }`}
+            style={{ filter: notificationsEnabled ? 'drop-shadow(0 0 8px rgba(0,255,102,0.4))' : 'none' }}
+          >
+            {notificationsEnabled ? (
+              <Bell className="w-5 h-5" />
+            ) : (
+              <BellOff className="w-5 h-5" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

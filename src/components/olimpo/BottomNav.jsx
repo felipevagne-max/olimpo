@@ -27,32 +27,31 @@ export default function BottomNav() {
   const unreadCount = insights.filter(i => !i.read).length;
 
   return (
-    <>
-      {/* Floating Oracle Button */}
-      <button
-        onClick={() => navigate(createPageUrl('Oracle'))}
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 transition-all hover:scale-105"
-      >
-        <div className="relative">
-          <div 
-            className="w-14 h-14 rounded-full flex items-center justify-center bg-[#0B0F0C] border-2 border-[#00FF66]"
-            style={{ filter: 'drop-shadow(0 0 16px rgba(0,255,102,0.5))' }}
-          >
-            <Eye className="w-7 h-7 text-[#00FF66]" strokeWidth={2} />
-          </div>
-          {unreadCount > 0 && (
+    <nav className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50">
+      <div className="relative">
+        {/* Floating Oracle Button - integrated into nav bar */}
+        <button
+          onClick={() => navigate(createPageUrl('Oracle'))}
+          className="absolute left-1/2 -translate-x-1/2 -top-7 transition-all hover:scale-105"
+        >
+          <div className="relative">
             <div 
-              className="absolute -top-1 -right-1 w-5 h-5 bg-[#00FF66] text-black rounded-full flex items-center justify-center text-[10px] font-bold"
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              className="w-14 h-14 rounded-full flex items-center justify-center bg-[#0B0F0C] border-2 border-[#00FF66]"
+              style={{ filter: 'drop-shadow(0 0 12px rgba(0,255,102,0.4))' }}
             >
-              {unreadCount}
+              <Eye className="w-6 h-6 text-[#00FF66]" strokeWidth={2.5} />
             </div>
-          )}
-        </div>
-      </button>
+            {unreadCount > 0 && (
+              <div 
+                className="absolute -top-1 -right-1 w-5 h-5 bg-[#00FF66] text-black rounded-full flex items-center justify-center text-[10px] font-bold"
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                {unreadCount}
+              </div>
+            )}
+          </div>
+        </button>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50">
         <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
           {navItems.map((item) => {
             const isActive = currentPath.includes(item.page);
@@ -83,9 +82,9 @@ export default function BottomNav() {
                 </span>
               </Link>
             );
-          })}
-        </div>
-      </nav>
-    </>
-  );
-}
+            })}
+            </div>
+            </div>
+            </nav>
+            );
+            }

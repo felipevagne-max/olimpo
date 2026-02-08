@@ -31,9 +31,10 @@ const WEEKDAYS = [
 
 const CATEGORIES = ['Saúde', 'Estudos', 'Trabalho', 'Mindset', 'Casa', 'Outro'];
 const DIFFICULTIES = [
-  { value: 'easy', label: 'Fácil' },
-  { value: 'medium', label: 'Médio' },
-  { value: 'hard', label: 'Difícil' },
+  { value: 'easy', label: 'Fácil', xp: 5 },
+  { value: 'medium', label: 'Médio', xp: 10 },
+  { value: 'hard', label: 'Difícil', xp: 15 },
+  { value: 'epic', label: 'Épico', xp: 25 },
 ];
 
 export default function CreateHabit() {
@@ -111,7 +112,9 @@ export default function CreateHabit() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    saveMutation.mutate({ ...formData, archived: false });
+    
+    const xpReward = DIFFICULTIES.find(d => d.value === formData.difficulty)?.xp || 10;
+    saveMutation.mutate({ ...formData, xpReward, archived: false });
   };
 
   if (editId && loadingEdit) {
@@ -228,17 +231,7 @@ export default function CreateHabit() {
           <OlimpoCard>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-[#9AA0A6] text-xs">XP por Conclusão</Label>
-                <OlimpoInput
-                  type="number"
-                  min={1}
-                  value={formData.xpReward}
-                  onChange={(e) => setFormData(prev => ({ ...prev, xpReward: parseInt(e.target.value) || 8 }))}
-                />
-              </div>
-
-              <div>
-                <Label className="text-[#9AA0A6] text-xs">Dificuldade</Label>
+                <Label className="text-[#9AA0A6] text-xs">Dificuldade *</Label>
                 <Select
                   value={formData.difficulty}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, difficulty: v }))}
@@ -249,7 +242,7 @@ export default function CreateHabit() {
                   <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
                     {DIFFICULTIES.map(d => (
                       <SelectItem key={d.value} value={d.value} className="text-[#E8E8E8]">
-                        {d.label}
+                        {d.label} ({d.xp} XP)
                       </SelectItem>
                     ))}
                   </SelectContent>

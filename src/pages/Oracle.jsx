@@ -6,17 +6,14 @@ import BottomNav from '@/components/olimpo/BottomNav';
 import TopBar from '@/components/olimpo/TopBar';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
-import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
-import { analyzePatterns, generateOracleResponse } from '@/components/oracle/PatternAnalyzer';
-import { Eye, Send, Sparkles, Settings, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { analyzePatterns } from '@/components/oracle/PatternAnalyzer';
+import { Eye, Sparkles, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Oracle() {
   const queryClient = useQueryClient();
-  const [message, setMessage] = useState('');
   const [generating, setGenerating] = useState(false);
-  const messagesEndRef = useRef(null);
 
   const { data: messages = [] } = useQuery({
     queryKey: ['oracleMessages'],
@@ -59,44 +56,7 @@ export default function Oracle() {
     queryFn: () => base44.entities.Habit.filter({ archived: false })
   });
 
-  const sendMessageMutation = useMutation({
-    mutationFn: async (content) => {
-      // Save user message
-      await base44.entities.OracleMessage.create({
-        role: 'user',
-        content
-      });
 
-      // Generate response
-      setGenerating(true);
-      const recentInsights = await queryClient.fetchQuery({
-        queryKey: ['oracleInsights'],
-        queryFn: () => base44.entities.OracleInsight.list('-created_date', 10)
-      });
-
-      const response = generateOracleResponse(
-        content,
-        recentInsights,
-        checkIns,
-        tasks,
-        config?.tone || 'direct'
-      );
-
-      // Save oracle response
-      await base44.entities.OracleMessage.create({
-        role: 'oracle',
-        content: response
-      });
-
-      setGenerating(false);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['oracleMessages']);
-      setMessage('');
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    }
-  });
 
   const generateInsightsMutation = useMutation({
     mutationFn: async () => {
@@ -157,12 +117,38 @@ export default function Oracle() {
     }
   }, [insights]);
 
-  const quickActions = [
-    'O que estou fazendo errado?',
-    'Me dê um plano para amanhã',
-    'Analise minha semana',
-    'Como melhorar meu sono?'
-  ];
+  const consultOracle = async () => {
+    setGenerating(true);
+    
+    const recentInsights = await queryClient.fetchQuery({
+      queryKey: ['oracleInsights'],
+      queryFn: () => base44.entities.OracleInsight.list('-created_date', 10)
+    });
+
+    if (recentInsights.length === 0 || checkIns.length < 3) {
+      const response = "Ainda não há dados suficientes. Registre pelo menos 3 dias de check-in e conclua algumas tarefas/hábitos para análise.";
+      
+      await base44.entities.OracleMessage.create({
+        role: 'oracle',
+        content: response
+      });
+      
+      setGenerating(false);
+      queryClient.invalidateQueries(['oracleMessages']);
+      return;
+    }
+
+    const insight = recentInsights[0];
+    const response = `${insight.title}\n\n${insight.evidence}\n\nAção: ${insight.recommendation}`;
+    
+    await base44.entities.OracleMessage.create({
+      role: 'oracle',
+      content: response
+    });
+    
+    setGenerating(false);
+    queryClient.invalidateQueries(['oracleMessages']);
+  };
 
   const getSeverityIcon = (severity) => {
     switch (severity) {
@@ -227,81 +213,44 @@ export default function Oracle() {
           </div>
         )}
 
-        {/* Chat */}
-        <OlimpoCard className="p-4 mb-20">
-          <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-            {messages.length === 0 && (
-              <div className="text-center py-8">
-                <Eye className="w-12 h-12 text-[#00FF66] mx-auto mb-3 opacity-50" />
-                <p className="text-sm text-[#9AA0A6]">
-                  Faça uma pergunta ao Oráculo
-                </p>
-              </div>
-            )}
-            
-            {messages.slice().reverse().map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-lg p-3 ${
-                    msg.role === 'user'
-                      ? 'bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.18)]'
-                      : 'bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)]'
-                  }`}
-                >
-                  <p className="text-sm text-[#E8E8E8] whitespace-pre-wrap">
+        {/* Consultation Result */}
+        {messages.length > 0 && (
+          <OlimpoCard className="mb-4">
+            <h3 className="text-sm font-semibold text-[#E8E8E8] mb-3">Última Consulta</h3>
+            <div className="space-y-3">
+              {messages.slice(0, 1).map((msg) => (
+                <div key={msg.id} className="bg-[#070A08] rounded-lg p-4 border border-[rgba(0,255,102,0.1)]">
+                  <p className="text-sm text-[#E8E8E8] whitespace-pre-wrap leading-relaxed">
                     {msg.content}
                   </p>
+                  <p className="text-xs text-[#9AA0A6] mt-3">
+                    {format(new Date(msg.created_date), 'dd/MM HH:mm')}
+                  </p>
                 </div>
-              </div>
-            ))}
-            
-            {generating && (
-              <div className="flex justify-start">
-                <div className="bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] rounded-lg p-3">
-                  <LoadingSpinner size="sm" />
-                </div>
+              ))}
+            </div>
+          </OlimpoCard>
+        )}
+
+        {/* Consult Button */}
+        <OlimpoCard className="mb-20">
+          <div className="text-center py-6">
+            {!generating ? (
+              <>
+                <Eye className="w-12 h-12 text-[#00FF66] mx-auto mb-4" style={{ filter: 'drop-shadow(0 0 12px rgba(0,255,102,0.4))' }} />
+                <OlimpoButton
+                  onClick={consultOracle}
+                  className="w-full"
+                >
+                  Consultar Oráculo
+                </OlimpoButton>
+              </>
+            ) : (
+              <div className="py-4">
+                <LoadingSpinner size="lg" />
+                <p className="text-sm text-[#9AA0A6] mt-4">Analisando seus dados...</p>
               </div>
             )}
-            
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick actions */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            {quickActions.map((action) => (
-              <button
-                key={action}
-                onClick={() => sendMessageMutation.mutate(action)}
-                className="text-xs px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)] text-[#00FF66] hover:bg-[rgba(0,255,102,0.1)] transition-all"
-              >
-                {action}
-              </button>
-            ))}
-          </div>
-
-          {/* Input */}
-          <div className="flex gap-2">
-            <OlimpoInput
-              placeholder="Pergunte ao Oráculo..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && message.trim()) {
-                  sendMessageMutation.mutate(message);
-                }
-              }}
-              className="flex-1"
-            />
-            <OlimpoButton
-              onClick={() => message.trim() && sendMessageMutation.mutate(message)}
-              disabled={!message.trim() || sendMessageMutation.isPending}
-              className="px-4"
-            >
-              <Send className="w-4 h-4" />
-            </OlimpoButton>
           </div>
         </OlimpoCard>
       </div>
