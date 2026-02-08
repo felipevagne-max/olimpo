@@ -101,15 +101,15 @@ export default function Tasks() {
 
   const completeHabitMutation = useMutation({
     mutationFn: async (habit) => {
-      const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === todayStr);
+      const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === selectedDateStr);
       if (existingLog?.completed) {
-        toast.error('Hábito já concluído hoje.');
+        toast.error('Conclusão confirmada. Não é possível desfazer.');
         throw new Error('Already completed');
       }
       
       await base44.entities.HabitLog.create({
         habitId: habit.id,
-        date: todayStr,
+        date: selectedDateStr,
         completed: true,
         xpEarned: habit.xpReward || 8
       });
@@ -338,71 +338,94 @@ export default function Tasks() {
           />
         ) : (
           <div className="space-y-3">
-            {dayTasks.map(task => (
-              <OlimpoCard key={task.id}>
+            {combinedItems.map(item => (
+              <OlimpoCard key={`${item.type}-${item.id}`}>
                 <div className="flex items-start gap-3">
                   <button
-                    onClick={() => completeTaskMutation.mutate(task)}
+                    onClick={() => item.type === 'task' 
+                      ? completeTaskMutation.mutate(item) 
+                      : completeHabitMutation.mutate(item)}
                     className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                      task.completed 
+                      item.isCompleted
                         ? 'bg-[#00FF66] border-[#00FF66]' 
                         : 'border-[#9AA0A6] hover:border-[#00FF66]'
                     }`}
                   >
-                    {task.completed && <Check className="w-4 h-4 text-black" />}
+                    {item.isCompleted && <Check className="w-4 h-4 text-black" />}
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className={`font-medium ${task.completed ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
-                      {task.title}
-                    </h3>
-                    {task.description && (
-                      <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{task.description}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      {item.type === 'habit' && (
+                        <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
+                      )}
+                      <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
+                        {item.type === 'task' ? item.title : item.name}
+                      </h3>
+                    </div>
+                    {item.description && (
+                      <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{item.description}</p>
                     )}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className={`text-xs px-2 py-0.5 rounded ${
-                        task.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
-                        task.priority === 'medium' ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' :
-                        'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
-                      }`}>
-                        {task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Média' : 'Baixa'}
-                      </span>
-                      {task.dueDate && (
-                        <span className="text-xs text-[#9AA0A6]">
-                          Prazo: {format(parseISO(task.dueDate), 'dd/MM')}
+                      {item.type === 'habit' && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
+                          Rotina
                         </span>
                       )}
-                      <span className="text-xs font-mono text-[#00FF66]">+{task.xpReward || 10} XP</span>
+                      {item.type === 'task' && item.priority && (
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          item.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
+                          item.priority === 'medium' ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' :
+                          'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
+                        }`}>
+                          {item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Média' : 'Baixa'}
+                        </span>
+                      )}
+                      {item.type === 'task' && item.dueDate && (
+                        <span className="text-xs text-[#9AA0A6]">
+                          Prazo: {format(parseISO(item.dueDate), 'dd/MM')}
+                        </span>
+                      )}
+                      {item.sortTime !== '99:99' && (
+                        <span className="text-xs text-[#9AA0A6]">
+                          {item.sortTime}
+                        </span>
+                      )}
+                      <span className="text-xs font-mono text-[#00FF66]">
+                        +{item.type === 'task' ? (item.xpReward || 10) : (item.xpReward || 8)} XP
+                      </span>
                     </div>
                   </div>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-                      <DropdownMenuItem 
-                        onClick={() => { setEditTask(task); setShowModal(true); }}
-                        className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
-                      >
-                        <Pencil className="w-4 h-4 mr-2" /> Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => archiveMutation.mutate(task.id)}
-                        className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
-                      >
-                        <Archive className="w-4 h-4 mr-2" /> Arquivar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => setDeleteId(task.id)}
-                        className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {item.type === 'task' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                        <DropdownMenuItem 
+                          onClick={() => { setEditTask(item); setShowModal(true); }}
+                          className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
+                        >
+                          <Pencil className="w-4 h-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => archiveMutation.mutate(item.id)}
+                          className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
+                        >
+                          <Archive className="w-4 h-4 mr-2" /> Arquivar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setDeleteId(item.id)}
+                          className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </OlimpoCard>
             ))}
@@ -422,13 +445,6 @@ export default function Tasks() {
         defaultDate={selectedDateStr}
       />
 
-      <XPGainManager />
-      <BottomNav />
-    </div>
-  );
-}
-
-/*
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
           <AlertDialogHeader>
@@ -450,4 +466,9 @@ export default function Tasks() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-*/
+
+      <XPGainManager />
+      <BottomNav />
+    </div>
+  );
+}
