@@ -41,16 +41,19 @@ export default function BottomNav() {
               to={createPageUrl(item.page)}
               className={cn(
                 "flex flex-col items-center justify-center py-2 px-0.5 flex-1 min-w-0 rounded-lg transition-all duration-150 relative",
-                isActive 
-                  ? isOracle ? "text-[#00FF66]" : "text-[#00FF66]"
-                  : "text-[#9AA0A6] hover:text-[#00FF66]"
+                isOracle 
+                  ? "text-[#00FF66]"
+                  : isActive 
+                    ? "text-[#00FF66]" 
+                    : "text-[#9AA0A6] hover:text-[#00FF66]"
               )}
+              style={isOracle ? { filter: 'drop-shadow(0 0 4px rgba(0,255,102,0.3))' } : undefined}
             >
               <div className={cn(
                 "p-1.5 rounded-lg transition-all duration-150",
-                isActive && (isOracle ? "bg-[rgba(0,255,102,0.2)]" : "bg-[rgba(0,255,102,0.15)]")
+                isOracle ? "bg-[rgba(0,255,102,0.15)]" : isActive && "bg-[rgba(0,255,102,0.15)]"
               )}>
-                <Icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
+                <Icon className="w-5 h-5" strokeWidth={isOracle || isActive ? 2 : 1.5} />
               </div>
               {isOracle && unreadCount > 0 && (
                 <div 

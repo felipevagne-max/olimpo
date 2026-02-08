@@ -151,18 +151,25 @@ export default function Tasks() {
   }
 
   // Filter and combine tasks + habits
-  const dayTasks = tasks.filter(t => t.date === selectedDateStr && !t.archived);
+  const dayTasks = showOverdue
+    ? tasks.filter(t => !t.archived && !t.completed && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate)))
+    : tasks.filter(t => t.date === selectedDateStr && !t.archived);
   
-  const dayHabits = habits.filter(habit => {
+  const dayHabits = showOverdue ? [] : habits.filter(habit => {
     if (habit.frequencyType === 'daily') return true;
     if (habit.frequencyType === 'weekdays') {
-      const dayName = format(parseISO(selectedDateStr), 'EEE', { locale: ptBR }).toLowerCase();
-      return habit.weekdays?.includes(dayName);
+      const dayOfWeek = format(selectedDate, 'EEE', { locale: ptBR }).toLowerCase();
+      return habit.weekdays?.includes(dayOfWeek);
     }
-    return true;
+    // For timesPerWeek, show in all days for now (stable approach)
+    return habit.frequencyType === 'timesPerWeek';
   });
 
-  const combinedItems = [
+  const combinedItems = showOverdue ? dayTasks.map(t => ({
+    ...t,
+    type: 'task',
+    isCompleted: t.completed
+  })) : [
     ...dayTasks.map(t => ({
       ...t,
       type: 'task',
@@ -185,7 +192,7 @@ export default function Tasks() {
     }
     if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
     if (a.sortUrgency !== b.sortUrgency) return a.sortUrgency - b.sortUrgency;
-    return new Date(a.created_date) - new Date(b.created_date);
+    return new Date(a.created_date || 0) - new Date(b.created_date || 0);
   });
 
   const completedCount = combinedItems.filter(i => i.isCompleted).length;
@@ -277,8 +284,24 @@ export default function Tasks() {
           {weekDays.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
             const isSelected = dayStr === selectedDateStr && !showOverdue;
-            const dayTasks = tasks.filter(t => t.date === dayStr && !t.archived);
-            const dayCompleted = dayTasks.filter(t => t.completed).length;
+            
+            // Calculate total items for this day (tasks + habits)
+            const dayTasksList = tasks.filter(t => t.date === dayStr && !t.archived);
+            const dayHabitsList = habits.filter(habit => {
+              if (habit.frequencyType === 'daily') return true;
+              if (habit.frequencyType === 'weekdays') {
+                const dayOfWeek = format(day, 'EEE', { locale: ptBR }).toLowerCase();
+                return habit.weekdays?.includes(dayOfWeek);
+              }
+              return habit.frequencyType === 'timesPerWeek';
+            });
+            
+            const totalItems = dayTasksList.length + dayHabitsList.length;
+            const completedTasks = dayTasksList.filter(t => t.completed).length;
+            const completedHabits = dayHabitsList.filter(h => 
+              habitLogs.some(l => l.habitId === h.id && l.date === dayStr && l.completed)
+            ).length;
+            const completedItems = completedTasks + completedHabits;
 
             return (
               <button
@@ -294,9 +317,9 @@ export default function Tasks() {
                   {format(day, 'EEE', { locale: ptBR })}
                 </span>
                 <span className="text-lg font-bold">{format(day, 'd')}</span>
-                {dayTasks.length > 0 && (
+                {totalItems > 0 && (
                   <span className={`text-[9px] ${isSelected ? 'text-black/70' : 'text-[#00FF66]'}`}>
-                    {dayCompleted}/{dayTasks.length}
+                    {completedItems}/{totalItems}
                   </span>
                 )}
               </button>
