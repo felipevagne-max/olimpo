@@ -325,64 +325,61 @@ export default function Dashboard() {
             )}
           </div>
           
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Moon className="w-4 h-4 text-[#00FF66]" />
-                  <span className="text-xs text-[#9AA0A6]">Sono</span>
+          {hasCheckedInToday ? (
+            <CheckInCompleted />
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Moon className="w-4 h-4 text-[#00FF66]" />
+                    <span className="text-xs text-[#9AA0A6]">Sono</span>
+                  </div>
+                  <span className="text-sm font-mono text-[#00FF66]">{checkInData.sleepScore}</span>
                 </div>
-                <span className="text-sm font-mono text-[#00FF66]">{checkInData.sleepScore}</span>
+                <Slider
+                  value={[checkInData.sleepScore]}
+                  onValueChange={([v]) => setCheckInData(prev => ({ ...prev, sleepScore: v }))}
+                  max={10}
+                  step={1}
+                  className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
+                />
               </div>
-              <Slider
-                value={[checkInData.sleepScore]}
-                onValueChange={([v]) => !hasCheckedInToday && setCheckInData(prev => ({ ...prev, sleepScore: v }))}
-                max={10}
-                step={1}
-                disabled={hasCheckedInToday}
-                className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
-              />
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-[#00FF66]" />
-                  <span className="text-xs text-[#9AA0A6]">Produtividade</span>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-[#00FF66]" />
+                    <span className="text-xs text-[#9AA0A6]">Produtividade</span>
+                  </div>
+                  <span className="text-sm font-mono text-[#00FF66]">{checkInData.productivityScore}</span>
                 </div>
-                <span className="text-sm font-mono text-[#00FF66]">{checkInData.productivityScore}</span>
+                <Slider
+                  value={[checkInData.productivityScore]}
+                  onValueChange={([v]) => setCheckInData(prev => ({ ...prev, productivityScore: v }))}
+                  max={10}
+                  step={1}
+                  className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
+                />
               </div>
-              <Slider
-                value={[checkInData.productivityScore]}
-                onValueChange={([v]) => !hasCheckedInToday && setCheckInData(prev => ({ ...prev, productivityScore: v }))}
-                max={10}
-                step={1}
-                disabled={hasCheckedInToday}
-                className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
-              />
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Smile className="w-4 h-4 text-[#00FF66]" />
-                  <span className="text-xs text-[#9AA0A6]">Humor</span>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Smile className="w-4 h-4 text-[#00FF66]" />
+                    <span className="text-xs text-[#9AA0A6]">Humor</span>
+                  </div>
+                  <span className="text-sm font-mono text-[#00FF66]">{checkInData.moodScore}</span>
                 </div>
-                <span className="text-sm font-mono text-[#00FF66]">{checkInData.moodScore}</span>
+                <Slider
+                  value={[checkInData.moodScore]}
+                  onValueChange={([v]) => setCheckInData(prev => ({ ...prev, moodScore: v }))}
+                  max={10}
+                  step={1}
+                  className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
+                />
               </div>
-              <Slider
-                value={[checkInData.moodScore]}
-                onValueChange={([v]) => !hasCheckedInToday && setCheckInData(prev => ({ ...prev, moodScore: v }))}
-                max={10}
-                step={1}
-                disabled={hasCheckedInToday}
-                className="[&_[role=slider]]:bg-[#00FF66] [&_[role=slider]]:border-0 [&_.bg-primary]:bg-[#00FF66]"
-              />
-            </div>
 
-            {hasCheckedInToday ? (
-              <CheckInCompleted />
-            ) : (
               <OlimpoButton
                 onClick={() => saveCheckInMutation.mutate(checkInData)}
                 className="w-full"
@@ -390,8 +387,8 @@ export default function Dashboard() {
               >
                 {saveCheckInMutation.isPending ? 'Salvando...' : 'Salvar Check-in (+15 XP)'}
               </OlimpoButton>
-            )}
-          </div>
+            </div>
+          )}
         </OlimpoCard>
 
         {/* Today's Tasks */}

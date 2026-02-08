@@ -3,17 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Lock, Award, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-
-const TITLE_COLORS = {
-  'Vigilante do Código': '#00AA44',
-  'Forjador de Rotina': '#00AA88',
-  'Executor Implacável': '#DD8800',
-  'Arquiteto do Amanhã': '#0088AA',
-  'Disciplina de Aço': '#888888',
-  'Tempestade Controlada': '#88DD00',
-  'Coração Calmo': '#6600AA',
-  'Mente Estratégica': '#00AACC',
-};
+import { TITLE_COLORS, TITLE_SYMBOLS } from './TitleSymbols';
 
 export default function TitlePopover({ children }) {
   const queryClient = useQueryClient();
@@ -60,15 +50,24 @@ export default function TitlePopover({ children }) {
   });
 
   const equipMutation = useMutation({
-    mutationFn: async ({ titleId, slot }) => {
+    mutationFn: async ({ titleId, slot, title }) => {
       if (!userTitles?.id) return;
       const update = {};
       update[`equippedTitle${slot}`] = titleId;
-      return base44.entities.UserTitles.update(userTitles.id, update);
+      await base44.entities.UserTitles.update(userTitles.id, update);
+      return title;
     },
-    onSuccess: () => {
+    onSuccess: (title) => {
       queryClient.invalidateQueries(['userTitles']);
-      toast.success('Título equipado');
+      
+      // Epic animation and sound
+      const color = TITLE_COLORS[title.name] || '#00FF66';
+      const event = new CustomEvent('title-equipped', { 
+        detail: { color, titleName: title.name } 
+      });
+      window.dispatchEvent(event);
+      
+      toast.success(`✨ ${title.name} equipado!`);
     }
   });
 
@@ -139,10 +138,9 @@ export default function TitlePopover({ children }) {
                 >
                   {title ? (
                     <>
-                      <Shield 
-                        className="w-full h-full p-2" 
-                        style={{ color }}
-                      />
+                      <div className="w-full h-full p-2" style={{ color }}>
+                        {TITLE_SYMBOLS[title.name] || <Shield className="w-full h-full" />}
+                      </div>
                       <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-1">
                         <p className="text-[8px] text-center truncate" style={{ color }}>
                           {title.name.split(' ')[0]}
@@ -179,10 +177,10 @@ export default function TitlePopover({ children }) {
                 >
                   <div 
                     className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: unlocked ? `${color}20` : 'rgba(255,255,255,0.05)' }}
+                    style={{ backgroundColor: unlocked ? `${color}20` : 'rgba(255,255,255,0.05)', color }}
                   >
                     {unlocked ? (
-                      <Award className="w-4 h-4" style={{ color }} />
+                      TITLE_SYMBOLS[title.name] || <Award className="w-4 h-4" />
                     ) : (
                       <Lock className="w-4 h-4 text-[#9AA0A6]" />
                     )}
@@ -199,7 +197,7 @@ export default function TitlePopover({ children }) {
                     </span>
                   ) : canEquip ? (
                     <button
-                      onClick={() => equipMutation.mutate({ titleId: title.id, slot: getNextSlot() })}
+                      onClick={() => equipMutation.mutate({ titleId: title.id, slot: getNextSlot(), title })}
                       className="text-[9px] px-2 py-1 rounded border transition-all hover:bg-[rgba(0,255,102,0.1)]"
                       style={{ borderColor: `${color}40`, color }}
                     >

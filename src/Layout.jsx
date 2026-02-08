@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import MatrixColumns from '@/components/olimpo/MatrixColumns';
+import TitleEquipEffect from '@/components/olimpo/TitleEquipEffect';
 
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <>
       <MatrixColumns opacity={0.05} />
+      <TitleEquipEffect />
       <div className="min-h-screen bg-black relative overflow-hidden">
         <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');

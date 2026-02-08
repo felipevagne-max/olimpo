@@ -9,6 +9,7 @@ const navItems = [
   { name: 'Dashboard', page: 'Dashboard', icon: LayoutDashboard },
   { name: 'Hábitos', page: 'Habits', icon: CheckSquare },
   { name: 'Tarefas', page: 'Tasks', icon: Calendar },
+  { name: 'Oráculo', page: 'Oracle', icon: Eye },
   { name: 'Metas', page: 'Goals', icon: Target },
   { name: 'Comunidade', page: 'Community', icon: Swords },
   { name: 'Finanças', page: 'Finance', icon: Wallet },
@@ -28,63 +29,47 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50">
-      <div className="relative">
-        {/* Floating Oracle Button - integrated into nav bar */}
-        <button
-          onClick={() => navigate(createPageUrl('Oracle'))}
-          className="absolute left-1/2 -translate-x-1/2 -top-7 transition-all hover:scale-105"
-        >
-          <div className="relative">
-            <div 
-              className="w-14 h-14 rounded-full flex items-center justify-center bg-[#0B0F0C] border-2 border-[#00FF66]"
-              style={{ filter: 'drop-shadow(0 0 12px rgba(0,255,102,0.4))' }}
+      <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-1">
+        {navItems.map((item) => {
+          const isActive = currentPath.includes(item.page);
+          const Icon = item.icon;
+          const isOracle = item.page === 'Oracle';
+          
+          return (
+            <Link
+              key={item.page}
+              to={createPageUrl(item.page)}
+              className={cn(
+                "flex flex-col items-center justify-center py-2 px-0.5 flex-1 min-w-0 rounded-lg transition-all duration-150 relative",
+                isActive 
+                  ? isOracle ? "text-[#00FF66]" : "text-[#00FF66]"
+                  : "text-[#9AA0A6] hover:text-[#00FF66]"
+              )}
             >
-              <Eye className="w-6 h-6 text-[#00FF66]" strokeWidth={2.5} />
-            </div>
-            {unreadCount > 0 && (
-              <div 
-                className="absolute -top-1 -right-1 w-5 h-5 bg-[#00FF66] text-black rounded-full flex items-center justify-center text-[10px] font-bold"
-                style={{ fontFamily: 'JetBrains Mono, monospace' }}
-              >
-                {unreadCount}
+              <div className={cn(
+                "p-1.5 rounded-lg transition-all duration-150",
+                isActive && (isOracle ? "bg-[rgba(0,255,102,0.2)]" : "bg-[rgba(0,255,102,0.15)]")
+              )}>
+                <Icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
               </div>
-            )}
-          </div>
-        </button>
-
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
-          {navItems.map((item) => {
-            const isActive = currentPath.includes(item.page);
-            const Icon = item.icon;
-            
-            return (
-              <Link
-                key={item.page}
-                to={createPageUrl(item.page)}
-                className={cn(
-                  "flex flex-col items-center justify-center py-2 px-1 min-w-[50px] rounded-lg transition-all duration-150",
-                  isActive 
-                    ? "text-[#00FF66]" 
-                    : "text-[#9AA0A6] hover:text-[#00FF66]"
-                )}
-              >
-                <div className={cn(
-                  "p-1.5 rounded-lg transition-all duration-150",
-                  isActive && "bg-[rgba(0,255,102,0.15)]"
-                )}>
-                  <Icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
+              {isOracle && unreadCount > 0 && (
+                <div 
+                  className="absolute top-1 right-1/2 translate-x-3 w-4 h-4 bg-[#00FF66] text-black rounded-full flex items-center justify-center text-[8px] font-bold"
+                  style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                >
+                  {unreadCount}
                 </div>
-                <span className={cn(
-                  "text-[10px] mt-0.5 font-medium",
-                  isActive ? "text-[#00FF66]" : "text-[#9AA0A6]"
-                )}>
-                  {item.name}
-                </span>
-              </Link>
-            );
-            })}
-            </div>
-            </div>
-            </nav>
-            );
-            }
+              )}
+              <span className={cn(
+                "text-[9px] mt-0.5 font-medium truncate max-w-full",
+                isActive ? "text-[#00FF66]" : "text-[#9AA0A6]"
+              )}>
+                {item.name}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
