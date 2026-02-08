@@ -9,8 +9,9 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
+import GoalActionSheet from '@/components/goals/GoalActionSheet';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
-import { ArrowLeft, Check, Target, Calendar, Zap, Trophy } from 'lucide-react';
+import { ArrowLeft, Check, Target, Calendar, Zap, Trophy, Plus, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function GoalDetail() {
@@ -20,6 +21,7 @@ export default function GoalDetail() {
   const goalId = searchParams.get('id');
 
   const [updateValue, setUpdateValue] = useState('');
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   const { data: goal, isLoading } = useQuery({
     queryKey: ['goal', goalId],
@@ -42,6 +44,24 @@ export default function GoalDetail() {
       const profiles = await base44.entities.UserProfile.list();
       return profiles[0] || null;
     }
+  });
+
+  const { data: linkedTasks = [] } = useQuery({
+    queryKey: ['linkedTasks', goalId],
+    queryFn: async () => {
+      const allTasks = await base44.entities.Task.list();
+      return allTasks.filter(t => t.goalId === goalId);
+    },
+    enabled: !!goalId
+  });
+
+  const { data: linkedHabits = [] } = useQuery({
+    queryKey: ['linkedHabits', goalId],
+    queryFn: async () => {
+      const allHabits = await base44.entities.Habit.list();
+      return allHabits.filter(h => h.goalId === goalId);
+    },
+    enabled: !!goalId
   });
 
   const updateProgressMutation = useMutation({
@@ -272,6 +292,59 @@ export default function GoalDetail() {
           </OlimpoCard>
         )}
 
+        {/* Ações para avançar */}
+        {goal.status !== 'completed' && (
+          <OlimpoCard className="mb-4">
+            <h3 className="text-sm font-semibold text-[#E8E8E8] mb-1" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+              Ações para avançar
+            </h3>
+            <p className="text-xs text-[#9AA0A6] mb-3">
+              Crie tarefas ou hábitos ligados a esta meta
+            </p>
+            <OlimpoButton 
+              className="w-full"
+              onClick={() => setShowActionSheet(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Ação
+            </OlimpoButton>
+
+            {/* Linked Actions */}
+            {(linkedTasks.length > 0 || linkedHabits.length > 0) && (
+              <div className="mt-4 pt-4 border-t border-[rgba(0,255,102,0.08)]">
+                <p className="text-xs text-[#9AA0A6] mb-2">Ações vinculadas</p>
+                <div className="space-y-2">
+                  {linkedTasks.map(task => (
+                    <div 
+                      key={task.id}
+                      onClick={() => navigate(createPageUrl('Tasks'))}
+                      className="flex items-center gap-2 p-2 bg-[#070A08] rounded-lg cursor-pointer hover:bg-[rgba(0,255,102,0.05)]"
+                    >
+                      <Calendar className="w-4 h-4 text-[#9AA0A6]" />
+                      <span className={`text-xs flex-1 ${task.completed ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
+                        {task.title}
+                      </span>
+                      {task.completed && <Check className="w-4 h-4 text-[#00FF66]" />}
+                    </div>
+                  ))}
+                  {linkedHabits.map(habit => (
+                    <div 
+                      key={habit.id}
+                      onClick={() => navigate(createPageUrl('Habits'))}
+                      className="flex items-center gap-2 p-2 bg-[#070A08] rounded-lg cursor-pointer hover:bg-[rgba(0,255,102,0.05)]"
+                    >
+                      <CheckSquare className="w-4 h-4 text-[#9AA0A6]" />
+                      <span className={`text-xs flex-1 ${habit.archived ? 'text-[#9AA0A6]' : 'text-[#E8E8E8]'}`}>
+                        {habit.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </OlimpoCard>
+        )}
+
         {/* Complete Goal Button */}
         {isComplete && goal.status !== 'completed' && (
           <OlimpoButton 
@@ -284,6 +357,12 @@ export default function GoalDetail() {
           </OlimpoButton>
         )}
       </div>
+
+      <GoalActionSheet 
+        open={showActionSheet}
+        onClose={() => setShowActionSheet(false)}
+        goalId={goalId}
+      />
 
       <XPGainManager />
     </div>

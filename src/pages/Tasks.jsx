@@ -10,6 +10,8 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
 import TaskModal from '@/components/tasks/TaskModal';
+import ProgressGrid7Days from '@/components/tasks/ProgressGrid7Days';
+import MatrixColumns from '@/components/olimpo/MatrixColumns';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -134,9 +136,10 @@ export default function Tasks() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-20">
+    <div className="min-h-screen bg-black pb-20 relative">
+      <MatrixColumns opacity={0.04} />
       <TopBar />
-      <div className="px-4 pt-20">
+      <div className="px-4 pt-20 relative z-10">
         {/* HUD Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -235,7 +238,7 @@ export default function Tasks() {
         {dayTasks.length === 0 ? (
           <EmptyState
             icon={Calendar}
-            title={showOverdue ? "Sem tarefas atrasadas" : "Nenhuma quest por aqui"}
+            title={showOverdue ? "Sem tarefas atrasadas" : "Nenhum novo desafio à vista"}
             description={showOverdue ? "Todas as tarefas estão em dia!" : "Crie sua próxima tarefa."}
             actionLabel="Criar Tarefa"
             onAction={() => { setEditTask(null); setShowModal(true); }}
@@ -312,6 +315,11 @@ export default function Tasks() {
             ))}
           </div>
         )}
+
+        {/* Progress Grid */}
+        <div className="mt-6">
+          <ProgressGrid7Days />
+        </div>
       </div>
 
       <TaskModal

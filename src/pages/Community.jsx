@@ -1,72 +1,35 @@
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
 import BottomNav from '@/components/olimpo/BottomNav';
 import TopBar from '@/components/olimpo/TopBar';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
-import OlimpoButton from '@/components/olimpo/OlimpoButton';
+import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import RankingList from '@/components/community/RankingList';
 import LevelDetails from '@/components/community/LevelDetails';
-import { Swords, Plus, Trash2, MessageSquare, User } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-const MOTIVATIONAL_QUOTES = [
-  "A jornada de mil quilômetros começa com um único passo.",
-  "O sucesso é a soma de pequenos esforços repetidos dia após dia.",
-  "Não espere por oportunidades, crie-as.",
-  "A disciplina é a ponte entre metas e conquistas.",
-  "Seu único limite é a sua mente.",
-];
+import LevelCrest from '@/components/olimpo/LevelCrest';
+import MatrixColumns from '@/components/olimpo/MatrixColumns';
+import { getLevelFromXP } from '@/components/olimpo/levelSystem';
+import { User, Zap, Target } from 'lucide-react';
 
 export default function Community() {
-  const queryClient = useQueryClient();
-  const [newPost, setNewPost] = useState('');
-  const [deleteId, setDeleteId] = useState(null);
+  const { data: xpTransactions = [], isLoading } = useQuery({
+    queryKey: ['xpTransactions'],
+    queryFn: () => base44.entities.XPTransaction.list()
+  });
 
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
 
-  const { data: posts = [], isLoading } = useQuery({
-    queryKey: ['posts'],
-    queryFn: () => base44.entities.CommunityPost.list('-created_date')
-  });
-
-  const createPostMutation = useMutation({
-    mutationFn: (content) => base44.entities.CommunityPost.create({ content, type: 'motivation' }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['posts']);
-      setNewPost('');
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
     }
   });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CommunityPost.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['posts']);
-      setDeleteId(null);
-    }
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!newPost.trim()) return;
-    createPostMutation.mutate(newPost);
-  };
 
   if (isLoading) {
     return (
@@ -76,149 +39,152 @@ export default function Community() {
     );
   }
 
+  const xpTotal = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+  const levelInfo = getLevelFromXP(xpTotal);
+
   return (
-    <div className="min-h-screen bg-black pb-20">
+    <div className="min-h-screen bg-black pb-20 relative">
+      <MatrixColumns opacity={0.03} />
       <TopBar />
-      <div className="px-4 pt-20">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 
-            className="text-xl font-bold text-[#00FF66]"
+      <div className="px-4 pt-20 relative z-10">
+        <h1 
+          className="text-xl font-bold text-[#00FF66] mb-6"
+          style={{ fontFamily: 'Orbitron, sans-serif' }}
+        >
+          COMUNIDADE
+        </h1>
+
+        {/* Status do Usuário */}
+        <OlimpoCard className="mb-6" glow>
+          <h3 
+            className="text-sm font-semibold text-[#00FF66] mb-4"
             style={{ fontFamily: 'Orbitron, sans-serif' }}
           >
-            COMUNIDADE
-          </h1>
-        </div>
-        <p className="text-sm text-[#9AA0A6] mb-6">
-          Compartilhe conquistas, veja o ranking e explore níveis
-        </p>
-
-        {/* Quote */}
-        <OlimpoCard className="mb-6">
-          <div className="flex items-start gap-3">
-            <Swords className="w-5 h-5 text-[#00FF66] mt-0.5" />
-            <div>
-              <p className="text-xs text-[#9AA0A6] mb-1">Frase do Dia</p>
-              <p className="text-sm text-[#E8E8E8] italic">
-                "{MOTIVATIONAL_QUOTES[new Date().getDate() % MOTIVATIONAL_QUOTES.length]}"
-              </p>
+            SEU STATUS
+          </h3>
+          
+          {/* Identidade */}
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-full bg-[rgba(0,255,102,0.15)] flex items-center justify-center">
+              <User className="w-6 h-6 text-[#00FF66]" />
             </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-[#E8E8E8]">
+                {userProfile?.displayName || user?.full_name || 'Herói'}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <LevelCrest levelIndex={levelInfo.rankIndex} size={24} />
+                <p className="text-xs text-[#9AA0A6]">
+                  RANK: <span className="text-[#00FF66]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                    {levelInfo.rankName}
+                  </span>
+                </p>
+                <p className="text-xs text-[#9AA0A6]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                  Lv {levelInfo.nivelNum}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* XP e Progresso */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#00FF66]" />
+                <span className="text-xs text-[#9AA0A6]">XP Total</span>
+              </div>
+              <span 
+                className="text-sm font-bold text-[#00FF66]"
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                {xpTotal}
+              </span>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-[#9AA0A6]">Progresso do nível</span>
+                <span 
+                  className="text-xs text-[#00FF66]"
+                  style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                >
+                  {levelInfo.levelProgressPercent.toFixed(0)}%
+                </span>
+              </div>
+              <OlimpoProgress 
+                value={levelInfo.levelProgressPercent} 
+                max={100} 
+                showLabel={false}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-[#9AA0A6]">Passo do rank</span>
+                <span 
+                  className="text-xs text-[#00FF66]"
+                  style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                >
+                  {levelInfo.rankStep}/5
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                {[1, 2, 3, 4, 5].map((step) => (
+                  <div
+                    key={step}
+                    className={`h-2 flex-1 rounded-full ${
+                      step <= levelInfo.rankStep
+                        ? 'bg-[#00FF66]'
+                        : 'bg-[rgba(0,255,102,0.18)]'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {levelInfo.levelsToNextRank > 0 && (
+              <div className="pt-3 border-t border-[rgba(0,255,102,0.08)]">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-[#9AA0A6]" />
+                  <div className="flex-1">
+                    <p className="text-xs text-[#9AA0A6]">Próximo rank:</p>
+                    <p className="text-sm text-[#00FF66]">{levelInfo.nextRankName}</p>
+                  </div>
+                  <p 
+                    className="text-xs text-[#9AA0A6]"
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                  >
+                    Faltam {levelInfo.levelsToNextRank} níveis
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </OlimpoCard>
 
-        {/* Tabs */}
-        <Tabs defaultValue="posts" className="mb-4">
-          <TabsList className="bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] w-full grid grid-cols-3">
-            <TabsTrigger 
-              value="posts"
-              className="data-[state=active]:bg-[rgba(0,255,102,0.15)] data-[state=active]:text-[#00FF66]"
+        {/* Níveis e Ranking */}
+        <div className="space-y-6">
+          <div>
+            <h3 
+              className="text-sm font-semibold text-[#E8E8E8] mb-3"
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
             >
-              Posts
-            </TabsTrigger>
-            <TabsTrigger 
-              value="ranking"
-              className="data-[state=active]:bg-[rgba(0,255,102,0.15)] data-[state=active]:text-[#00FF66]"
-            >
-              Ranking
-            </TabsTrigger>
-            <TabsTrigger 
-              value="niveis"
-              className="data-[state=active]:bg-[rgba(0,255,102,0.15)] data-[state=active]:text-[#00FF66]"
-            >
-              Níveis
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="posts" className="mt-4">
-            {/* New Post */}
-            <OlimpoCard className="mb-6">
-              <form onSubmit={handleSubmit}>
-                <Textarea
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  placeholder="Compartilhe sua motivação..."
-                  className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8] placeholder:text-[#9AA0A6] focus:border-[#00FF66] resize-none mb-3"
-                  rows={3}
-                />
-                <OlimpoButton 
-                  type="submit" 
-                  className="w-full"
-                  disabled={!newPost.trim() || createPostMutation.isPending}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Publicar
-                </OlimpoButton>
-              </form>
-            </OlimpoCard>
-
-            {/* Posts Feed */}
-            {posts.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageSquare className="w-12 h-12 text-[#9AA0A6] mx-auto mb-3 opacity-50" />
-                <p className="text-sm text-[#9AA0A6]">Mural vazio. Seja o primeiro!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {posts.map(post => (
-                  <OlimpoCard key={post.id}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="w-8 h-8 rounded-full bg-[rgba(0,255,102,0.15)] flex items-center justify-center shrink-0">
-                          <User className="w-4 h-4 text-[#00FF66]" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs text-[#9AA0A6] mb-1">
-                            {post.created_by?.split('@')[0] || 'Anônimo'} • {format(new Date(post.created_date), 'dd/MM HH:mm')}
-                          </p>
-                          <p className="text-sm text-[#E8E8E8]">{post.content}</p>
-                        </div>
-                      </div>
-                      {post.created_by === user?.email && (
-                        <button
-                          onClick={() => setDeleteId(post.id)}
-                          className="p-1 text-[#9AA0A6] hover:text-[#FF3B3B]"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </OlimpoCard>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="ranking" className="mt-4">
-            <RankingList />
-          </TabsContent>
-
-          <TabsContent value="niveis" className="mt-4">
+              NÍVEIS E RECOMPENSAS
+            </h3>
             <LevelDetails />
-          </TabsContent>
-        </Tabs>
-      </div>
+          </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-[#E8E8E8]">Excluir post?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#9AA0A6]">
-              Essa ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => deleteMutation.mutate(deleteId)}
-              className="bg-[#FF3B3B] text-white hover:bg-[#DD2B2B]"
+          <div>
+            <h3 
+              className="text-sm font-semibold text-[#E8E8E8] mb-3"
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
             >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              RANKING TOP 10
+            </h3>
+            <RankingList />
+          </div>
+        </div>
+      </div>
 
       <BottomNav />
     </div>

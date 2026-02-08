@@ -1,16 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { Bell, BellOff, Award } from 'lucide-react';
 import OlimpoLogo from './OlimpoLogo';
 import LevelPopover from './LevelPopover';
+import TitlePopover from '../titles/TitlePopover';
 import { getLevelFromXP } from './levelSystem';
 import { toast } from 'sonner';
 
 export default function TopBar() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
@@ -80,12 +78,11 @@ export default function TopBar() {
 
         {/* Right: Titles + Notification Bell */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate(createPageUrl('Titles'))}
-            className="p-2 rounded-full text-[#9AA0A6] hover:text-[#00FF66] transition-all"
-          >
-            <Award className="w-5 h-5" />
-          </button>
+          <TitlePopover>
+            <button className="p-2 rounded-full text-[#9AA0A6] hover:text-[#00FF66] transition-all">
+              <Award className="w-5 h-5" />
+            </button>
+          </TitlePopover>
           <button
             onClick={() => toggleNotificationsMutation.mutate(!notificationsEnabled)}
             className={`p-2 rounded-full transition-all ${
