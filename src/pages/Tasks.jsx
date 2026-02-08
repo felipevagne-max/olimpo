@@ -11,6 +11,7 @@ import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
 import TaskModal from '@/components/tasks/TaskModal';
 import ProgressGrid7Days from '@/components/tasks/ProgressGrid7Days';
+import ExpectancyNext7Days from '@/components/tasks/ExpectancyNext7Days';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
@@ -249,8 +250,8 @@ export default function Tasks() {
                 className="text-2xl font-bold text-[#00FF66] mb-1"
                 style={{ fontFamily: 'Orbitron, sans-serif' }}
               >
-                Sequência do Dia
-                </h1>
+                EXECUÇÃO ON
+              </h1>
                 <p className="text-sm text-[#9AA0A6]">
                 <span className="text-[#00FF66] font-mono">{completedCount}/{combinedItems.length}</span> concluídas
                 </p>
@@ -381,11 +382,16 @@ export default function Tasks() {
                           {item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Média' : 'Baixa'}
                         </span>
                       )}
-                      {item.type === 'task' && item.dueDate && (
-                        <span className="text-xs text-[#9AA0A6]">
-                          Prazo: {format(parseISO(item.dueDate), 'dd/MM')}
-                        </span>
-                      )}
+                      {item.type === 'task' && item.dueDate && (() => {
+                        const hoursUntil = Math.floor((parseISO(item.dueDate + 'T23:59:59') - new Date()) / (1000 * 60 * 60));
+                        const isUrgent = hoursUntil <= 48 || item.priority === 'high';
+                        return (
+                          <span className={`text-xs font-mono ${isUrgent ? 'text-[#00FFC8] font-semibold' : 'text-[#9AA0A6]'}`}>
+                            Prazo: {format(parseISO(item.dueDate), 'dd/MM')}
+                            {isUrgent && ' ⚡'}
+                          </span>
+                        );
+                      })()}
                       {item.sortTime !== '99:99' && (
                         <span className="text-xs text-[#9AA0A6]">
                           {item.sortTime}
@@ -431,6 +437,11 @@ export default function Tasks() {
             ))}
           </div>
         )}
+
+        {/* Expectancy Next 7 Days */}
+        <div className="mt-6">
+          <ExpectancyNext7Days />
+        </div>
 
         {/* Progress Grid */}
         <div className="mt-6">

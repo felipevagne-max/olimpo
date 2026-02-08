@@ -65,10 +65,10 @@ export default function ProgressGrid7Days() {
   if (gridItems.length === 0) return null;
 
   return (
-    <OlimpoCard>
+    <OlimpoCard className="border-[rgba(191,255,74,0.2)]">
       <h3 
-        className="text-sm font-semibold text-[#00FF66] mb-1"
-        style={{ fontFamily: 'Orbitron, sans-serif' }}
+        className="text-sm font-semibold mb-1"
+        style={{ fontFamily: 'Orbitron, sans-serif', color: '#BFFF4A' }}
       >
         PROGRESSO (7 DIAS)
       </h3>
@@ -85,10 +85,14 @@ export default function ProgressGrid7Days() {
                   <th 
                     key={day.date} 
                     className={`text-center py-2 px-1 text-xs ${
-                      day.isToday ? 'bg-[rgba(0,255,102,0.1)] border-x-2 border-[rgba(0,255,102,0.3)]' : ''
+                      day.isToday ? 'border-x-2' : ''
                     }`}
+                    style={day.isToday ? { 
+                      backgroundColor: 'rgba(191,255,74,0.1)', 
+                      borderColor: 'rgba(191,255,74,0.3)' 
+                    } : undefined}
                   >
-                    <div className={day.isToday ? 'text-[#00FF66]' : 'text-[#9AA0A6]'}>
+                    <div style={{ color: day.isToday ? '#BFFF4A' : '#9AA0A6' }}>
                       {day.dayName}
                     </div>
                     <div className="text-[10px] text-[#9AA0A6]">{day.dayNum}</div>
@@ -120,15 +124,17 @@ export default function ProgressGrid7Days() {
                   return (
                     <td 
                       key={day.date} 
-                      className={`text-center py-2 px-1 ${
-                        day.isToday ? 'bg-[rgba(0,255,102,0.05)]' : ''
-                      }`}
+                      className="text-center py-2 px-1"
+                      style={day.isToday ? { backgroundColor: 'rgba(191,255,74,0.05)' } : undefined}
                     >
-                      <div className={`w-5 h-5 rounded border-2 mx-auto ${
-                        completed 
-                          ? 'bg-[#00FF66] border-[#00FF66]' 
-                          : 'border-[rgba(0,255,102,0.18)]'
-                      }`} />
+                      <div 
+                        className={`w-5 h-5 rounded border-2 mx-auto ${
+                          completed ? 'bg-[#BFFF4A]' : ''
+                        }`}
+                        style={{ 
+                          borderColor: completed ? '#BFFF4A' : 'rgba(191,255,74,0.18)'
+                        }}
+                      />
                     </td>
                   );
                 })}

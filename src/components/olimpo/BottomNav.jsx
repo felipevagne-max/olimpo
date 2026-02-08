@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { name: 'Dashboard', page: 'Dashboard', icon: LayoutDashboard },
   { name: 'Hábitos', page: 'Habits', icon: CheckSquare },
-  { name: 'Tarefas', page: 'Tasks', icon: Calendar },
+  { name: 'Execução ON', page: 'Tasks', icon: Calendar },
   { name: 'Oráculo', page: 'Oracle', icon: Eye },
   { name: 'Metas', page: 'Goals', icon: Target },
   { name: 'Comunidade', page: 'Community', icon: Swords },
