@@ -59,6 +59,7 @@ import Oracle from './pages/Oracle';
 import Progress from './pages/Progress';
 import Tasks from './pages/Tasks';
 import Titles from './pages/Titles';
+import UnifiedTasks from './pages/UnifiedTasks';
 import __Layout from './Layout.jsx';
 
 
@@ -75,6 +76,7 @@ export const PAGES = {
     "Progress": Progress,
     "Tasks": Tasks,
     "Titles": Titles,
+    "UnifiedTasks": UnifiedTasks,
 }
 
 export const pagesConfig = {

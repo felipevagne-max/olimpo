@@ -10,7 +10,53 @@ import LevelDetails from '@/components/community/LevelDetails';
 import LevelCrest from '@/components/olimpo/LevelCrest';
 import MatrixColumns from '@/components/olimpo/MatrixColumns';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
+import { TITLE_COLORS, TITLE_SYMBOLS } from '@/components/titles/TitleSymbols';
 import { User, Zap, Target } from 'lucide-react';
+
+function TitleSymbols() {
+  const { data: userTitles } = useQuery({
+    queryKey: ['userTitles'],
+    queryFn: async () => {
+      const titles = await base44.entities.UserTitles.list();
+      return titles[0] || null;
+    }
+  });
+
+  const { data: titleDefinitions = [] } = useQuery({
+    queryKey: ['titleDefinitions'],
+    queryFn: () => base44.entities.TitleDefinition.list()
+  });
+
+  if (!userTitles) return null;
+
+  const equippedIds = [
+    userTitles.equippedTitle1,
+    userTitles.equippedTitle2,
+    userTitles.equippedTitle3
+  ].filter(Boolean);
+
+  if (equippedIds.length === 0) return null;
+
+  return (
+    <div className="flex gap-1">
+      {equippedIds.map(id => {
+        const title = titleDefinitions.find(t => t.id === id);
+        if (!title) return null;
+        const color = TITLE_COLORS[title.name] || '#00FF66';
+        return (
+          <div 
+            key={id} 
+            className="w-4 h-4"
+            style={{ color }}
+            title={title.name}
+          >
+            {TITLE_SYMBOLS[title.name]}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function Community() {
   const { data: xpTransactions = [], isLoading } = useQuery({
@@ -69,10 +115,13 @@ export default function Community() {
               <User className="w-6 h-6 text-[#00FF66]" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-[#E8E8E8]">
-                {userProfile?.displayName || user?.full_name || 'Herói'}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm font-medium text-[#E8E8E8]">
+                  {userProfile?.displayName || user?.full_name || 'Herói'}
+                </p>
+                <TitleSymbols />
+              </div>
+              <div className="flex items-center gap-2">
                 <LevelCrest levelIndex={levelInfo.rankIndex} size={24} />
                 <p className="text-xs text-[#9AA0A6]">
                   RANK: <span className="text-[#00FF66]" style={{ fontFamily: 'Orbitron, sans-serif' }}>

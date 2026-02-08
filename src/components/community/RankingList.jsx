@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import LevelCrest from '@/components/olimpo/LevelCrest';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
+import { TITLE_COLORS, TITLE_SYMBOLS } from '@/components/titles/TitleSymbols';
 import { Trophy, Medal, Award } from 'lucide-react';
 
 // Mock users for ranking (seed data)
@@ -27,6 +28,19 @@ export default function RankingList() {
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
     queryFn: () => base44.entities.XPTransaction.list()
+  });
+
+  const { data: userTitles } = useQuery({
+    queryKey: ['userTitles'],
+    queryFn: async () => {
+      const titles = await base44.entities.UserTitles.list();
+      return titles[0] || null;
+    }
+  });
+
+  const { data: titleDefinitions = [] } = useQuery({
+    queryKey: ['titleDefinitions'],
+    queryFn: () => base44.entities.TitleDefinition.list()
   });
 
   const userXP = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
@@ -108,10 +122,28 @@ export default function RankingList() {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#E8E8E8] truncate">
-                {user.name}
-                {user.isCurrentUser && <span className="text-[#00FF66] ml-1">(Você)</span>}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium text-[#E8E8E8] truncate">
+                  {user.name}
+                  {user.isCurrentUser && <span className="text-[#00FF66] ml-1">(Você)</span>}
+                </p>
+                {user.isCurrentUser && userTitles && (
+                  <div className="flex gap-0.5">
+                    {[userTitles.equippedTitle1, userTitles.equippedTitle2, userTitles.equippedTitle3]
+                      .filter(Boolean)
+                      .map(id => {
+                        const title = titleDefinitions.find(t => t.id === id);
+                        if (!title) return null;
+                        const color = TITLE_COLORS[title.name] || '#00FF66';
+                        return (
+                          <div key={id} className="w-3 h-3" style={{ color }}>
+                            {TITLE_SYMBOLS[title.name]}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <LevelCrest levelIndex={user.level.levelIndex} size={16} />
                 <span className="text-xs text-[#9AA0A6]">{user.level.levelName}</span>
