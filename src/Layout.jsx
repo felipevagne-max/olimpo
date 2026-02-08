@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
+import MatrixColumns from '@/components/olimpo/MatrixColumns';
 
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
@@ -21,8 +22,10 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      <style>{`
+    <>
+      <MatrixColumns opacity={0.05} />
+      <div className="min-h-screen bg-black relative overflow-hidden">
+        <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
         
         :root {
@@ -70,6 +73,7 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
       {children}
-    </div>
-  );
-}
+      </div>
+      </>
+      );
+      }

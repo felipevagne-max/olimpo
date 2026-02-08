@@ -54,8 +54,8 @@ export default function MatrixColumns({ opacity = 0.05 }) {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
-      style={{ opacity: 0.5 }}
+      className="fixed top-0 left-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 0 }}
     />
   );
 }

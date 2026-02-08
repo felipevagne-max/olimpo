@@ -79,7 +79,7 @@ export default function TopBar() {
         {/* Right: Titles + Notification Bell */}
         <div className="flex items-center gap-2">
           <TitlePopover>
-            <button className="p-2 rounded-full text-[#9AA0A6] hover:text-[#00FF66] transition-all">
+            <button className="p-2 rounded-full text-[#FFD400] hover:text-[#FFEE00] transition-all">
               <Award className="w-5 h-5" />
             </button>
           </TitlePopover>
