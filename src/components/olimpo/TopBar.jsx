@@ -6,6 +6,7 @@ import LevelPopover from './LevelPopover';
 import TitlePopover from '../titles/TitlePopover';
 import UserPopover from './UserPopover';
 import AnnouncementsPopover from './AnnouncementsPopover';
+import NotificationsPopover from './NotificationsPopover';
 import { getLevelFromXP } from './levelSystem';
 import { toast } from 'sonner';
 
