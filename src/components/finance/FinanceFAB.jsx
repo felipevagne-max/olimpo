@@ -6,9 +6,9 @@ export default function FinanceFAB({ onAction }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const actions = [
+    { id: 'receita', label: 'Nova receita', icon: TrendingUp, color: '#00FF66' },
     { id: 'despesa', label: 'Nova despesa', icon: DollarSign, color: '#FF3B3B' },
-    { id: 'cartao', label: 'Compra no cartão', icon: CreditCard, color: '#FFC107' },
-    { id: 'receita', label: 'Nova receita', icon: TrendingUp, color: '#00FF66' }
+    { id: 'cartao', label: 'Compra no cartão', icon: CreditCard, color: '#FFC107' }
   ];
 
   const handleAction = (id) => {
