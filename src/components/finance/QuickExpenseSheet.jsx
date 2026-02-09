@@ -178,11 +178,11 @@ export default function QuickExpenseSheet({ open, onClose }) {
           </div>
 
           <div>
-            <Label className="text-[#9AA0A6] text-xs">Destino do pagamento</Label>
+            <Label className="text-[#9AA0A6] text-xs">Observações</Label>
             <OlimpoInput
               value={formData.payeeName}
               onChange={(e) => setFormData(prev => ({ ...prev, payeeName: e.target.value }))}
-              placeholder="Ex: Bea, Mercado, Posto, Aluguel"
+              placeholder="Notas adicionais..."
             />
           </div>
 
