@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User, LogOut } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import OlimpoInput from './OlimpoInput';
 import OlimpoButton from './OlimpoButton';
@@ -143,6 +144,19 @@ export default function UserPopover() {
     updateNameMutation.mutate(pendingName);
   };
 
+  const updateProfileSettingMutation = useMutation({
+    mutationFn: (skipConfirm) => {
+      if (!userProfile?.id) return;
+      return base44.entities.UserProfile.update(userProfile.id, {
+        skipCardPurchaseConfirm: skipConfirm
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userProfile']);
+      toast.success('Preferência atualizada!');
+    }
+  });
+
   const handleLogout = async () => {
     try {
       await base44.auth.logout();
@@ -225,6 +239,18 @@ export default function UserPopover() {
             >
               {planDaysRemaining !== null ? `${planDaysRemaining} dias restantes` : '—'}
             </p>
+          </div>
+
+          {/* Card Purchase Confirm Toggle */}
+          <div className="pt-3 border-t border-[rgba(0,255,102,0.18)]">
+            <div className="flex items-center justify-between">
+              <Label className="text-[#9AA0A6] text-xs">Confirmar valores do cartão</Label>
+              <Switch
+                checked={!userProfile?.skipCardPurchaseConfirm}
+                onCheckedChange={(checked) => updateProfileSettingMutation.mutate(!checked)}
+                className="data-[state=checked]:bg-[#00FF66]"
+              />
+            </div>
           </div>
 
           {/* Logout */}
