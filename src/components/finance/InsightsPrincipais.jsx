@@ -32,13 +32,14 @@ export default function InsightsPrincipais({ currentMonth }) {
     queryFn: () => base44.entities.Category.list()
   });
 
-  // A) Normal expenses (exclude card bill payments and investments)
+  // A) Normal expenses (exclude card bill payments, investment records, and investment transfers)
   const normalExpenses = activeExpenses.filter(e => 
     e.type === 'despesa' &&
     e.date >= monthStart &&
     e.date <= monthEnd &&
     !e.isCardBillPayment &&
     !e.isInvestment &&
+    !e.isInvestmentTransfer &&
     e.status === 'pago'
   );
 

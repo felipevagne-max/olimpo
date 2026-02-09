@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, CreditCard, DollarSign, TrendingUp } from 'lucide-react';
+import { Plus, CreditCard, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function FinanceFAB({ onAction }) {
@@ -8,6 +8,7 @@ export default function FinanceFAB({ onAction }) {
   const actions = [
     { id: 'receita', label: 'Nova receita', icon: TrendingUp, color: '#00FF66' },
     { id: 'despesa', label: 'Nova despesa', icon: DollarSign, color: '#FF3B3B' },
+    { id: 'investimento', label: 'Investimento', icon: TrendingDown, color: '#7C5CFF' },
     { id: 'cartao', label: 'Compra no cartão', icon: CreditCard, color: '#FFC107' }
   ];
 

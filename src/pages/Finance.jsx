@@ -23,6 +23,7 @@ export default function Finance() {
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeSheet, setActiveSheet] = useState(null);
+  const [showInvestmentSheet, setShowInvestmentSheet] = useState(false);
   const [showExtract, setShowExtract] = useState(false);
 
   const toggleExpenseStatusMutation = useMutation({
