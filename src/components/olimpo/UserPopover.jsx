@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Camera, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import OlimpoInput from './OlimpoInput';
 import OlimpoButton from './OlimpoButton';
 import { toast } from 'sonner';
@@ -26,6 +27,8 @@ export default function UserPopover() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingName, setPendingName] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef(null);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -119,6 +122,76 @@ export default function UserPopover() {
     }
   });
 
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (file) => {
+      // Compress and resize image
+      const compressed = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxSize = 512;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height) {
+              if (width > maxSize) {
+                height = height * (maxSize / width);
+                width = maxSize;
+              }
+            } else {
+              if (height > maxSize) {
+                width = width * (maxSize / height);
+                height = maxSize;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Upload to storage
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
+      
+      // Update profile
+      if (!userProfile?.id) throw new Error('Profile not found');
+      await base44.entities.UserProfile.update(userProfile.id, { avatar_url: file_url });
+      
+      return file_url;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userProfile']);
+      toast.success('Foto atualizada!');
+      setUploadingAvatar(false);
+    },
+    onError: (error) => {
+      toast.error('Não foi possível atualizar sua foto.');
+      setUploadingAvatar(false);
+    }
+  });
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione uma imagem válida');
+      return;
+    }
+    
+    setUploadingAvatar(true);
+    uploadAvatarMutation.mutate(file);
+  };
+
   const handleSaveClick = () => {
     const trimmed = username.trim();
     if (!trimmed || trimmed === userProfile?.displayName) return;
@@ -129,8 +202,8 @@ export default function UserPopover() {
       const now = new Date();
       const daysSince = Math.floor((now - lastChanged) / (1000 * 60 * 60 * 24));
       if (daysSince < 90) {
-        const daysRemaining = 90 - daysSince;
-        toast.error(`Você poderá alterar novamente em ${daysRemaining} dias.`);
+        const daysRemaining = Math.ceil(90 - daysSince);
+        toast.error(`Não permito, tente em ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}.`);
         return;
       }
     }
@@ -171,8 +244,21 @@ export default function UserPopover() {
     ? Math.max(0, Math.ceil((new Date(userProfile.planExpiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
     : null;
 
+  // Get initials from displayName or email
+  const getInitials = () => {
+    const name = userProfile?.displayName || user?.email || '';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
+  };
+
   return (
     <>
+    <input
+      type="file"
+      ref={fileInputRef}
+      accept="image/*"
+      onChange={handleAvatarChange}
+      className="hidden"
+    />
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button 
@@ -199,6 +285,31 @@ export default function UserPopover() {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center gap-3 pb-4 border-b border-[rgba(0,255,102,0.18)]">
+            <div className="relative">
+              <Avatar className="w-20 h-20 border-2 border-[rgba(0,255,102,0.3)]">
+                <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.displayName || user?.email} />
+                <AvatarFallback className="bg-[#070A08] text-[#00FF66] text-xl font-semibold">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              {uploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-full">
+                  <Loader2 className="w-6 h-6 text-[#00FF66] animate-spin" />
+                </div>
+              )}
+            </div>
+            <OlimpoButton
+              variant="secondary"
+              className="h-8 text-xs"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+            >
+              <Camera className="w-3 h-3 mr-1" />
+              Trocar foto
+            </OlimpoButton>
+          </div>
           {/* Username - Editable */}
           <div>
             <Label className="text-[#9AA0A6] text-xs">Nome de usuário</Label>

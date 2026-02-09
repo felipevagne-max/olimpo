@@ -60,6 +60,28 @@ export default function Layout({ children, currentPageName }) {
       <TitleEquipEffect />
       <div className="min-h-screen bg-black relative overflow-hidden">
         <style>{`
+          /* Desktop responsive container */
+          @media (min-width: 1024px) {
+            .olimpo-container {
+              max-width: 1280px;
+              margin-left: auto;
+              margin-right: auto;
+            }
+            
+            .olimpo-grid-2 {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 1rem;
+            }
+            
+            .olimpo-grid-4 {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 1rem;
+            }
+          }
+        `}</style>
+        <style>{`
           body::before {
             content: '';
             position: fixed;

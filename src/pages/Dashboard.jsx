@@ -352,11 +352,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-20 relative">
+    <div className="min-h-screen bg-black pb-20 lg:pb-0 lg:pl-64 relative">
       <TopBar />
       <MatrixRain opacity={0.05} side="left" />
       
-      <div className="relative z-10 px-4 pt-20">
+      <div className="relative z-10 px-4 pt-20 olimpo-container lg:px-8">
         {/* Welcome & Level Progress */}
         <div className="mb-6">
           <p className="text-[#9AA0A6] text-sm">Bem-vindo,</p>
@@ -400,7 +400,7 @@ export default function Dashboard() {
             {monthName.charAt(0).toUpperCase() + monthName.slice(1)}, {year} (até hoje)
           </p>
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
             {/* A) Hábitos */}
             <OlimpoCard className="border-[rgba(191,255,74,0.2)]">
               <div className="flex items-center gap-2 mb-2">
@@ -468,7 +468,7 @@ export default function Dashboard() {
           </div>
 
           {/* BEM-ESTAR MÉDIO */}
-          <OlimpoCard>
+          <OlimpoCard className="lg:col-span-2 lg:mx-auto lg:max-w-2xl lg:w-full">
             <h3 
               className="text-sm font-semibold text-[#E8E8E8] mb-3"
               style={{ fontFamily: 'Orbitron, sans-serif' }}
