@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BottomNav from '@/components/olimpo/BottomNav';
 import TopBar from '@/components/olimpo/TopBar';
@@ -250,6 +250,97 @@ export default function Dashboard() {
     .filter(t => t.created_date?.startsWith(today))
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
+  // Month calculations
+  const now = new Date();
+  const monthStart = startOfMonth(now);
+  const monthName = format(now, 'MMMM', { locale: ptBR });
+  const year = format(now, 'yyyy');
+
+  // A) HÁBITOS - Nota 0-10
+  const monthDays = [];
+  for (let d = new Date(monthStart); d <= now; d.setDate(d.getDate() + 1)) {
+    monthDays.push(format(d, 'yyyy-MM-dd'));
+  }
+
+  let expectedHabits = 0;
+  monthDays.forEach(day => {
+    const dayOfWeek = format(new Date(day), 'EEE', { locale: ptBR }).toLowerCase();
+    habits.forEach(habit => {
+      if (habit.frequencyType === 'daily') {
+        expectedHabits++;
+      } else if (habit.frequencyType === 'weekdays' && habit.weekdays?.includes(dayOfWeek)) {
+        expectedHabits++;
+      }
+    });
+  });
+
+  const doneHabits = habitLogs.filter(l => {
+    if (!l.date || !l.completed) return false;
+    const logDate = new Date(l.date);
+    return logDate >= monthStart && logDate <= now;
+  }).length;
+
+  const habitCompletionRate = expectedHabits > 0 ? doneHabits / expectedHabits : 0;
+  const habitScore = expectedHabits > 0 ? Math.round(10 * habitCompletionRate) : null;
+
+  // B) EXECUÇÃO ON - Nota 0-10
+  const monthTasks = tasks.filter(t => {
+    if (t.archived) return false;
+    const taskDate = new Date(t.date);
+    return taskDate >= monthStart && taskDate <= now;
+  });
+
+  const doneTasks = monthTasks.filter(t => t.completed).length;
+  const totalTasks = monthTasks.length;
+  const taskCompletionRate = totalTasks > 0 ? doneTasks / totalTasks : 0;
+  
+  const overduePendingTasks = monthTasks.filter(t => !t.completed && t.isOverdue).length;
+  const overduePenalty = Math.min(2, overduePendingTasks / 5);
+  const executionScore = totalTasks > 0 
+    ? Math.max(0, Math.round(10 * taskCompletionRate) - overduePenalty) 
+    : null;
+
+  // C) METAS DO MÊS - Percentual
+  const goalsInMonth = goals.filter(g => {
+    if (g.status === 'archived') return false;
+    if (g.dueDate) {
+      const dueDate = new Date(g.dueDate);
+      return dueDate >= monthStart && dueDate <= endOfDay(now);
+    }
+    const createdDate = new Date(g.created_date);
+    return createdDate >= monthStart && createdDate <= endOfDay(now);
+  });
+
+  const completedGoalsMonth = goalsInMonth.filter(g => g.status === 'completed').length;
+  const totalGoalsMonth = goalsInMonth.length;
+  const goalsPercent = totalGoalsMonth > 0 
+    ? Math.round(100 * completedGoalsMonth / totalGoalsMonth) 
+    : null;
+
+  // D) XP NO MÊS
+  const xpMonth = xpTransactions.filter(t => {
+    if (!t.created_date) return false;
+    const txDate = new Date(t.created_date);
+    return txDate >= monthStart && txDate <= now;
+  }).reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  // BEM-ESTAR MÉDIO
+  const monthCheckIns = checkIns.filter(c => {
+    if (!c.date) return false;
+    const checkDate = new Date(c.date);
+    return checkDate >= monthStart && checkDate <= now;
+  });
+
+  const avgSleep = monthCheckIns.length > 0
+    ? (monthCheckIns.reduce((sum, c) => sum + (c.sleepScore || 0), 0) / monthCheckIns.length).toFixed(1)
+    : null;
+  const avgProductivity = monthCheckIns.length > 0
+    ? (monthCheckIns.reduce((sum, c) => sum + (c.productivityScore || 0), 0) / monthCheckIns.length).toFixed(1)
+    : null;
+  const avgMood = monthCheckIns.length > 0
+    ? (monthCheckIns.reduce((sum, c) => sum + (c.moodScore || 0), 0) / monthCheckIns.length).toFixed(1)
+    : null;
+
   const isLoading = loadingXP || loadingTasks || loadingHabits;
 
   if (isLoading) {
@@ -292,6 +383,140 @@ export default function Dashboard() {
             {levelInfo.xpToNextLevel > 0 && (
               <p className="text-xs text-[#9AA0A6] mt-1 text-right">
                 Faltam {levelInfo.xpToNextLevel} XP
+              </p>
+            )}
+          </OlimpoCard>
+        </div>
+
+        {/* MÊS ATUAL - 4 Boxes */}
+        <div className="mb-6">
+          <h2 
+            className="text-lg font-bold text-[#00FF66] mb-1"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            MÊS ATUAL
+          </h2>
+          <p className="text-xs text-[#9AA0A6] mb-4">
+            {monthName.charAt(0).toUpperCase() + monthName.slice(1)}, {year} (até hoje)
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* A) Hábitos */}
+            <OlimpoCard className="border-[rgba(191,255,74,0.2)]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-[rgba(191,255,74,0.6)]" />
+                <span className="text-xs text-[#9AA0A6]">HÁBITOS</span>
+              </div>
+              <p 
+                className="text-3xl font-bold text-[#E8E8E8]"
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                {habitScore !== null ? `${habitScore}/10` : '—/10'}
+              </p>
+              {habitScore === null && (
+                <p className="text-[9px] text-[#9AA0A6] mt-1">Sem hábitos ativos neste mês</p>
+              )}
+            </OlimpoCard>
+
+            {/* B) Execução ON */}
+            <OlimpoCard className="border-[rgba(0,255,200,0.2)]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-[rgba(0,255,200,0.6)]" />
+                <span className="text-xs text-[#9AA0A6]">EXECUÇÃO ON</span>
+              </div>
+              <p 
+                className="text-3xl font-bold text-[#E8E8E8]"
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                {executionScore !== null ? `${executionScore}/10` : '—/10'}
+              </p>
+              {executionScore === null && (
+                <p className="text-[9px] text-[#9AA0A6] mt-1">Sem tarefas no mês</p>
+              )}
+            </OlimpoCard>
+
+            {/* C) Metas do Mês */}
+            <OlimpoCard className="border-[rgba(124,92,255,0.2)]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-[rgba(124,92,255,0.6)]" />
+                <span className="text-xs text-[#9AA0A6]">METAS DO MÊS</span>
+              </div>
+              <p 
+                className="text-3xl font-bold text-[#E8E8E8]"
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                {goalsPercent !== null ? `${goalsPercent}%` : '—%'}
+              </p>
+              {goalsPercent === null && (
+                <p className="text-[9px] text-[#9AA0A6] mt-1">Sem metas deste mês</p>
+              )}
+            </OlimpoCard>
+
+            {/* D) XP no Mês */}
+            <OlimpoCard className="border-[rgba(255,212,0,0.2)]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-[rgba(255,212,0,0.6)]" />
+                <span className="text-xs text-[#9AA0A6]">XP NO MÊS</span>
+              </div>
+              <p 
+                className="text-3xl font-bold text-[#E8E8E8]"
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                +{xpMonth}
+              </p>
+            </OlimpoCard>
+          </div>
+
+          {/* BEM-ESTAR MÉDIO */}
+          <OlimpoCard>
+            <h3 
+              className="text-sm font-semibold text-[#E8E8E8] mb-3"
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
+            >
+              BEM-ESTAR MÉDIO (MÊS)
+            </h3>
+            {avgSleep !== null ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Moon className="w-4 h-4 text-[#00FF66]" />
+                    <span className="text-xs text-[#9AA0A6]">Sono</span>
+                  </div>
+                  <span 
+                    className="text-sm font-bold text-[#E8E8E8]"
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                  >
+                    {avgSleep}/10
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-[#00FF66]" />
+                    <span className="text-xs text-[#9AA0A6]">Produtividade</span>
+                  </div>
+                  <span 
+                    className="text-sm font-bold text-[#E8E8E8]"
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                  >
+                    {avgProductivity}/10
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smile className="w-4 h-4 text-[#00FF66]" />
+                    <span className="text-xs text-[#9AA0A6]">Humor</span>
+                  </div>
+                  <span 
+                    className="text-sm font-bold text-[#E8E8E8]"
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                  >
+                    {avgMood}/10
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[#9AA0A6] text-center py-4">
+                Faça check-in para gerar média do mês
               </p>
             )}
           </OlimpoCard>
