@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, Check } from 'lucide-react';
+import { Mail, Check } from 'lucide-react';
 import { format } from 'date-fns';
-import OlimpoButton from './OlimpoButton';
 
+// IMPORTANT: This component shows USER NOTIFICATIONS (overdue tasks, etc.)
+// This is NOT the toggle for enabling/disabling notifications
+// Icon: ENVELOPE/MAIL (not bell)
 export default function NotificationsPopover() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
@@ -41,8 +43,11 @@ export default function NotificationsPopover() {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <button className="p-2 rounded-lg text-[#00FF66] hover:bg-[rgba(0,255,102,0.1)] transition-all relative">
-          <Bell className="w-5 h-5" />
+        <button 
+          className="p-2 rounded-lg text-[#00FF66] hover:bg-[rgba(0,255,102,0.1)] transition-all relative"
+          title="Avisos"
+        >
+          <Mail className="w-5 h-5" />
           {unreadCount > 0 && (
             <div 
               className="absolute top-1 right-1 w-4 h-4 bg-[#FF3B3B] text-white rounded-full flex items-center justify-center text-[8px] font-bold"
@@ -77,7 +82,7 @@ export default function NotificationsPopover() {
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-8 text-center">
-              <Bell className="w-8 h-8 text-[#9AA0A6] mx-auto mb-2 opacity-50" />
+              <Mail className="w-8 h-8 text-[#9AA0A6] mx-auto mb-2 opacity-50" />
               <p className="text-sm text-[#9AA0A6]">Nenhuma notificação</p>
             </div>
           ) : (

@@ -64,7 +64,10 @@ export default function AnnouncementsPopover() {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <button className="relative p-2 text-[#9AA0A6] hover:text-[#00FF66] transition-colors rounded-lg hover:bg-[rgba(0,255,102,0.1)]">
+        <button 
+          className="relative p-2 text-[#9AA0A6] hover:text-[#00FF66] transition-colors rounded-lg hover:bg-[rgba(0,255,102,0.1)]"
+          title="Recados"
+        >
           <Mail className="w-5 h-5" />
           {unreadCount > 0 && (
             <div 

@@ -70,14 +70,14 @@ export default function TopBar() {
           <OlimpoLogo size={32} glow={false} />
         </div>
 
-        {/* Right: Titles + Notifications Toggle + Announcements + User */}
+        {/* Right: Titles + Avisos (Carta) + Notificações (Sino Toggle) + User */}
         <div className="flex items-center gap-1">
           <TitlePopover>
             <button className="p-2 rounded-full text-[#FFD400] hover:text-[#FFEE00] transition-all">
               <Award className="w-5 h-5" />
             </button>
           </TitlePopover>
-          <NotificationsPopover />
+          <AnnouncementsPopover />
           <button
             onClick={() => toggleNotificationsMutation.mutate(!notificationsEnabled)}
             className={`p-2 rounded-lg transition-all ${
@@ -85,6 +85,7 @@ export default function TopBar() {
                 ? 'text-[#00FF66] hover:bg-[rgba(0,255,102,0.1)]' 
                 : 'text-[#9AA0A6] hover:bg-[rgba(0,255,102,0.1)] opacity-60'
             }`}
+            title="Notificações"
           >
             {notificationsEnabled ? (
               <Bell className="w-5 h-5" />
