@@ -80,26 +80,24 @@ export default function Goals() {
         currentValue: newValue
       });
 
-      // Award XP for progress
+      // Award XP using centralized function
+      const { awardXp } = await import('@/utils/xpSystem');
       const GOAL_PROGRESS_XP = 5;
-      await base44.entities.XPTransaction.create({
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: GOAL_PROGRESS_XP,
         sourceType: 'goal_progress',
         sourceId: goal.id,
-        amount: GOAL_PROGRESS_XP,
-        note: 'Goal progress'
+        note: 'Goal progress',
+        sfxEnabled
       });
 
       return GOAL_PROGRESS_XP;
     },
-    onSuccess: (xpGained) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
-      
-      // Trigger XP effect if available
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      if (window.triggerXPGain) {
-        window.triggerXPGain(xpGained, sfxEnabled);
-      }
     }
   });
 

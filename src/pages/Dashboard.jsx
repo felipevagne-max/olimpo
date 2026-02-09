@@ -128,7 +128,6 @@ export default function Dashboard() {
 
   const saveCheckInMutation = useMutation({
     mutationFn: async (data) => {
-      // Block if already checked in today
       if (todayCheckIn) {
         toast.error('Você já registrou o check-in de hoje.');
         throw new Error('Check-in already done today');
@@ -136,13 +135,17 @@ export default function Dashboard() {
       
       const checkIn = await base44.entities.CheckIn.create({ ...data, date: today });
       
-      // Award XP for daily check-in
+      // Award XP using centralized function
+      const { awardXp } = await import('@/utils/xpSystem');
       const CHECKIN_XP_REWARD = 15;
-      await base44.entities.XPTransaction.create({
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: CHECKIN_XP_REWARD,
         sourceType: 'checkin',
         sourceId: checkIn.id,
-        amount: CHECKIN_XP_REWARD,
-        note: 'Daily check-in'
+        note: 'Daily check-in',
+        sfxEnabled
       });
       
       return { checkIn, xpGained: CHECKIN_XP_REWARD };
@@ -150,11 +153,6 @@ export default function Dashboard() {
     onSuccess: (data) => {
       queryClient.invalidateQueries(['checkIns']);
       queryClient.invalidateQueries(['xpTransactions']);
-      
-      // Trigger XP gain effect
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(data.xpGained, sfxEnabled);
-      
       toast.success(`Check-in registrado! +${data.xpGained} XP`);
     }
   });
@@ -175,27 +173,28 @@ export default function Dashboard() {
       const baseXP = task.xpReward || 10;
       const xpAmount = task.isOverdue ? Math.round(baseXP * 0.5) : baseXP;
       
-      await base44.entities.XPTransaction.create({
+      // Award XP using centralized function
+      const { awardXp } = await import('@/utils/xpSystem');
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: xpAmount,
         sourceType: 'task',
         sourceId: task.id,
-        amount: xpAmount,
-        note: task.isOverdue ? `Tarefa atrasada: ${task.title} (x0.5)` : `Tarefa: ${task.title}`
+        note: task.isOverdue ? `Tarefa atrasada: ${task.title} (x0.5)` : `Tarefa: ${task.title}`,
+        sfxEnabled
       });
       
       return xpAmount;
     },
-    onSuccess: (xpGained) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
-      
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 
   const completeHabitMutation = useMutation({
     mutationFn: async (habit) => {
-      // Check if already completed today
       const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === today && l.completed);
       if (existingLog) {
         toast.error('Hábito já concluído hoje.');
@@ -211,21 +210,23 @@ export default function Dashboard() {
         xpEarned: xpAmount
       });
 
-      await base44.entities.XPTransaction.create({
+      // Award XP using centralized function
+      const { awardXp } = await import('@/utils/xpSystem');
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: xpAmount,
         sourceType: 'habit',
         sourceId: habit.id,
-        amount: xpAmount,
-        note: `Hábito: ${habit.name}`
+        note: `Hábito: ${habit.name}`,
+        sfxEnabled
       });
 
       return xpAmount;
     },
-    onSuccess: (xpGained) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
-      
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 

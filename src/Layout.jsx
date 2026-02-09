@@ -12,8 +12,11 @@ export default function Layout({ children, currentPageName }) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Initialize and check for overdue tasks
+    // Initialize and check for overdue tasks with minimum 3s splash duration
     const init = async () => {
+      const startTime = Date.now();
+      const MIN_SPLASH_DURATION = 3000;
+
       try {
         const today = format(new Date(), 'yyyy-MM-dd');
         const tasks = await base44.entities.Task.list();
@@ -36,6 +39,11 @@ export default function Layout({ children, currentPageName }) {
         console.error('Error rolling overdue tasks:', error);
       }
       
+      // Ensure minimum splash duration
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_SPLASH_DURATION - elapsed);
+      
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
       setIsChecking(false);
     };
 

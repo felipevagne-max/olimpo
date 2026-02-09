@@ -4,6 +4,7 @@ import { Bell, BellOff, Award } from 'lucide-react';
 import OlimpoLogo from './OlimpoLogo';
 import LevelPopover from './LevelPopover';
 import TitlePopover from '../titles/TitlePopover';
+import UserPopover from './UserPopover';
 import { getLevelFromXP } from './levelSystem';
 import { toast } from 'sonner';
 
