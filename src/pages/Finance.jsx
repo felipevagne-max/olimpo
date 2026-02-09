@@ -15,6 +15,7 @@ import QuickIncomeSheet from '@/components/finance/QuickIncomeSheet';
 import ReportIncomes from '@/components/finance/ReportIncomes';
 import ReportExpenses from '@/components/finance/ReportExpenses';
 import ReportCard from '@/components/finance/ReportCard';
+import InsightsPrincipais from '@/components/finance/InsightsPrincipais';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, PiggyBank, Clock, AlertTriangle } from 'lucide-react';
 
 export default function Finance() {
@@ -59,9 +60,9 @@ export default function Finance() {
     .filter(e => e.isInvestment === true)
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
-  // GASTOS (expenses excluding investments)
+  // GASTOS (expenses excluding investments and card bill payments)
   const gastos = monthExpenses
-    .filter(e => e.type === 'despesa' && !e.isInvestment && e.status === 'pago')
+    .filter(e => e.type === 'despesa' && !e.isInvestment && !e.isCardBillPayment && e.status === 'pago')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
   // A PAGAR (programmed expenses)
@@ -87,7 +88,7 @@ export default function Finance() {
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
   const despesasTotal = expenses
-    .filter(e => e.type === 'despesa')
+    .filter(e => e.type === 'despesa' && !e.isCardBillPayment)
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
   const capital = rendaAcumulada + investidoAcumulado - despesasTotal;
@@ -204,6 +205,9 @@ export default function Finance() {
             </p>
           </div>
         </OlimpoCard>
+
+        {/* INSIGHTS PRINCIPAIS */}
+        <InsightsPrincipais currentMonth={currentMonth} />
 
         {/* RELATÓRIOS */}
         <div className="mb-6">
