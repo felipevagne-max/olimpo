@@ -1,49 +1,83 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import OlimpoInput from '../olimpo/OlimpoInput';
 import OlimpoButton from '../olimpo/OlimpoButton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { CheckCircle2, Clock, AlertCircle, XCircle } from 'lucide-react';
+
+const STATUS_OPTIONS = [
+  { value: 'RECEBIDO', label: 'RECEBIDO', color: '#00FF66', icon: CheckCircle2 },
+  { value: 'PROGRAMADO', label: 'PROGRAMADO', color: '#FFD400', icon: Clock },
+  { value: 'AGUARDANDO', label: 'AGUARDANDO', color: '#A855F7', icon: AlertCircle },
+  { value: 'ADIADO', label: 'ADIADO', color: '#FF3B3B', icon: XCircle }
+];
 
 export default function QuickIncomeSheet({ open, onClose }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    title: '',
     amount: '',
+    title: '',
     date: format(new Date(), 'yyyy-MM-dd'),
-    status: 'pago'
+    incomeSubstatus: 'RECEBIDO',
+    payer: ''
   });
 
+  useEffect(() => {
+    if (!open) {
+      setFormData({
+        amount: '',
+        title: '',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        incomeSubstatus: 'RECEBIDO',
+        payer: ''
+      });
+    }
+  }, [open]);
+
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Expense.create({
-      ...data,
-      amount: parseFloat(data.amount),
-      type: 'receita',
-      category: 'receita'
-    }),
+    mutationFn: (data) => {
+      const isReceived = data.incomeSubstatus === 'RECEBIDO';
+      
+      return base44.entities.Expense.create({
+        title: data.title,
+        amount: parseFloat(data.amount),
+        date: data.date,
+        type: 'receita',
+        status: isReceived ? 'pago' : 'programado',
+        paid_at: isReceived ? new Date().toISOString() : null,
+        incomeSubstatus: data.incomeSubstatus,
+        payer: data.payer,
+        payeeName: `Pagador: ${data.payer}`
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['expenses']);
       toast.success('Receita registrada!');
-      setFormData({ title: '', amount: '', date: format(new Date(), 'yyyy-MM-dd'), status: 'pago' });
       onClose();
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.amount) return;
+    if (!formData.amount || !formData.title.trim() || !formData.date || !formData.incomeSubstatus || !formData.payer.trim()) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
     createMutation.mutate(formData);
   };
+
+  const selectedStatus = STATUS_OPTIONS.find(s => s.value === formData.incomeSubstatus);
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="bg-[#0B0F0C] border-t border-[rgba(0,255,102,0.3)] rounded-t-2xl"
+        className="bg-[#0B0F0C] border-t border-[rgba(0,255,102,0.3)] rounded-t-2xl max-h-[90vh] overflow-y-auto"
       >
         <SheetHeader className="pb-4">
           <SheetTitle 
@@ -56,11 +90,11 @@ export default function QuickIncomeSheet({ open, onClose }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label className="text-[#9AA0A6] text-xs">Valor (R$) *</Label>
+            <Label className="text-[#9AA0A6] text-xs">Valor *</Label>
             <OlimpoInput
               type="number"
               step="0.01"
-              min="0"
+              min="0.01"
               value={formData.amount}
               onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
               placeholder="0,00"
@@ -74,37 +108,72 @@ export default function QuickIncomeSheet({ open, onClose }) {
             <OlimpoInput
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Ex: Salário"
+              placeholder="Ex: Salário, Freela, Reembolso"
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-[#9AA0A6] text-xs">Data</Label>
-              <OlimpoInput
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              />
-            </div>
+          <div>
+            <Label className="text-[#9AA0A6] text-xs">Quando entra *</Label>
+            <OlimpoInput
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              required
+            />
+            <p className="text-[10px] text-[#9AA0A6] mt-1">Data prevista</p>
+          </div>
 
-            <div>
-              <Label className="text-[#9AA0A6] text-xs">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
-              >
-                <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-                  <SelectItem value="pago" className="text-[#E8E8E8]">Recebido</SelectItem>
-                  <SelectItem value="programado" className="text-[#E8E8E8]">Programado</SelectItem>
-                  <SelectItem value="pendente" className="text-[#E8E8E8]">Aguardando</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label className="text-[#9AA0A6] text-xs">Status do recebimento *</Label>
+            <Select
+              value={formData.incomeSubstatus}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, incomeSubstatus: v }))}
+            >
+              <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+                <SelectValue>
+                  {selectedStatus && (
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: selectedStatus.color }}
+                      />
+                      <span>{selectedStatus.label}</span>
+                    </div>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                {STATUS_OPTIONS.map((status) => {
+                  const Icon = status.icon;
+                  return (
+                    <SelectItem 
+                      key={status.value} 
+                      value={status.value}
+                      className="text-[#E8E8E8]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon 
+                          className="w-4 h-4" 
+                          style={{ color: status.color }}
+                        />
+                        <span>{status.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-[#9AA0A6] text-xs">Pagador *</Label>
+            <OlimpoInput
+              value={formData.payer}
+              onChange={(e) => setFormData(prev => ({ ...prev, payer: e.target.value }))}
+              placeholder="Empresa X / Pessoa Y"
+              required
+            />
           </div>
 
           <div className="flex gap-3 pt-4">
