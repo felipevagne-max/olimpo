@@ -48,6 +48,11 @@ export default function Finance() {
     queryFn: () => base44.entities.Expense.list('-date')
   });
 
+  useOverdueNotifications();
+
+  // Filter out deleted items
+  const activeExpenses = expenses.filter(e => !e.deleted_at);
+
   // Filter by month
   const monthExpenses = activeExpenses.filter(e => e.date >= monthStart && e.date <= monthEnd);
   
@@ -80,15 +85,15 @@ export default function Finance() {
   const saldoMes = renda - (gastos + investido);
 
   // SEU CAPITAL (all-time, excluding PERDIDO)
-  const rendaAcumulada = expenses
+  const rendaAcumulada = activeExpenses
     .filter(e => e.type === 'receita' && e.incomeSubstatus !== 'PERDIDO')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
-  const investidoAcumulado = expenses
+  const investidoAcumulado = activeExpenses
     .filter(e => e.isInvestment === true)
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
-  const despesasTotal = expenses
+  const despesasTotal = activeExpenses
     .filter(e => e.type === 'despesa' && !e.isCardBillPayment)
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
