@@ -169,6 +169,6 @@ export default function ReportExpenses({ currentMonth }) {
       onClose={() => setEditingItem(null)} 
       expense={editingItem}
     />
-  </>
+    </>
   );
 }

@@ -190,6 +190,6 @@ export default function ReportIncomes({ currentMonth }) {
       onClose={() => setEditingItem(null)} 
       expense={editingItem}
     />
-  </>
+    </>
   );
 }
