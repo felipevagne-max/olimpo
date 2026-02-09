@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 export default function ReportExpenses({ currentMonth }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
@@ -38,6 +39,7 @@ export default function ReportExpenses({ currentMonth }) {
     .reduce((sum, o) => sum + o.amount, 0);
 
   return (
+    <>
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="bg-[#0B0F0C] border border-[rgba(255,193,7,0.18)] rounded-xl overflow-hidden">
         <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-[rgba(255,193,7,0.05)] transition-colors">

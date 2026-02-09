@@ -16,6 +16,7 @@ import ReportIncomes from '@/components/finance/ReportIncomes';
 import ReportExpenses from '@/components/finance/ReportExpenses';
 import ReportCard from '@/components/finance/ReportCard';
 import InsightsPrincipais from '@/components/finance/InsightsPrincipais';
+import useOverdueNotifications from '@/components/finance/useOverdueNotifications';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, PiggyBank, Clock, AlertTriangle } from 'lucide-react';
 
 export default function Finance() {
@@ -48,7 +49,7 @@ export default function Finance() {
   });
 
   // Filter by month
-  const monthExpenses = expenses.filter(e => e.date >= monthStart && e.date <= monthEnd);
+  const monthExpenses = activeExpenses.filter(e => e.date >= monthStart && e.date <= monthEnd);
   
   // RENDA (total income of the month, excluding PERDIDO)
   const renda = monthExpenses

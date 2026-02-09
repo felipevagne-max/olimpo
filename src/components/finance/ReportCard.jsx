@@ -30,7 +30,7 @@ export default function ReportCard({ currentMonth }) {
     queryFn: () => base44.entities.Category.list()
   });
 
-  const monthInstallments = installments.filter(i => i.monthKey === monthKey);
+  const monthInstallments = activeInstallments.filter(i => i.monthKey === monthKey);
 
   // Group by card
   const byCard = monthInstallments.reduce((acc, inst) => {

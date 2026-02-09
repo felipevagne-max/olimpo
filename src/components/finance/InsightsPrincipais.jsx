@@ -19,6 +19,9 @@ export default function InsightsPrincipais({ currentMonth }) {
     queryFn: () => base44.entities.CardInstallment.list()
   });
 
+  const activeExpenses = expenses.filter(e => !e.deleted_at);
+  const activeInstallments = installments.filter(i => !i.deleted_at);
+
   const { data: purchases = [] } = useQuery({
     queryKey: ['cardPurchases'],
     queryFn: () => base44.entities.CardPurchase.list()
@@ -30,7 +33,7 @@ export default function InsightsPrincipais({ currentMonth }) {
   });
 
   // A) Normal expenses (exclude card bill payments and investments)
-  const normalExpenses = expenses.filter(e => 
+  const normalExpenses = activeExpenses.filter(e => 
     e.type === 'despesa' &&
     e.date >= monthStart &&
     e.date <= monthEnd &&
@@ -40,7 +43,7 @@ export default function InsightsPrincipais({ currentMonth }) {
   );
 
   // B) Card installments for the month
-  const monthInstallments = installments.filter(i => i.monthKey === monthKey);
+  const monthInstallments = activeInstallments.filter(i => i.monthKey === monthKey);
 
   // Build category totals
   const categoryTotals = {};

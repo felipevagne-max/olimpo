@@ -76,6 +76,7 @@ export default function TopBar() {
               <Award className="w-5 h-5" />
             </button>
           </TitlePopover>
+          <NotificationsPopover />
           <button
             onClick={() => toggleNotificationsMutation.mutate(!notificationsEnabled)}
             className={`p-2 rounded-lg transition-all ${
@@ -90,7 +91,6 @@ export default function TopBar() {
               <BellOff className="w-5 h-5" />
             )}
           </button>
-          <AnnouncementsPopover />
           <UserPopover />
         </div>
       </div>

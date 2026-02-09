@@ -56,6 +56,7 @@ export default function ReportIncomes({ currentMonth }) {
     .reduce((sum, i) => sum + i.amount, 0);
 
   return (
+    <>
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] rounded-xl overflow-hidden">
         <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-[rgba(0,255,102,0.05)] transition-colors">
