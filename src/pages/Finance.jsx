@@ -12,13 +12,28 @@ import FinanceFAB from '@/components/finance/FinanceFAB';
 import QuickExpenseSheet from '@/components/finance/QuickExpenseSheet';
 import QuickCardSheet from '@/components/finance/QuickCardSheet';
 import QuickIncomeSheet from '@/components/finance/QuickIncomeSheet';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, PiggyBank, Clock, AlertTriangle } from 'lucide-react';
 
 export default function Finance() {
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeSheet, setActiveSheet] = useState(null);
   const [showExtract, setShowExtract] = useState(false);
+
+  const toggleExpenseStatusMutation = useMutation({
+    mutationFn: async (expense) => {
+      const newStatus = expense.status === 'programado' ? 'pago' : 'programado';
+      const isPaid = newStatus === 'pago';
+      
+      return base44.entities.Expense.update(expense.id, {
+        status: newStatus,
+        paid_at: isPaid ? new Date().toISOString() : null
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['expenses']);
+    }
+  });
 
   const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
@@ -43,7 +58,17 @@ export default function Finance() {
   
   // GASTOS (expenses excluding investments)
   const gastos = monthExpenses
-    .filter(e => e.type === 'despesa' && !e.isInvestment)
+    .filter(e => e.type === 'despesa' && !e.isInvestment && e.status === 'pago')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  // A PAGAR (programmed expenses)
+  const aPagar = monthExpenses
+    .filter(e => e.type === 'despesa' && e.status === 'programado')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  // NÃO PREVISTO (unplanned expenses that are PAID)
+  const naoPrevisto = monthExpenses
+    .filter(e => e.type === 'despesa' && e.planType === 'IMPREVISTO' && e.status === 'pago')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
   // SALDO MÊS
@@ -98,8 +123,8 @@ export default function Finance() {
           </button>
         </div>
 
-        {/* 4 Blocos (2x2) */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        {/* Top Row - Main Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
           {/* RENDA */}
           <OlimpoCard className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -127,15 +152,49 @@ export default function Finance() {
               R$ {gastos.toFixed(2)}
             </p>
           </OlimpoCard>
+        </div>
 
-          {/* INVESTIDO */}
-          <OlimpoCard className="p-4 text-center">
+        {/* Second Row - Additional Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* A PAGAR */}
+          <OlimpoCard className="p-4 text-center border-[rgba(255,193,7,0.3)]">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <PiggyBank className="w-4 h-4 text-[#FFC107]" />
-              <p className="text-xs text-[#9AA0A6] uppercase">Investido</p>
+              <Clock className="w-4 h-4 text-[#FFC107]" />
+              <p className="text-xs text-[#9AA0A6] uppercase">A Pagar</p>
             </div>
             <p 
               className="text-xl font-bold text-[#FFC107]"
+              style={{ fontFamily: 'JetBrains Mono, monospace' }}
+            >
+              R$ {aPagar.toFixed(2)}
+            </p>
+          </OlimpoCard>
+
+          {/* NÃO PREVISTO */}
+          <OlimpoCard className="p-4 text-center border-[rgba(255,59,59,0.3)]">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-[#FF3B3B]" />
+              <p className="text-xs text-[#9AA0A6] uppercase">Não Previsto</p>
+            </div>
+            <p 
+              className="text-xl font-bold text-[#FF3B3B]"
+              style={{ fontFamily: 'JetBrains Mono, monospace' }}
+            >
+              R$ {naoPrevisto.toFixed(2)}
+            </p>
+          </OlimpoCard>
+        </div>
+
+        {/* Third Row - Summary Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {/* INVESTIDO */}
+          <OlimpoCard className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <PiggyBank className="w-4 h-4 text-[#00FF66]" />
+              <p className="text-xs text-[#9AA0A6] uppercase">Investido</p>
+            </div>
+            <p 
+              className="text-xl font-bold text-[#00FF66]"
               style={{ fontFamily: 'JetBrains Mono, monospace' }}
             >
               R$ {investido.toFixed(2)}
@@ -191,10 +250,38 @@ export default function Finance() {
             </div>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {monthExpenses.map(exp => (
-                <div key={exp.id} className="flex items-center justify-between p-2 bg-[#070A08] rounded-lg">
+                <div key={exp.id} className="flex items-center gap-3 p-2 bg-[#070A08] rounded-lg">
+                  {exp.type === 'despesa' && (
+                    <button
+                      onClick={() => toggleExpenseStatusMutation.mutate(exp)}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                        exp.status === 'pago'
+                          ? 'bg-[#00FF66] border-[#00FF66]'
+                          : 'border-[#9AA0A6] hover:border-[#00FF66]'
+                      }`}
+                    >
+                      {exp.status === 'pago' && (
+                        <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#E8E8E8] truncate">{exp.title}</p>
-                    <p className="text-xs text-[#9AA0A6]">{format(new Date(exp.date), 'dd/MM')}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-[#9AA0A6]">{format(new Date(exp.date), 'dd/MM')}</p>
+                      {exp.planType === 'IMPREVISTO' && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]">
+                          IMPREVISTO
+                        </span>
+                      )}
+                      {exp.status === 'programado' && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(255,193,7,0.2)] text-[#FFC107]">
+                          PROGRAMADO
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p 
                     className="text-sm font-bold"
