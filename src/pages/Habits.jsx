@@ -13,7 +13,7 @@ import EmptyState from '@/components/olimpo/EmptyState';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Flame, Zap, MoreVertical, Pencil, Archive, Trash2, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
-import HabitGrid from '@/components/habits/HabitGrid';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -159,13 +159,8 @@ export default function Habits() {
     <div className="min-h-screen bg-black pb-20 lg:pb-0">
       <TopBar />
       <div className="px-4 pt-20 lg:pl-64 lg:max-w-7xl lg:mx-auto">
-        {/* Desktop: Habit Grid */}
-        <div className="hidden lg:block">
-          <HabitGrid />
-        </div>
-
-        {/* Mobile: Original Habits List */}
-        <div className="lg:hidden">
+        {/* Habits List - Mobile & Desktop */}
+        <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <h1 
@@ -308,7 +303,6 @@ export default function Habits() {
           </div>
         )}
         </div>
-        {/* End Mobile */}
       </div>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
