@@ -4,6 +4,8 @@ import { format, startOfMonth, endOfMonth, isBefore } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import FinanceItemStatusPill from './FinanceItemStatusPill';
+import EditExpenseSheet from './EditExpenseSheet';
 
 const STATUS_COLORS = {
   RECEBIDO: '#00FF66',
@@ -15,6 +17,7 @@ const STATUS_COLORS = {
 
 export default function ReportIncomes({ currentMonth }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [editingItem, setEditingItem] = useState(null);
 
   const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
@@ -24,7 +27,9 @@ export default function ReportIncomes({ currentMonth }) {
     queryFn: () => base44.entities.Expense.list('-date')
   });
 
-  const incomes = expenses
+  const activeExpenses = expenses.filter(e => !e.deleted_at);
+
+  const incomes = activeExpenses
     .filter(e => e.type === 'receita' && e.date >= monthStart && e.date <= monthEnd)
     .map((inc, idx) => ({ ...inc, num: idx + 1 }));
 
@@ -106,15 +111,11 @@ export default function ReportIncomes({ currentMonth }) {
                         {format(new Date(inc.date), 'dd/MM/yyyy')}
                       </td>
                       <td className="py-2 px-1">
-                        <span 
-                          className="text-[10px] px-2 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: `${statusColor}20`,
-                            color: statusColor
-                          }}
-                        >
-                          {inc.incomeSubstatus || 'PROGRAMADO'}
-                        </span>
+                        <FinanceItemStatusPill 
+                          item={inc} 
+                          type="income"
+                          onEdit={() => setEditingItem(inc)}
+                        />
                       </td>
                     </tr>
                   );
@@ -183,5 +184,12 @@ export default function ReportIncomes({ currentMonth }) {
         </CollapsibleContent>
       </div>
     </Collapsible>
+
+    <EditExpenseSheet 
+      open={!!editingItem} 
+      onClose={() => setEditingItem(null)} 
+      expense={editingItem}
+    />
+  </>
   );
 }

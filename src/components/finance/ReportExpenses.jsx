@@ -4,6 +4,8 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import FinanceItemStatusPill from './FinanceItemStatusPill';
+import EditExpenseSheet from './EditExpenseSheet';
 
 export default function ReportExpenses({ currentMonth }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,7 +19,9 @@ export default function ReportExpenses({ currentMonth }) {
     queryFn: () => base44.entities.Expense.list('-date')
   });
 
-  const outs = expenses
+  const activeExpenses = expenses.filter(e => !e.deleted_at);
+
+  const outs = activeExpenses
     .filter(e => e.type === 'despesa' && e.date >= monthStart && e.date <= monthEnd && !e.isInvestment)
     .map((exp, idx) => ({ ...exp, num: idx + 1 }));
 
@@ -90,15 +94,11 @@ export default function ReportExpenses({ currentMonth }) {
                         {format(new Date(out.date), 'dd/MM/yy')}
                       </td>
                       <td className="py-2 px-1">
-                        <span 
-                          className="text-[10px] px-2 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: out.status === 'pago' ? '#00FF6620' : '#FFD40020',
-                            color: out.status === 'pago' ? '#00FF66' : '#FFD400'
-                          }}
-                        >
-                          {out.status === 'pago' ? 'PAGO' : 'PROGRAMADO'}
-                        </span>
+                        <FinanceItemStatusPill 
+                          item={out} 
+                          type="expense"
+                          onEdit={() => setEditingItem(out)}
+                        />
                       </td>
                       <td className="py-2 px-1">
                         <span 
@@ -163,5 +163,12 @@ export default function ReportExpenses({ currentMonth }) {
         </CollapsibleContent>
       </div>
     </Collapsible>
+
+    <EditExpenseSheet 
+      open={!!editingItem} 
+      onClose={() => setEditingItem(null)} 
+      expense={editingItem}
+    />
+  </>
   );
 }

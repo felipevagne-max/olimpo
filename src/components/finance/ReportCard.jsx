@@ -4,6 +4,7 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import FinanceItemStatusPill from './FinanceItemStatusPill';
 
 export default function ReportCard({ currentMonth }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,11 +31,14 @@ export default function ReportCard({ currentMonth }) {
     queryFn: () => base44.entities.Category.list()
   });
 
+  const activePurchases = purchases.filter(p => !p.deleted_at);
+  const activeInstallments = installments.filter(i => !i.deleted_at);
+
   const monthInstallments = activeInstallments.filter(i => i.monthKey === monthKey);
 
   // Group by card
   const byCard = monthInstallments.reduce((acc, inst) => {
-    const purchase = purchases.find(p => p.id === inst.purchaseId);
+    const purchase = activePurchases.find(p => p.id === inst.purchaseId);
     if (!purchase) return acc;
 
     const cardId = purchase.creditCardId;
@@ -115,15 +119,10 @@ export default function ReportCard({ currentMonth }) {
                                 {item.installmentAmount.toFixed(2)}
                               </td>
                               <td className="py-1.5 px-1">
-                                <span 
-                                  className="text-[9px] px-1.5 py-0.5 rounded"
-                                  style={{ 
-                                    backgroundColor: item.status === 'PAID' ? '#00FF6620' : '#06B6D420',
-                                    color: item.status === 'PAID' ? '#00FF66' : '#06B6D4'
-                                  }}
-                                >
-                                  {item.status}
-                                </span>
+                                <FinanceItemStatusPill 
+                                  item={item} 
+                                  type="installment"
+                                />
                               </td>
                               <td className="py-1.5 px-1 text-[#9AA0A6] text-[10px]">
                                 {category?.name || '—'}
