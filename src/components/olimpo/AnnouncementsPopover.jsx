@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import OlimpoButton from './OlimpoButton';
 import { format } from 'date-fns';
@@ -65,7 +65,7 @@ export default function AnnouncementsPopover() {
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button className="relative p-2 text-[#9AA0A6] hover:text-[#00FF66] transition-colors rounded-lg hover:bg-[rgba(0,255,102,0.1)]">
-          <Bell className="w-5 h-5" />
+          <Mail className="w-5 h-5" />
           {unreadCount > 0 && (
             <div 
               className="absolute -top-1 -right-1 w-5 h-5 bg-[#00FF66] text-black rounded-full flex items-center justify-center text-[9px] font-bold"

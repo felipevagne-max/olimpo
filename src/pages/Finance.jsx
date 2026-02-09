@@ -123,8 +123,8 @@ export default function Finance() {
           </button>
         </div>
 
-        {/* Top Row - Main Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        {/* 4 Cards de Resumo (2x2) */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
           {/* RENDA */}
           <OlimpoCard className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -152,41 +152,7 @@ export default function Finance() {
               R$ {gastos.toFixed(2)}
             </p>
           </OlimpoCard>
-        </div>
 
-        {/* Second Row - Additional Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {/* A PAGAR */}
-          <OlimpoCard className="p-4 text-center border-[rgba(255,193,7,0.3)]">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-[#FFC107]" />
-              <p className="text-xs text-[#9AA0A6] uppercase">A Pagar</p>
-            </div>
-            <p 
-              className="text-xl font-bold text-[#FFC107]"
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              R$ {aPagar.toFixed(2)}
-            </p>
-          </OlimpoCard>
-
-          {/* NÃO PREVISTO */}
-          <OlimpoCard className="p-4 text-center border-[rgba(255,59,59,0.3)]">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-[#FF3B3B]" />
-              <p className="text-xs text-[#9AA0A6] uppercase">Não Previsto</p>
-            </div>
-            <p 
-              className="text-xl font-bold text-[#FF3B3B]"
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              R$ {naoPrevisto.toFixed(2)}
-            </p>
-          </OlimpoCard>
-        </div>
-
-        {/* Third Row - Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
           {/* INVESTIDO */}
           <OlimpoCard className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">

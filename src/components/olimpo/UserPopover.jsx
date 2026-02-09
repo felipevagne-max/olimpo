@@ -43,6 +43,25 @@ export default function UserPopover() {
     }
   });
 
+  const playLightningSound = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.15);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.15);
+  };
+
   const updateNameMutation = useMutation({
     mutationFn: async (newName) => {
       const trimmed = newName.trim();
@@ -84,6 +103,13 @@ export default function UserPopover() {
     onSuccess: () => {
       queryClient.invalidateQueries(['userProfile']);
       setIsOpen(false);
+      
+      // Play lightning sound if SFX enabled
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      if (sfxEnabled) {
+        playLightningSound();
+      }
+      
       setShowSuccess(true);
     },
     onError: (error) => {
@@ -239,16 +265,44 @@ export default function UserPopover() {
     </AlertDialog>
 
     <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
-      <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+      <AlertDialogContent className="bg-[#0B0F0C] border-[#00FF66] border-2 relative overflow-hidden">
+        {/* Lightning animation */}
+        {showSuccess && (
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle at center, rgba(0,255,102,0.2) 0%, transparent 70%)',
+              animation: 'lightning-pulse 800ms ease-out'
+            }}
+          />
+        )}
+        <style>{`
+          @keyframes lightning-pulse {
+            0% { opacity: 0; transform: scale(0.8); }
+            30% { opacity: 1; transform: scale(1.1); }
+            60% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.2); }
+          }
+          @keyframes lightning-glow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(0,255,102,0.4)); }
+            50% { filter: drop-shadow(0 0 20px rgba(0,255,102,0.8)); }
+          }
+        `}</style>
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-[#00FF66] text-center">
+          <AlertDialogTitle 
+            className="text-[#00FF66] text-center text-lg"
+            style={{ 
+              fontFamily: 'Orbitron, sans-serif',
+              animation: showSuccess ? 'lightning-glow 800ms ease-out' : 'none'
+            }}
+          >
             Tudo certo {pendingName}, sua jornada continua...
           </AlertDialogTitle>
         </AlertDialogHeader>
         <AlertDialogFooter className="sm:justify-center">
           <AlertDialogAction 
             onClick={() => setShowSuccess(false)}
-            className="bg-[#00FF66] text-black hover:bg-[#00DD55]"
+            className="bg-[#00FF66] text-black hover:bg-[#00DD55] font-semibold"
           >
             Continuar
           </AlertDialogAction>

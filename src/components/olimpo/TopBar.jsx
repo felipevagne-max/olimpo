@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Award } from 'lucide-react';
+import { Award, Bell, BellOff } from 'lucide-react';
 import OlimpoLogo from './OlimpoLogo';
 import LevelPopover from './LevelPopover';
 import TitlePopover from '../titles/TitlePopover';
@@ -17,8 +17,28 @@ export default function TopBar() {
     queryFn: () => base44.entities.XPTransaction.list()
   });
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
+  });
+
+  const toggleNotificationsMutation = useMutation({
+    mutationFn: async (enabled) => {
+      if (!userProfile?.id) return;
+      return base44.entities.UserProfile.update(userProfile.id, { notificationsEnabled: enabled });
+    },
+    onSuccess: (_, enabled) => {
+      queryClient.invalidateQueries(['userProfile']);
+      toast.success(enabled ? 'Notificações ativadas' : 'Notificações desativadas');
+    }
+  });
+
   const xpTotal = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
   const levelInfo = getLevelFromXP(xpTotal);
+  const notificationsEnabled = userProfile?.notificationsEnabled ?? true;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-[rgba(0,255,102,0.18)]">
@@ -49,13 +69,27 @@ export default function TopBar() {
           <OlimpoLogo size={32} glow={false} />
         </div>
 
-        {/* Right: Titles + Announcements + User */}
+        {/* Right: Titles + Notifications Toggle + Announcements + User */}
         <div className="flex items-center gap-1">
           <TitlePopover>
             <button className="p-2 rounded-full text-[#FFD400] hover:text-[#FFEE00] transition-all">
               <Award className="w-5 h-5" />
             </button>
           </TitlePopover>
+          <button
+            onClick={() => toggleNotificationsMutation.mutate(!notificationsEnabled)}
+            className={`p-2 rounded-lg transition-all ${
+              notificationsEnabled 
+                ? 'text-[#00FF66] hover:bg-[rgba(0,255,102,0.1)]' 
+                : 'text-[#9AA0A6] hover:bg-[rgba(0,255,102,0.1)] opacity-60'
+            }`}
+          >
+            {notificationsEnabled ? (
+              <Bell className="w-5 h-5" />
+            ) : (
+              <BellOff className="w-5 h-5" />
+            )}
+          </button>
           <AnnouncementsPopover />
           <UserPopover />
         </div>
