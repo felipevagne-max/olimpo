@@ -12,6 +12,9 @@ import FinanceFAB from '@/components/finance/FinanceFAB';
 import QuickExpenseSheet from '@/components/finance/QuickExpenseSheet';
 import QuickCardSheet from '@/components/finance/QuickCardSheet';
 import QuickIncomeSheet from '@/components/finance/QuickIncomeSheet';
+import ReportIncomes from '@/components/finance/ReportIncomes';
+import ReportExpenses from '@/components/finance/ReportExpenses';
+import ReportCard from '@/components/finance/ReportCard';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, PiggyBank, Clock, AlertTriangle } from 'lucide-react';
 
 export default function Finance() {
@@ -46,9 +49,9 @@ export default function Finance() {
   // Filter by month
   const monthExpenses = expenses.filter(e => e.date >= monthStart && e.date <= monthEnd);
   
-  // RENDA (total income of the month)
+  // RENDA (total income of the month, excluding PERDIDO)
   const renda = monthExpenses
-    .filter(e => e.type === 'receita')
+    .filter(e => e.type === 'receita' && e.incomeSubstatus !== 'PERDIDO')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
   // INVESTIDO (investments of the month - using isInvestment flag)
@@ -74,9 +77,9 @@ export default function Finance() {
   // SALDO MÊS
   const saldoMes = renda - (gastos + investido);
 
-  // SEU CAPITAL (all-time)
+  // SEU CAPITAL (all-time, excluding PERDIDO)
   const rendaAcumulada = expenses
-    .filter(e => e.type === 'receita')
+    .filter(e => e.type === 'receita' && e.incomeSubstatus !== 'PERDIDO')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
   const investidoAcumulado = expenses
@@ -201,6 +204,21 @@ export default function Finance() {
             </p>
           </div>
         </OlimpoCard>
+
+        {/* RELATÓRIOS */}
+        <div className="mb-6">
+          <h2 
+            className="text-sm font-bold text-[#00FF66] mb-4 uppercase"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            RELATÓRIOS
+          </h2>
+          <div className="space-y-3">
+            <ReportIncomes currentMonth={currentMonth} />
+            <ReportExpenses currentMonth={currentMonth} />
+            <ReportCard currentMonth={currentMonth} />
+          </div>
+        </div>
 
         {/* Extract Section (when showing) */}
         {showExtract && (

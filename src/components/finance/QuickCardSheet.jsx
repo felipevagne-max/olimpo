@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Check, ChevronsUpDown, Plus, Pencil, Power, PowerOff } from 'lucide-react';
 import OlimpoInput from '../olimpo/OlimpoInput';
 import OlimpoButton from '../olimpo/OlimpoButton';
+import CardPurchaseConfirmDialog from './CardPurchaseConfirmDialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,8 @@ export default function QuickCardSheet({ open, onClose }) {
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCardName, setNewCardName] = useState('');
   const [editingCard, setEditingCard] = useState(null);
+  const [createdPurchaseId, setCreatedPurchaseId] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { data: cards = [] } = useQuery({
     queryKey: ['creditCards'],
@@ -40,6 +43,14 @@ export default function QuickCardSheet({ open, onClose }) {
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: () => base44.entities.Category.list()
+  });
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
   });
 
   const activeCards = cards.filter(c => c.active !== false);
@@ -129,12 +140,20 @@ export default function QuickCardSheet({ open, onClose }) {
       }
 
       await Promise.all(installmentPromises);
+      return purchase;
     },
-    onSuccess: () => {
+    onSuccess: (purchase) => {
       queryClient.invalidateQueries(['cardPurchases']);
       queryClient.invalidateQueries(['cardInstallments']);
       toast.success('Compra registrada!');
-      onClose();
+      
+      // Check if should show confirm dialog
+      if (!userProfile?.skipCardPurchaseConfirm) {
+        setCreatedPurchaseId(purchase.id);
+        setShowConfirm(true);
+      } else {
+        onClose();
+      }
     }
   });
 
@@ -182,6 +201,12 @@ export default function QuickCardSheet({ open, onClose }) {
   const filteredCategories = categories.filter(c => 
     c.name.toLowerCase().includes(categorySearch.toLowerCase())
   );
+
+  const handleConfirmClose = () => {
+    setShowConfirm(false);
+    setCreatedPurchaseId(null);
+    onClose();
+  };
 
   return (
     <>
@@ -477,6 +502,13 @@ export default function QuickCardSheet({ open, onClose }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Confirm Dialog */}
+    <CardPurchaseConfirmDialog
+      open={showConfirm}
+      onClose={handleConfirmClose}
+      purchaseId={createdPurchaseId}
+    />
     </>
   );
 }
