@@ -29,12 +29,12 @@ export default function BottomNav({ collapsed = false }) {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50 lg:left-0 lg:top-0 lg:bottom-0 lg:border-r lg:border-t-0 transition-all duration-200"
+      className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50 lg:left-0 lg:top-0 lg:bottom-0 lg:border-r lg:border-t-0 lg:transition-all lg:duration-200"
       style={{
-        width: collapsed ? '72px' : '256px'
+        width: window.innerWidth >= 1024 ? (collapsed ? '72px' : '256px') : '100%'
       }}
     >
-      <div className={`flex justify-around items-center h-16 max-w-lg mx-auto px-1 lg:flex-col lg:h-auto lg:max-w-none lg:pt-20 lg:gap-1 ${collapsed ? 'lg:px-1' : 'lg:px-2'}`}>
+      <div className={`flex justify-around items-center h-16 w-full px-1 lg:flex-col lg:h-auto lg:max-w-none lg:pt-20 lg:gap-1 ${collapsed ? 'lg:px-1' : 'lg:px-2'}`}>
         {navItems.map((item) => {
           const isActive = currentPath.includes(item.page);
           const Icon = item.icon;
@@ -77,14 +77,13 @@ export default function BottomNav({ collapsed = false }) {
                   {unreadCount}
                 </div>
               )}
-              {!collapsed && (
-                <span className={cn(
-                  "text-[9px] mt-0.5 font-medium truncate max-w-full lg:text-sm lg:mt-0",
-                  isActive ? "text-[#00FF66]" : "text-[#9AA0A6]"
-                )}>
-                  {item.name}
-                </span>
-              )}
+              <span className={cn(
+                "text-[9px] mt-0.5 font-medium truncate max-w-full",
+                collapsed ? "lg:hidden" : "lg:text-sm lg:mt-0",
+                isActive ? "text-[#00FF66]" : "text-[#9AA0A6]"
+              )}>
+                {item.name}
+              </span>
             </Link>
           );
         })}
