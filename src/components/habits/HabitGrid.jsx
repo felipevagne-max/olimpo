@@ -185,110 +185,114 @@ export default function HabitGrid() {
         </div>
       ) : (
         <>
-          {/* Grid Container */}
-          <div className="bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] rounded-xl overflow-hidden">
-            <div className="grid grid-cols-[200px_1fr] divide-x divide-[rgba(0,255,102,0.1)]">
-              {/* Left Column: Habits List */}
-              <div className="bg-[#070A08]">
-                <div className="p-3 border-b border-[rgba(0,255,102,0.18)]">
-                  <p 
-                    className="text-xs font-bold text-[#00FF66] uppercase"
-                    style={{ fontFamily: 'Orbitron, sans-serif' }}
-                  >
-                    Hábito
-                  </p>
-                </div>
-                {activeHabits.map(habit => {
-                  const percent = getHabitPercent(habit);
-                  return (
-                    <div 
-                      key={habit.id}
-                      className="p-3 border-b border-[rgba(0,255,102,0.05)] flex items-center gap-2"
-                      style={{ minHeight: '48px' }}
-                    >
-                      <div 
-                        className="w-1 h-8 bg-[#00FF66] rounded-full"
-                        style={{ opacity: 0.6 }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-[#E8E8E8] truncate">{habit.name}</p>
-                        <p 
-                          className="text-[10px] text-[#00FF66] font-mono"
-                        >
-                          {percent === '—' ? '—%' : `${percent}%`}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Right Column: Grid by Weeks */}
-              <div className="overflow-x-auto">
-                {weeks.map((week, weekIdx) => (
-                  <div key={weekIdx} className="border-b border-[rgba(0,255,102,0.1)]">
-                    {/* Week Header */}
-                    <div className="bg-[#0B0F0C] p-2 border-b border-[rgba(0,255,102,0.18)]">
+          {/* Weeks Side by Side (Desktop: Horizontal Layout) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 overflow-x-auto">
+            {weeks.slice(0, 3).map((week, weekIdx) => {
+              const progress = getWeekProgress(weekIdx);
+              const weekStart = week[0];
+              const weekEnd = week[6];
+              
+              return (
+                <div 
+                  key={weekIdx}
+                  className="bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] rounded-xl overflow-hidden"
+                >
+                  {/* Week Header */}
+                  <div className="p-3 bg-[#070A08] border-b border-[rgba(0,255,102,0.18)]">
+                    <div className="flex items-center justify-between mb-1">
                       <p 
-                        className="text-[10px] font-bold text-[#9AA0A6] uppercase"
+                        className="text-xs font-bold text-[#00FF66] uppercase"
                         style={{ fontFamily: 'Orbitron, sans-serif' }}
                       >
                         Semana {weekIdx + 1}
                       </p>
+                      <p 
+                        className="text-xs text-[#00FF66] font-mono"
+                        style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                      >
+                        {progress}%
+                      </p>
                     </div>
+                    <p className="text-[10px] text-[#9AA0A6]">
+                      {format(weekStart, 'dd', { locale: ptBR })}–{format(weekEnd, 'dd MMM', { locale: ptBR })}
+                    </p>
+                  </div>
 
-                    {/* Days Header */}
-                    <div className="grid grid-cols-7 border-b border-[rgba(0,255,102,0.1)]">
+                  {/* Grid: Columns = Habits, Rows = Days */}
+                  <div className="overflow-x-auto">
+                    <div 
+                      className="grid"
+                      style={{
+                        gridTemplateColumns: `88px repeat(${activeHabits.length}, 44px)`,
+                      }}
+                    >
+                      {/* Header Row */}
+                      <div className="sticky left-0 bg-[#0B0F0C] p-2 border-b border-r border-[rgba(0,255,102,0.1)] z-10">
+                        <p className="text-[9px] text-[#9AA0A6] uppercase font-bold">Dia</p>
+                      </div>
+                      
+                      {activeHabits.map(habit => (
+                        <div 
+                          key={habit.id}
+                          className="p-2 border-b border-r border-[rgba(0,255,102,0.1)]"
+                          title={habit.name}
+                        >
+                          <p className="text-[9px] text-[#E8E8E8] truncate writing-mode-vertical-rl rotate-180 mx-auto h-16 flex items-center">
+                            {habit.name}
+                          </p>
+                        </div>
+                      ))}
+
+                      {/* Day Rows */}
                       {week.map((day, dayIdx) => {
                         const isToday = isSameDay(day, today);
+                        
                         return (
-                          <div 
-                            key={dayIdx}
-                            className={`p-2 text-center border-r border-[rgba(0,255,102,0.05)] ${
-                              isToday ? 'bg-[rgba(0,255,102,0.08)]' : ''
-                            }`}
-                          >
-                            <p className={`text-[10px] font-mono ${isToday ? 'text-[#00FF66] font-bold' : 'text-[#9AA0A6]'}`}>
-                              {format(day, 'dd/MM')}
-                            </p>
-                            <p className={`text-[9px] ${isToday ? 'text-[#00FF66]' : 'text-[#9AA0A6]'}`}>
-                              {format(day, 'EEE', { locale: ptBR }).toUpperCase()}
-                            </p>
-                          </div>
+                          <>
+                            {/* Day Label (sticky) */}
+                            <div 
+                              key={`day-${dayIdx}`}
+                              className={`sticky left-0 bg-[#0B0F0C] p-2 border-b border-r border-[rgba(0,255,102,0.05)] z-10 ${
+                                isToday ? 'bg-[rgba(0,255,102,0.05)]' : ''
+                              }`}
+                            >
+                              <p className={`text-[10px] font-mono ${isToday ? 'text-[#00FF66] font-bold' : 'text-[#9AA0A6]'}`}>
+                                {format(day, 'EEE dd', { locale: ptBR }).toUpperCase()}
+                              </p>
+                            </div>
+
+                            {/* Habit Cells */}
+                            {activeHabits.map(habit => {
+                              const isCompleted = isHabitCompletedOnDay(habit, day);
+                              
+                              return (
+                                <div 
+                                  key={`${habit.id}-${dayIdx}`}
+                                  className={`p-2 flex items-center justify-center border-b border-r border-[rgba(0,255,102,0.05)] ${
+                                    isToday ? 'bg-[rgba(0,255,102,0.03)]' : ''
+                                  }`}
+                                >
+                                  <button
+                                    onClick={() => toggleHabitDayMutation.mutate({ habit, date: day })}
+                                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
+                                      isCompleted
+                                        ? 'bg-[#00FF66] border-[#00FF66]'
+                                        : 'border-[#9AA0A6] hover:border-[#00FF66] hover:bg-[rgba(0,255,102,0.05)]'
+                                    }`}
+                                  >
+                                    {isCompleted && <Check className="w-3 h-3 text-black" />}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </>
                         );
                       })}
                     </div>
-
-                    {/* Habit Rows */}
-                    {activeHabits.map(habit => (
-                      <div key={habit.id} className="grid grid-cols-7 border-b border-[rgba(0,255,102,0.05)]">
-                        {week.map((day, dayIdx) => {
-                          const isCompleted = isHabitCompletedOnDay(habit, day);
-                          return (
-                            <div 
-                              key={dayIdx}
-                              className="p-2 flex items-center justify-center border-r border-[rgba(0,255,102,0.05)]"
-                              style={{ minHeight: '48px' }}
-                            >
-                              <button
-                                onClick={() => toggleHabitDayMutation.mutate({ habit, date: day })}
-                                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  isCompleted
-                                    ? 'bg-[#00FF66] border-[#00FF66]'
-                                    : 'border-[#9AA0A6] hover:border-[#00FF66] hover:bg-[rgba(0,255,102,0.05)]'
-                                }`}
-                              >
-                                {isCompleted && <Check className="w-4 h-4 text-black" />}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Weekly Progress Cards */}
