@@ -65,6 +65,9 @@ export const XPGainManager = () => {
 };
 
 export const triggerXPGain = (xp, sfxEnabled = true) => {
+  // Make globally accessible
+  window.triggerXPGain = triggerXPGain;
+  
   // Dispatch visual effect
   window.dispatchEvent(new CustomEvent('xp-gain', { detail: { xp } }));
 
