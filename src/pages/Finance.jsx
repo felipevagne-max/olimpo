@@ -12,6 +12,7 @@ import FinanceFAB from '@/components/finance/FinanceFAB';
 import QuickExpenseSheet from '@/components/finance/QuickExpenseSheet';
 import QuickCardSheet from '@/components/finance/QuickCardSheet';
 import QuickIncomeSheet from '@/components/finance/QuickIncomeSheet';
+import QuickInvestmentSheet from '@/components/finance/QuickInvestmentSheet';
 import ReportIncomes from '@/components/finance/ReportIncomes';
 import ReportExpenses from '@/components/finance/ReportExpenses';
 import ReportCard from '@/components/finance/ReportCard';
@@ -23,8 +24,11 @@ export default function Finance() {
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeSheet, setActiveSheet] = useState(null);
-  const [showInvestmentSheet, setShowInvestmentSheet] = useState(false);
   const [showExtract, setShowExtract] = useState(false);
+
+  const handleFABAction = (actionId) => {
+    setActiveSheet(actionId);
+  };
 
   const toggleExpenseStatusMutation = useMutation({
     mutationFn: async (expense) => {
@@ -67,9 +71,15 @@ export default function Finance() {
     .filter(e => e.isInvestment === true)
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
-  // GASTOS (expenses excluding investments and card bill payments)
+  // GASTOS (expenses excluding investments, card bill payments, and investment transfers)
   const gastos = monthExpenses
-    .filter(e => e.type === 'despesa' && !e.isInvestment && !e.isCardBillPayment && e.status === 'pago')
+    .filter(e => 
+      e.type === 'despesa' && 
+      !e.isInvestment && 
+      !e.isCardBillPayment && 
+      !e.isInvestmentTransfer && 
+      e.status === 'pago'
+    )
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
   // A PAGAR (programmed expenses)
@@ -82,8 +92,13 @@ export default function Finance() {
     .filter(e => e.type === 'despesa' && e.planType === 'IMPREVISTO' && e.status === 'pago')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // SALDO MÊS
-  const saldoMes = renda - (gastos + investido);
+  // Investment transfers (when "Saiu da conta" is ON)
+  const investmentTransfers = monthExpenses
+    .filter(e => e.isInvestmentTransfer === true && e.status === 'pago')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  // SALDO MÊS (renda - gastos - investmentTransfers)
+  const saldoMes = renda - gastos - investmentTransfers;
 
   // SEU CAPITAL (all-time, excluding PERDIDO)
   const rendaAcumulada = activeExpenses
@@ -95,10 +110,15 @@ export default function Finance() {
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
   const despesasTotal = activeExpenses
-    .filter(e => e.type === 'despesa' && !e.isCardBillPayment)
+    .filter(e => 
+      e.type === 'despesa' && 
+      !e.isCardBillPayment && 
+      !e.isInvestment
+    )
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  const capital = rendaAcumulada + investidoAcumulado - despesasTotal;
+  // Capital = caixa + investimentos
+  const capital = rendaAcumulada - despesasTotal + investidoAcumulado;
 
   if (isLoading) {
     return (
@@ -306,12 +326,13 @@ export default function Finance() {
       </div>
 
       {/* FAB */}
-      <FinanceFAB onAction={setActiveSheet} />
+      <FinanceFAB onAction={handleFABAction} />
 
       {/* Quick Sheets */}
       <QuickExpenseSheet open={activeSheet === 'despesa'} onClose={() => setActiveSheet(null)} />
       <QuickCardSheet open={activeSheet === 'cartao'} onClose={() => setActiveSheet(null)} />
       <QuickIncomeSheet open={activeSheet === 'receita'} onClose={() => setActiveSheet(null)} />
+      <QuickInvestmentSheet open={activeSheet === 'investimento'} onOpenChange={(open) => !open && setActiveSheet(null)} />
 
       <BottomNav />
     </div>
