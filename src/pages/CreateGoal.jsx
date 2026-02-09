@@ -34,8 +34,7 @@ export default function CreateGoal() {
     targetValue: 100,
     currentValue: 0,
     unit: '',
-    dueDate: '',
-    xpOnComplete: 200
+    dueDate: ''
   });
 
   const [milestones, setMilestones] = useState([]);
@@ -70,8 +69,7 @@ export default function CreateGoal() {
         targetValue: editGoal.targetValue || 100,
         currentValue: editGoal.currentValue || 0,
         unit: editGoal.unit || '',
-        dueDate: editGoal.dueDate || '',
-        xpOnComplete: editGoal.xpOnComplete || 200
+        dueDate: editGoal.dueDate || ''
       });
     }
   }, [editGoal]);
@@ -129,10 +127,27 @@ export default function CreateGoal() {
     setMilestones(prev => prev.filter((_, i) => i !== index));
   };
 
+  const calculateGoalXP = (dueDate) => {
+    const BASE_GOAL_XP = 200;
+    const BONUS_PER_WEEK = 25;
+    const MAX_XP = 500;
+
+    if (!dueDate) return BASE_GOAL_XP;
+
+    const now = new Date();
+    const due = new Date(dueDate);
+    const daysUntilDue = Math.max(0, Math.floor((due - now) / (1000 * 60 * 60 * 24)));
+    const weeks = Math.floor(daysUntilDue / 7);
+    
+    return Math.min(BASE_GOAL_XP + (weeks * BONUS_PER_WEEK), MAX_XP);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
-    saveMutation.mutate(formData);
+    
+    const xpOnComplete = calculateGoalXP(formData.dueDate);
+    saveMutation.mutate({ ...formData, xpOnComplete });
   };
 
   if (editId && loadingEdit) {
@@ -297,25 +312,17 @@ export default function CreateGoal() {
           </OlimpoCard>
 
           <OlimpoCard>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-[#9AA0A6] text-xs">Prazo</Label>
-                <OlimpoInput
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label className="text-[#9AA0A6] text-xs">XP ao Concluir</Label>
-                <OlimpoInput
-                  type="number"
-                  min={1}
-                  value={formData.xpOnComplete}
-                  onChange={(e) => setFormData(prev => ({ ...prev, xpOnComplete: parseInt(e.target.value) || 200 }))}
-                />
-              </div>
-            </div>
+            <Label className="text-[#9AA0A6] text-xs mb-2 block">Prazo (opcional)</Label>
+            <OlimpoInput
+              type="date"
+              value={formData.dueDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+            />
+            {formData.dueDate && (
+              <p className="text-xs text-[#9AA0A6] mt-2">
+                XP ao concluir: <span className="text-[#00FF66] font-mono">+{calculateGoalXP(formData.dueDate)} XP</span>
+              </p>
+            )}
           </OlimpoCard>
 
           <div className="flex gap-3 pt-4">

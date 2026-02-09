@@ -59,39 +59,41 @@ export default function Habits() {
     mutationFn: async (habit) => {
       const todayLog = habitLogs.find(l => l.habitId === habit.id && l.date === today);
       
-      // Block uncomplete after confirmation
       if (todayLog?.completed) {
         toast.error('Conclusão confirmada. Não é possível desfazer.');
         throw new Error('Cannot uncomplete habit');
       }
       
+      const xpAmount = habit.xpReward || 8;
+      
       if (todayLog) {
-        await base44.entities.HabitLog.update(todayLog.id, { completed: true, xpEarned: habit.xpReward || 8 });
+        await base44.entities.HabitLog.update(todayLog.id, { completed: true, xpEarned: xpAmount });
       } else {
         await base44.entities.HabitLog.create({
           habitId: habit.id,
           date: today,
           completed: true,
-          xpEarned: habit.xpReward || 8
+          xpEarned: xpAmount
         });
       }
       
-      await base44.entities.XPTransaction.create({
+      // Award XP using centralized function
+      const { awardXp } = await import('@/components/xpSystem');
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: xpAmount,
         sourceType: 'habit',
         sourceId: habit.id,
-        amount: habit.xpReward || 8,
-        note: `Hábito: ${habit.name}`
+        note: `Hábito: ${habit.name}`,
+        sfxEnabled
       });
       
-      return habit.xpReward || 8;
+      return xpAmount;
     },
-    onSuccess: (xpGained) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
-      
-      // Trigger XP gain effect
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 

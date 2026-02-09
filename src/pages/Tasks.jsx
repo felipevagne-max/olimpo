@@ -228,23 +228,18 @@ export default function Tasks() {
       <TopBar />
       <div className="px-4 pt-20 relative z-10">
         {/* HUD Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)]">
-              <Zap className="w-4 h-4 text-[#00FF66]" />
-              <span className="text-xs font-mono text-[#00FF66]">+{todayXP}</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)]">
-              <Trophy className="w-4 h-4 text-[#FFC107]" />
-              <span className="text-xs font-mono text-[#FFC107]">{completedCount}</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)]">
-              <Medal className="w-4 h-4 text-[#9AA0A6]" />
-              <span className="text-xs font-mono text-[#9AA0A6]">Lv.{level}</span>
-            </div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)]">
+            <Zap className="w-4 h-4 text-[#00FF66]" />
+            <span className="text-xs font-mono text-[#00FF66]">+{todayXP}</span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] flex items-center justify-center">
-            <User className="w-4 h-4 text-[#9AA0A6]" />
+          <div className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)]">
+            <Trophy className="w-4 h-4 text-[#FFC107]" />
+            <span className="text-xs font-mono text-[#FFC107]">{completedCount}</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)]">
+            <Medal className="w-4 h-4 text-[#9AA0A6]" />
+            <span className="text-xs font-mono text-[#9AA0A6]">Lv.{level}</span>
           </div>
         </div>
 

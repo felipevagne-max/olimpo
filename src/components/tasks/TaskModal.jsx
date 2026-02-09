@@ -145,17 +145,12 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
         className="bg-[#0B0F0C] border-t border-[rgba(0,255,102,0.18)] rounded-t-2xl max-h-[90vh] overflow-y-auto"
       >
         <SheetHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle 
-              className="text-lg text-[#00FF66]"
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
-              {task ? 'Editar Tarefa' : 'Nova Tarefa'}
-            </SheetTitle>
-            <button onClick={onClose} className="text-[#9AA0A6] hover:text-[#00FF66]">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <SheetTitle 
+            className="text-lg text-[#00FF66]"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            {task ? 'Editar Tarefa' : 'Nova Tarefa'}
+          </SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -257,16 +252,6 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
                 onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
               />
             </div>
-          </div>
-
-          <div>
-            <Label className="text-[#9AA0A6] text-xs">Data da Tarefa</Label>
-            <OlimpoInput
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              required
-            />
           </div>
 
           <div className="flex gap-3 pt-4">

@@ -7,11 +7,24 @@ import { Label } from '@/components/ui/label';
 import OlimpoInput from './OlimpoInput';
 import OlimpoButton from './OlimpoButton';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function UserPopover() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [pendingName, setPendingName] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -37,6 +50,17 @@ export default function UserPopover() {
         throw new Error('Nome não pode ser vazio');
       }
 
+      // Check 90-day lock
+      if (userProfile?.username_last_changed_at) {
+        const lastChanged = new Date(userProfile.username_last_changed_at);
+        const now = new Date();
+        const daysSince = Math.floor((now - lastChanged) / (1000 * 60 * 60 * 24));
+        if (daysSince < 90) {
+          const daysRemaining = 90 - daysSince;
+          throw new Error(`Você poderá alterar novamente em ${daysRemaining} dias.`);
+        }
+      }
+
       // Check uniqueness (case-insensitive)
       const allProfiles = await base44.entities.UserProfile.list();
       const nameExists = allProfiles.some(p => 
@@ -53,17 +77,45 @@ export default function UserPopover() {
       }
 
       return base44.entities.UserProfile.update(userProfile.id, {
-        displayName: trimmed
+        displayName: trimmed,
+        username_last_changed_at: new Date().toISOString()
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['userProfile']);
-      toast.success('Nome atualizado.');
+      setIsOpen(false);
+      setShowSuccess(true);
     },
     onError: (error) => {
       toast.error(error.message);
+      setShowConfirm(false);
     }
   });
+
+  const handleSaveClick = () => {
+    const trimmed = username.trim();
+    if (!trimmed || trimmed === userProfile?.displayName) return;
+
+    // Check 90-day lock before showing confirmation
+    if (userProfile?.username_last_changed_at) {
+      const lastChanged = new Date(userProfile.username_last_changed_at);
+      const now = new Date();
+      const daysSince = Math.floor((now - lastChanged) / (1000 * 60 * 60 * 24));
+      if (daysSince < 90) {
+        const daysRemaining = 90 - daysSince;
+        toast.error(`Você poderá alterar novamente em ${daysRemaining} dias.`);
+        return;
+      }
+    }
+
+    setPendingName(trimmed);
+    setShowConfirm(true);
+  };
+
+  const confirmUpdate = () => {
+    setShowConfirm(false);
+    updateNameMutation.mutate(pendingName);
+  };
 
   const handleLogout = async () => {
     try {
@@ -80,9 +132,16 @@ export default function UserPopover() {
     : null;
 
   return (
+    <>
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <button className="p-2 text-[#9AA0A6] hover:text-[#00FF66] transition-colors rounded-lg hover:bg-[rgba(0,255,102,0.1)]">
+        <button 
+          className="p-2 transition-colors rounded-lg hover:bg-[rgba(0,255,200,0.1)]"
+          style={{ 
+            color: 'rgba(0, 255, 200, 0.7)',
+            filter: isOpen ? 'drop-shadow(0 0 6px rgba(0,255,200,0.3))' : 'none'
+          }}
+        >
           <User className="w-5 h-5" />
         </button>
       </PopoverTrigger>
@@ -111,7 +170,7 @@ export default function UserPopover() {
                 className="flex-1"
               />
               <OlimpoButton
-                onClick={() => updateNameMutation.mutate(username)}
+                onClick={handleSaveClick}
                 disabled={updateNameMutation.isPending || username === userProfile?.displayName}
                 className="px-3"
               >
@@ -154,5 +213,48 @@ export default function UserPopover() {
         </div>
       </PopoverContent>
     </Popover>
+
+    <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+      <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-[#E8E8E8]">
+            Herói, deseja realmente alterar seu nome?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-[#9AA0A6]">
+            Você não poderá alterar pelos próximos 90 dias.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-transparent border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={confirmUpdate}
+            className="bg-[#00FF66] text-black hover:bg-[#00DD55]"
+          >
+            Confirmar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
+      <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-[#00FF66] text-center">
+            Tudo certo {pendingName}, sua jornada continua...
+          </AlertDialogTitle>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="sm:justify-center">
+          <AlertDialogAction 
+            onClick={() => setShowSuccess(false)}
+            className="bg-[#00FF66] text-black hover:bg-[#00DD55]"
+          >
+            Continuar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }
