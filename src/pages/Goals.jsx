@@ -81,7 +81,7 @@ export default function Goals() {
       });
 
       // Award XP using centralized function
-      const { awardXp } = await import('@/utils/xpSystem');
+      const { awardXp } = await import('@/components/xpSystem');
       const GOAL_PROGRESS_XP = 5;
       const sfxEnabled = userProfile?.sfxEnabled ?? true;
       

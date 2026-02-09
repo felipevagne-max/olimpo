@@ -136,7 +136,7 @@ export default function Dashboard() {
       const checkIn = await base44.entities.CheckIn.create({ ...data, date: today });
       
       // Award XP using centralized function
-      const { awardXp } = await import('@/utils/xpSystem');
+      const { awardXp } = await import('@/components/xpSystem');
       const CHECKIN_XP_REWARD = 15;
       const sfxEnabled = userProfile?.sfxEnabled ?? true;
       
@@ -174,7 +174,7 @@ export default function Dashboard() {
       const xpAmount = task.isOverdue ? Math.round(baseXP * 0.5) : baseXP;
       
       // Award XP using centralized function
-      const { awardXp } = await import('@/utils/xpSystem');
+      const { awardXp } = await import('@/components/xpSystem');
       const sfxEnabled = userProfile?.sfxEnabled ?? true;
       
       await awardXp({
@@ -211,7 +211,7 @@ export default function Dashboard() {
       });
 
       // Award XP using centralized function
-      const { awardXp } = await import('@/utils/xpSystem');
+      const { awardXp } = await import('@/components/xpSystem');
       const sfxEnabled = userProfile?.sfxEnabled ?? true;
       
       await awardXp({
