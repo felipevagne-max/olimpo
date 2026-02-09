@@ -34,7 +34,7 @@ export default function BottomNav() {
           const isActive = currentPath.includes(item.page);
           const Icon = item.icon;
           const isOracle = item.page === 'Oracle';
-          
+
           return (
             <Link
               key={item.page}
