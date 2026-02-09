@@ -68,20 +68,29 @@ export default function RankingList() {
   const currentUserRank = leaderboard.findIndex(u => u.isCurrentUser) + 1;
 
   const getPositionColor = (position) => {
-    if (position === 1) return '#FFD700'; // Gold
-    if (position === 2) return '#C0C0C0'; // Silver
-    if (position === 3) return '#CD7F32'; // Bronze
-    return '#00FF66'; // Matrix green for 4-10
+    if (position === 1) return '#FFD400'; // Gold tech
+    if (position === 2) return '#A855F7'; // Purple tech
+    if (position === 3) return '#00FFC8'; // Cyan tech
+    if (position === 4) return '#00FF66'; // Matrix green
+    if (position === 5) return '#FFB020'; // Amber tech
+    if (position === 6) return '#14B8A6'; // Teal
+    if (position === 7) return '#6366F1'; // Indigo
+    if (position === 8) return '#84CC16'; // Lime
+    if (position === 9) return '#22D3EE'; // Cyan light
+    if (position === 10) return '#A78BFA'; // Purple light
+    return 'rgba(0,255,102,0.3)'; // Subtle for 11+
   };
 
   const getPositionBadge = (position) => {
     const color = getPositionColor(position);
+    const iconSize = 'w-4 h-4';
+    const textSize = position <= 3 ? 'text-sm' : 'text-xs';
     
     if (position === 1) {
       return (
-        <div className="flex items-center gap-2">
-          <Trophy className="w-6 h-6" style={{ color }} />
-          <span className="text-2xl font-bold" style={{ fontFamily: 'Orbitron, sans-serif', color }}>
+        <div className="flex items-center gap-1.5">
+          <Trophy className={iconSize} style={{ color }} />
+          <span className={`${textSize} font-bold`} style={{ fontFamily: 'Orbitron, sans-serif', color }}>
             #1
           </span>
         </div>
@@ -89,9 +98,9 @@ export default function RankingList() {
     }
     if (position === 2) {
       return (
-        <div className="flex items-center gap-2">
-          <Medal className="w-6 h-6" style={{ color }} />
-          <span className="text-xl font-bold" style={{ fontFamily: 'Orbitron, sans-serif', color }}>
+        <div className="flex items-center gap-1.5">
+          <Medal className={iconSize} style={{ color }} />
+          <span className={`${textSize} font-bold`} style={{ fontFamily: 'Orbitron, sans-serif', color }}>
             #2
           </span>
         </div>
@@ -99,16 +108,16 @@ export default function RankingList() {
     }
     if (position === 3) {
       return (
-        <div className="flex items-center gap-2">
-          <Award className="w-6 h-6" style={{ color }} />
-          <span className="text-xl font-bold" style={{ fontFamily: 'Orbitron, sans-serif', color }}>
+        <div className="flex items-center gap-1.5">
+          <Award className={iconSize} style={{ color }} />
+          <span className={`${textSize} font-bold`} style={{ fontFamily: 'Orbitron, sans-serif', color }}>
             #3
           </span>
         </div>
       );
     }
     return (
-      <span className="text-lg font-bold" style={{ fontFamily: 'Orbitron, sans-serif', color }}>
+      <span className={`${textSize} font-bold`} style={{ fontFamily: 'Orbitron, sans-serif', color }}>
         #{position}
       </span>
     );
@@ -127,15 +136,17 @@ export default function RankingList() {
   const renderTitles = (equippedTitles, size = 'md') => {
     if (!equippedTitles || equippedTitles.length === 0) return null;
     
-    const maxTitles = size === 'sm' ? 2 : 3;
+    const maxTitles = 3;
+    const iconSize = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+    const displayedTitles = equippedTitles.slice(0, maxTitles);
+    const remainingCount = equippedTitles.length - maxTitles;
     
     return (
-      <div className="flex gap-1">
-        {equippedTitles.slice(0, maxTitles).map(titleId => {
+      <div className="flex gap-0.5 items-center">
+        {displayedTitles.map(titleId => {
           const title = titleDefinitions.find(t => t.id === titleId);
           if (!title) return null;
           const color = TITLE_COLORS[title.name] || '#00FF66';
-          const iconSize = size === 'sm' ? 'w-3 h-3' : 'w-4 h-4';
           return (
             <div 
               key={titleId} 
@@ -147,6 +158,9 @@ export default function RankingList() {
             </div>
           );
         })}
+        {remainingCount > 0 && (
+          <span className="text-[9px] text-[#9AA0A6] ml-0.5">+{remainingCount}</span>
+        )}
       </div>
     );
   };
@@ -165,83 +179,76 @@ export default function RankingList() {
         <p className="text-xs text-[#9AA0A6] mt-1">Ordenado por Level (XP total)</p>
       </div>
 
-      {/* TOP 10 - Destaque */}
+      {/* TOP 10 - Compact Row Cards */}
       <div>
         <h3 
-          className="text-sm font-bold text-[#00FF66] mb-4 uppercase"
+          className="text-sm font-bold text-[#00FF66] mb-3 uppercase"
           style={{ fontFamily: 'Orbitron, sans-serif' }}
         >
           TOP 10
         </h3>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-1.5">
           {top10.map((user, idx) => {
             const position = idx + 1;
-            const isTop3 = position <= 3;
+            const borderColor = getPositionColor(position);
+            const firstTitle = user.equippedTitles[0] 
+              ? titleDefinitions.find(t => t.id === user.equippedTitles[0])?.name 
+              : null;
             
             return (
               <div
                 key={user.id}
-                className={`relative p-5 rounded-xl border-2 transition-all ${
-                  user.isCurrentUser
-                    ? 'bg-[rgba(0,255,102,0.08)] border-[#00FF66]'
-                    : isTop3
-                      ? 'bg-[#0B0F0C] border-[rgba(255,215,0,0.3)]'
-                      : 'bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]'
-                }`}
-                style={
-                  isTop3 && !user.isCurrentUser
-                    ? { boxShadow: `0 0 20px ${getPositionColor(position)}15` }
-                    : undefined
-                }
+                className="relative flex items-center gap-3 p-3 lg:p-2.5 rounded-lg bg-[#0B0F0C] border transition-all hover:bg-[rgba(0,255,102,0.03)]"
+                style={{
+                  borderLeft: `3px solid ${borderColor}`,
+                  borderTop: `1px solid rgba(0,255,102,0.1)`,
+                  borderRight: `1px solid rgba(0,255,102,0.1)`,
+                  borderBottom: `1px solid rgba(0,255,102,0.1)`,
+                  boxShadow: position <= 3 ? `0 0 12px ${borderColor}15` : undefined
+                }}
               >
-                {/* Position Badge */}
-                <div className="flex items-start justify-between mb-3">
+                {/* Position */}
+                <div className="w-10 lg:w-8 flex-shrink-0">
                   {getPositionBadge(position)}
-                  {user.isCurrentUser && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-[#00FF66] text-black font-bold">
-                      VOCÊ
-                    </span>
+                </div>
+
+                {/* Avatar */}
+                <Avatar className="w-8 h-8 lg:w-7 lg:h-7 border border-[rgba(0,255,102,0.2)]">
+                  <AvatarImage src={user.avatar_url} />
+                  <AvatarFallback className="bg-[rgba(0,255,102,0.1)] text-[#00FF66] text-xs">
+                    {getInitials(user.displayName)}
+                  </AvatarFallback>
+                </Avatar>
+
+                {/* Name + Titles */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-sm lg:text-xs font-semibold text-[#E8E8E8] truncate">
+                      {user.displayName || 'Herói'}
+                    </p>
+                    {renderTitles(user.equippedTitles, 'sm')}
+                  </div>
+                  {firstTitle && position <= 3 && (
+                    <p className="text-[10px] text-[#9AA0A6] truncate">
+                      {firstTitle}
+                    </p>
                   )}
                 </div>
 
-                {/* User Info */}
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="w-16 h-16 border-2 border-[rgba(0,255,102,0.3)]">
-                    <AvatarImage src={user.avatar_url} />
-                    <AvatarFallback className="bg-[rgba(0,255,102,0.15)] text-[#00FF66] text-lg font-bold">
-                      {getInitials(user.displayName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-base font-semibold text-[#E8E8E8] truncate">
-                        {user.displayName || 'Herói'}
-                      </p>
-                      {renderTitles(user.equippedTitles)}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span 
-                        className="text-sm px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] border border-[rgba(0,255,102,0.3)] text-[#00FF66] font-mono"
-                        style={{ fontFamily: 'JetBrains Mono, monospace' }}
-                      >
-                        LV {user.level}
-                      </span>
-                      <LevelCrest levelIndex={user.levelInfo.levelIndex} size={20} />
-                    </div>
-                  </div>
-                </div>
+                {/* Level Badge */}
+                <span 
+                  className="text-xs lg:text-[11px] px-2 py-0.5 rounded bg-[rgba(0,255,102,0.1)] text-[#00FF66] font-mono flex-shrink-0"
+                  style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                >
+                  LV {user.level}
+                </span>
 
-                {/* XP Total */}
-                <div className="pt-3 border-t border-[rgba(0,255,102,0.1)]">
-                  <p className="text-xs text-[#9AA0A6] mb-1">XP Total</p>
-                  <p 
-                    className="text-xl font-bold text-[#00FF66]"
-                    style={{ fontFamily: 'JetBrains Mono, monospace' }}
-                  >
-                    {user.xpTotal.toLocaleString()}
-                  </p>
-                </div>
+                {/* "Você" indicator */}
+                {user.isCurrentUser && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#00FF66] text-black font-bold">
+                    VOCÊ
+                  </span>
+                )}
               </div>
             );
           })}
@@ -260,56 +267,56 @@ export default function RankingList() {
 
           {/* Current User Position (if not in top 10) */}
           {currentUserRank > 10 && (
-            <div className="mb-3 p-3 rounded-lg bg-[rgba(0,255,102,0.08)] border-2 border-[#00FF66]">
-              <p className="text-xs text-[#9AA0A6] mb-2">Sua posição:</p>
-              <div className="flex items-center gap-3">
-                <span 
-                  className="text-sm font-bold text-[#00FF66]"
-                  style={{ fontFamily: 'Orbitron, sans-serif' }}
-                >
-                  #{currentUserRank}
-                </span>
-                <Avatar className="w-9 h-9 border border-[rgba(0,255,102,0.3)]">
-                  <AvatarImage src={leaderboard[currentUserRank - 1]?.avatar_url} />
-                  <AvatarFallback className="bg-[rgba(0,255,102,0.15)] text-[#00FF66] text-sm">
-                    {getInitials(leaderboard[currentUserRank - 1]?.displayName)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-[#E8E8E8] truncate">
-                      {leaderboard[currentUserRank - 1]?.displayName || 'Você'}
-                    </p>
-                    {renderTitles(leaderboard[currentUserRank - 1]?.equippedTitles, 'sm')}
-                  </div>
+            <div className="mb-3 flex items-center gap-3 p-2.5 rounded-lg bg-[rgba(0,255,102,0.08)] border-2 border-[#00FF66]">
+              <span 
+                className="text-xs font-bold text-[#00FF66] w-10"
+                style={{ fontFamily: 'Orbitron, sans-serif' }}
+              >
+                #{currentUserRank}
+              </span>
+              <Avatar className="w-7 h-7 border border-[rgba(0,255,102,0.3)]">
+                <AvatarImage src={leaderboard[currentUserRank - 1]?.avatar_url} />
+                <AvatarFallback className="bg-[rgba(0,255,102,0.15)] text-[#00FF66] text-xs">
+                  {getInitials(leaderboard[currentUserRank - 1]?.displayName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-[#E8E8E8] truncate">
+                    {leaderboard[currentUserRank - 1]?.displayName || 'Você'}
+                  </p>
+                  {renderTitles(leaderboard[currentUserRank - 1]?.equippedTitles, 'sm')}
                 </div>
-                <span 
-                  className="text-xs px-2 py-1 rounded bg-[rgba(0,255,102,0.15)] text-[#00FF66] font-mono"
-                  style={{ fontFamily: 'JetBrains Mono, monospace' }}
-                >
-                  LV {leaderboard[currentUserRank - 1]?.level}
-                </span>
               </div>
+              <span 
+                className="text-[11px] px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#00FF66] font-mono"
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                LV {leaderboard[currentUserRank - 1]?.level}
+              </span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#00FF66] text-black font-bold">
+                VOCÊ
+              </span>
             </div>
           )}
 
-          <div className="space-y-1 bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] rounded-xl p-3">
+          <div className="space-y-0.5 bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] rounded-xl p-2">
             {others.map((user, idx) => {
               const position = idx + 11;
               
               return (
                 <div
                   key={user.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-[rgba(0,255,102,0.05)] transition-all"
+                  className="flex items-center gap-2.5 lg:gap-2 p-2 lg:p-1.5 rounded-lg hover:bg-[rgba(0,255,102,0.05)] transition-all"
                 >
                   <span 
-                    className="text-xs font-mono text-[#9AA0A6] w-8"
+                    className="text-[11px] font-mono text-[#9AA0A6] w-8 lg:w-7"
                     style={{ fontFamily: 'JetBrains Mono, monospace' }}
                   >
                     #{position}
                   </span>
                   
-                  <Avatar className="w-9 h-9 border border-[rgba(0,255,102,0.18)]">
+                  <Avatar className="w-7 h-7 lg:w-6 lg:h-6 border border-[rgba(0,255,102,0.15)]">
                     <AvatarImage src={user.avatar_url} />
                     <AvatarFallback className="bg-[rgba(0,255,102,0.1)] text-[#00FF66] text-xs">
                       {getInitials(user.displayName)}
@@ -317,8 +324,8 @@ export default function RankingList() {
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-[#E8E8E8] truncate">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs lg:text-[11px] text-[#E8E8E8] truncate">
                         {user.displayName || 'Herói'}
                       </p>
                       {renderTitles(user.equippedTitles, 'sm')}
@@ -326,7 +333,7 @@ export default function RankingList() {
                   </div>
 
                   <span 
-                    className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.1)] text-[#00FF66] font-mono"
+                    className="text-[11px] lg:text-[10px] px-1.5 py-0.5 rounded bg-[rgba(0,255,102,0.1)] text-[#00FF66] font-mono"
                     style={{ fontFamily: 'JetBrains Mono, monospace' }}
                   >
                     LV {user.level}
