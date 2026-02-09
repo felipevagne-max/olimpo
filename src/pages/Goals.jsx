@@ -10,7 +10,8 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
-import { Plus, Target, Trophy, Zap, MoreVertical, Pencil, Archive, Trash2, CheckCircle2 } from 'lucide-react';
+import { Plus, Target, Trophy, Zap, MoreVertical, Pencil, Archive, Trash2, CheckCircle2, ChevronUp } from 'lucide-react';
+import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import {
   DropdownMenu,
@@ -60,6 +61,45 @@ export default function Goals() {
     onSuccess: () => {
       queryClient.invalidateQueries(['goals']);
       setDeleteId(null);
+    }
+  });
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
+  });
+
+  const progressGoalMutation = useMutation({
+    mutationFn: async (goal) => {
+      const newValue = (goal.currentValue || 0) + 1;
+      
+      await base44.entities.Goal.update(goal.id, {
+        currentValue: newValue
+      });
+
+      // Award XP for progress
+      const GOAL_PROGRESS_XP = 5;
+      await base44.entities.XPTransaction.create({
+        sourceType: 'goal_progress',
+        sourceId: goal.id,
+        amount: GOAL_PROGRESS_XP,
+        note: 'Goal progress'
+      });
+
+      return GOAL_PROGRESS_XP;
+    },
+    onSuccess: (xpGained) => {
+      queryClient.invalidateQueries(['goals']);
+      queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP effect if available
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      if (window.triggerXPGain) {
+        window.triggerXPGain(xpGained, sfxEnabled);
+      }
     }
   });
 
@@ -250,6 +290,22 @@ export default function Goals() {
                     </span>
                     <span className="text-xs font-mono text-[#00FF66]">+{goal.xpOnComplete || 200} XP</span>
                   </div>
+
+                  {/* Progress Button */}
+                  {goal.status === 'active' && goal.goalType === 'accumulative' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        progressGoalMutation.mutate(goal);
+                        toast.success('+5 XP por progresso na meta!');
+                      }}
+                      className="mt-3 w-full py-2 bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.3)] rounded-lg text-[#00FF66] text-sm font-semibold hover:bg-[rgba(0,255,102,0.15)] transition-all flex items-center justify-center gap-2"
+                      disabled={progressGoalMutation.isPending}
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                      Avançar (+5 XP)
+                    </button>
+                  )}
                 </OlimpoCard>
               );
             })}

@@ -373,6 +373,11 @@ export default function Tasks() {
                           Rotina
                         </span>
                       )}
+                      {item.type === 'task' && item.isOverdue && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
+                          ATRASADA
+                        </span>
+                      )}
                       {item.type === 'task' && item.priority && (
                         <span className={`text-xs px-2 py-0.5 rounded ${
                           item.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
@@ -398,7 +403,10 @@ export default function Tasks() {
                         </span>
                       )}
                       <span className="text-xs font-mono text-[#00FF66]">
-                        +{item.type === 'task' ? (item.xpReward || 10) : (item.xpReward || 8)} XP
+                        +{item.type === 'task' 
+                          ? (item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10))
+                          : (item.xpReward || 8)
+                        } XP
                       </span>
                     </div>
                   </div>

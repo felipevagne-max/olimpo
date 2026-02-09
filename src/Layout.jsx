@@ -2,24 +2,48 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
+import { format } from 'date-fns';
 import MatrixColumns from '@/components/olimpo/MatrixColumns';
 import TitleEquipEffect from '@/components/olimpo/TitleEquipEffect';
+import SplashScreen from '@/components/olimpo/SplashScreen';
 
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Auto-login local (sem autenticação)
-    setIsChecking(false);
+    // Initialize and check for overdue tasks
+    const init = async () => {
+      try {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const tasks = await base44.entities.Task.list();
+        
+        // Roll overdue tasks to today
+        const overdueTasks = tasks.filter(t => 
+          !t.completed && 
+          !t.archived && 
+          t.date < today
+        );
+
+        for (const task of overdueTasks) {
+          await base44.entities.Task.update(task.id, {
+            rolledFromDate: task.date,
+            date: today,
+            isOverdue: true
+          });
+        }
+      } catch (error) {
+        console.error('Error rolling overdue tasks:', error);
+      }
+      
+      setIsChecking(false);
+    };
+
+    init();
   }, [currentPageName, navigate]);
 
   if (isChecking) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[rgba(0,255,102,0.2)] border-t-[#00FF66] rounded-full animate-spin" />
-      </div>
-    );
+    return <SplashScreen />;
   }
 
   return (
@@ -27,6 +51,18 @@ export default function Layout({ children, currentPageName }) {
       <MatrixColumns opacity={0.05} />
       <TitleEquipEffect />
       <div className="min-h-screen bg-black relative overflow-hidden">
+        <style>{`
+          body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+          }
+        `}</style>
         <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
         

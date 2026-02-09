@@ -95,6 +95,14 @@ export default function Dashboard() {
     queryFn: () => base44.entities.HabitLog.list()
   });
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
+  });
+
   const { data: goals = [] } = useQuery({
     queryKey: ['goals'],
     queryFn: () => base44.entities.Goal.list()
@@ -103,14 +111,6 @@ export default function Dashboard() {
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
     queryFn: () => base44.entities.CheckIn.list()
-  });
-
-  const { data: userProfile } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
-      return profiles[0] || null;
-    }
   });
 
   const todayCheckIn = checkIns.find(c => c.date === today);
@@ -161,7 +161,6 @@ export default function Dashboard() {
 
   const completeTaskMutation = useMutation({
     mutationFn: async (task) => {
-      // Block uncomplete after confirmation
       if (task.completed) {
         toast.error('Conclusão confirmada. Não é possível desfazer.');
         throw new Error('Cannot uncomplete task');
@@ -172,20 +171,59 @@ export default function Dashboard() {
         completedAt: new Date().toISOString()
       });
       
+      // Calculate XP with overdue multiplier
+      const baseXP = task.xpReward || 10;
+      const xpAmount = task.isOverdue ? Math.round(baseXP * 0.5) : baseXP;
+      
       await base44.entities.XPTransaction.create({
         sourceType: 'task',
         sourceId: task.id,
-        amount: task.xpReward || 10,
-        note: `Tarefa: ${task.title}`
+        amount: xpAmount,
+        note: task.isOverdue ? `Tarefa atrasada: ${task.title} (x0.5)` : `Tarefa: ${task.title}`
       });
       
-      return task.xpReward || 10;
+      return xpAmount;
     },
     onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
       
-      // Trigger XP gain effect
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(xpGained, sfxEnabled);
+    }
+  });
+
+  const completeHabitMutation = useMutation({
+    mutationFn: async (habit) => {
+      // Check if already completed today
+      const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === today && l.completed);
+      if (existingLog) {
+        toast.error('Hábito já concluído hoje.');
+        throw new Error('Habit already completed');
+      }
+
+      const xpAmount = habit.xpReward || 8;
+      
+      await base44.entities.HabitLog.create({
+        habitId: habit.id,
+        date: today,
+        completed: true,
+        xpEarned: xpAmount
+      });
+
+      await base44.entities.XPTransaction.create({
+        sourceType: 'habit',
+        sourceId: habit.id,
+        amount: xpAmount,
+        note: `Hábito: ${habit.name}`
+      });
+
+      return xpAmount;
+    },
+    onSuccess: (xpGained) => {
+      queryClient.invalidateQueries(['habitLogs']);
+      queryClient.invalidateQueries(['xpTransactions']);
+      
       const sfxEnabled = userProfile?.sfxEnabled ?? true;
       triggerXPGain(xpGained, sfxEnabled);
     }
@@ -391,7 +429,7 @@ export default function Dashboard() {
           )}
         </OlimpoCard>
 
-        {/* Today's Tasks */}
+        {/* Today's Todo (Tasks + Habits) */}
         <OlimpoCard>
           <div className="flex items-center justify-between mb-4">
             <h3 
@@ -410,44 +448,95 @@ export default function Dashboard() {
             </OlimpoButton>
           </div>
 
-          {todayTasks.length === 0 ? (
-            <p className="text-sm text-[#9AA0A6] text-center py-4">
-              Nenhuma quest por aqui. Crie sua próxima tarefa.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {todayTasks.map(task => (
-                <div 
-                  key={task.id}
-                  className="flex items-center gap-3 p-3 bg-[#070A08] rounded-lg border border-[rgba(0,255,102,0.1)]"
-                >
-                  <button
-                    onClick={() => completeTaskMutation.mutate(task)}
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                      task.completed 
-                        ? 'bg-[#00FF66] border-[#00FF66]' 
-                        : 'border-[#9AA0A6] hover:border-[#00FF66]'
+          {(() => {
+            const incompleteTasks = todayTasks.filter(t => !t.completed);
+            
+            // Get today's pending habits
+            const todayWeekday = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][new Date().getDay()];
+            const pendingHabits = habits.filter(habit => {
+              if (habit.archived) return false;
+              
+              // Check if habit is valid for today
+              if (habit.frequencyType === 'daily') return true;
+              if (habit.frequencyType === 'weekdays' && habit.weekdays?.includes(todayWeekday)) return true;
+              if (habit.frequencyType === 'timesPerWeek') {
+                // For now, allow all days if timesPerWeek (could be enhanced)
+                return true;
+              }
+              return false;
+            }).filter(habit => {
+              // Check if not completed today
+              const completedToday = habitLogs.find(l => l.habitId === habit.id && l.date === today && l.completed);
+              return !completedToday;
+            });
+
+            const allItems = [
+              ...incompleteTasks.map(t => ({ ...t, type: 'task' })),
+              ...pendingHabits.map(h => ({ ...h, type: 'habit' }))
+            ];
+
+            return allItems.length === 0 ? (
+              <p className="text-sm text-[#9AA0A6] text-center py-4">
+                Tudo concluído! 🎯
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {allItems.map(item => (
+                  <div 
+                    key={item.type === 'task' ? `task-${item.id}` : `habit-${item.id}`}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                      item.type === 'task' && item.isOverdue
+                        ? 'bg-[rgba(255,59,59,0.05)] border-[rgba(255,59,59,0.3)]'
+                        : 'bg-[#070A08] border-[rgba(0,255,102,0.1)]'
                     }`}
                   >
-                    {task.completed && <Check className="w-3 h-3 text-black" />}
-                  </button>
-                  <div className="flex-1">
-                    <p className={`text-sm ${task.completed ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
-                      {task.title}
-                    </p>
+                    <button
+                      onClick={() => {
+                        if (item.type === 'task') {
+                          completeTaskMutation.mutate(item);
+                        } else {
+                          completeHabitMutation.mutate(item);
+                        }
+                      }}
+                      className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all border-[#9AA0A6] hover:border-[#00FF66]"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm text-[#E8E8E8]">
+                        {item.type === 'task' ? item.title : item.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {item.type === 'habit' && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
+                            Rotina
+                          </span>
+                        )}
+                        {item.type === 'task' && item.isOverdue && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
+                            ATRASADA
+                          </span>
+                        )}
+                        {item.type === 'task' && item.priority && (
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            item.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
+                            item.priority === 'medium' ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' :
+                            'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
+                          }`}>
+                            {item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Média' : 'Baixa'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-xs text-[#00FF66] font-mono">
+                      +{item.type === 'task' 
+                        ? (item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10))
+                        : (item.xpReward || 8)
+                      }
+                    </span>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded ${
-                    task.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
-                    task.priority === 'medium' ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' :
-                    'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
-                  }`}>
-                    {task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Média' : 'Baixa'}
-                  </span>
-                  <span className="text-xs text-[#00FF66] font-mono">+{task.xpReward || 10}</span>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
         </OlimpoCard>
       </div>
 
