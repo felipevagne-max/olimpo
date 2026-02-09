@@ -77,7 +77,7 @@ export default function TopBar() {
           <OlimpoLogo size={32} glow={false} />
         </div>
 
-        {/* Right: Titles + Notification Bell */}
+        {/* Right: Titles + Notification Bell + User */}
         <div className="flex items-center gap-2">
           <TitlePopover>
             <button className="p-2 rounded-full text-[#FFD400] hover:text-[#FFEE00] transition-all">
@@ -99,6 +99,7 @@ export default function TopBar() {
               <BellOff className="w-5 h-5" />
             )}
           </button>
+          <UserPopover />
         </div>
       </div>
     </div>

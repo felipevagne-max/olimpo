@@ -83,20 +83,25 @@ export default function Tasks() {
         completedAt: new Date().toISOString()
       });
       
-      await base44.entities.XPTransaction.create({
+      const baseXP = task.xpReward || 10;
+      const xpAmount = task.isOverdue ? Math.round(baseXP * 0.5) : baseXP;
+      
+      const { awardXp } = await import('@/components/xpSystem');
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: xpAmount,
         sourceType: 'task',
         sourceId: task.id,
-        amount: task.xpReward || 10,
-        note: `Tarefa: ${task.title}`
+        note: task.isOverdue ? `Tarefa atrasada: ${task.title} (x0.5)` : `Tarefa: ${task.title}`,
+        sfxEnabled
       });
       
-      return task.xpReward || 10;
+      return xpAmount;
     },
-    onSuccess: (xpGained) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 
@@ -108,27 +113,31 @@ export default function Tasks() {
         throw new Error('Already completed');
       }
       
+      const xpAmount = habit.xpReward || 8;
+      
       await base44.entities.HabitLog.create({
         habitId: habit.id,
         date: selectedDateStr,
         completed: true,
-        xpEarned: habit.xpReward || 8
+        xpEarned: xpAmount
       });
       
-      await base44.entities.XPTransaction.create({
+      const { awardXp } = await import('@/components/xpSystem');
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: xpAmount,
         sourceType: 'habit',
         sourceId: habit.id,
-        amount: habit.xpReward || 8,
-        note: `Hábito: ${habit.name}`
+        note: `Hábito: ${habit.name}`,
+        sfxEnabled
       });
       
-      return habit.xpReward || 8;
+      return xpAmount;
     },
-    onSuccess: (xpGained) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(xpGained, sfxEnabled);
     }
   });
 
