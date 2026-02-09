@@ -14,6 +14,7 @@ export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isChecking, setIsChecking] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
@@ -34,6 +35,17 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const sidebarCollapsed = userProfile?.sidebarCollapsed ?? false;
+
+  // Detect desktop breakpoint
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   useEffect(() => {
     // Initialize and check for overdue tasks with minimum 3s splash duration
@@ -83,14 +95,14 @@ export default function Layout({ children, currentPageName }) {
       <MatrixColumns opacity={0.05} />
       <TitleEquipEffect />
       <TopBar 
-        sidebarCollapsed={sidebarCollapsed} 
+        sidebarCollapsed={isDesktop ? sidebarCollapsed : false} 
         onToggleSidebar={() => toggleSidebarMutation.mutate(!sidebarCollapsed)}
       />
-      <BottomNav collapsed={sidebarCollapsed} />
+      <BottomNav collapsed={isDesktop ? sidebarCollapsed : false} />
       <div 
         className="min-h-screen bg-black relative overflow-hidden transition-all duration-200"
         style={{
-          paddingLeft: sidebarCollapsed ? '72px' : '256px'
+          paddingLeft: isDesktop ? (sidebarCollapsed ? '72px' : '256px') : '0'
         }}
       >
         <style>{`
@@ -136,6 +148,19 @@ export default function Layout({ children, currentPageName }) {
         <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
         
+        /* Global box-sizing reset */
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        html, body, #root {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+          margin: 0;
+          padding: 0;
+        }
+
         :root {
           --olimpo-bg: #000000;
           --olimpo-surface: #0B0F0C;
@@ -152,6 +177,12 @@ export default function Layout({ children, currentPageName }) {
           background-color: var(--olimpo-bg);
           color: var(--olimpo-text);
           font-family: 'Inter', sans-serif;
+        }
+
+        /* Prevent wide images/elements from breaking layout */
+        img {
+          max-width: 100%;
+          height: auto;
         }
 
         /* Custom scrollbar */
