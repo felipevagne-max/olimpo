@@ -15,7 +15,7 @@ const navItems = [
   { name: 'Finanças', page: 'Finance', icon: Wallet },
 ];
 
-export default function BottomNav() {
+export default function BottomNav({ collapsed = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
@@ -28,8 +28,13 @@ export default function BottomNav() {
   const unreadCount = insights.filter(i => !i.read).length;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50 lg:left-0 lg:top-0 lg:bottom-0 lg:w-64 lg:border-r lg:border-t-0">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-1 lg:flex-col lg:h-auto lg:max-w-none lg:pt-20 lg:gap-1 lg:px-2">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50 lg:left-0 lg:top-0 lg:bottom-0 lg:border-r lg:border-t-0 transition-all duration-200"
+      style={{
+        width: collapsed ? '72px' : '256px'
+      }}
+    >
+      <div className={`flex justify-around items-center h-16 max-w-lg mx-auto px-1 lg:flex-col lg:h-auto lg:max-w-none lg:pt-20 lg:gap-1 ${collapsed ? 'lg:px-1' : 'lg:px-2'}`}>
         {navItems.map((item) => {
           const isActive = currentPath.includes(item.page);
           const Icon = item.icon;
@@ -41,7 +46,9 @@ export default function BottomNav() {
               to={createPageUrl(item.page)}
               className={cn(
                 "flex flex-col items-center justify-center py-2 px-0.5 flex-1 min-w-0 rounded-lg transition-all duration-150 relative",
-                "lg:flex-row lg:justify-start lg:w-full lg:px-4 lg:py-3 lg:gap-3",
+                collapsed 
+                  ? "lg:flex-col lg:justify-center lg:w-full lg:px-1 lg:py-3 lg:gap-0.5"
+                  : "lg:flex-row lg:justify-start lg:w-full lg:px-4 lg:py-3 lg:gap-3",
                 isOracle 
                   ? "text-[#00FF66]"
                   : isActive 
@@ -49,6 +56,7 @@ export default function BottomNav() {
                     : "text-[#9AA0A6] hover:text-[#00FF66] hover:bg-[rgba(0,255,102,0.05)]"
               )}
               style={isOracle ? { filter: 'drop-shadow(0 0 4px rgba(0,255,102,0.3))' } : undefined}
+              title={collapsed ? item.name : undefined}
             >
               <div className={cn(
                 "p-1.5 rounded-lg transition-all duration-150",
@@ -58,18 +66,25 @@ export default function BottomNav() {
               </div>
               {isOracle && unreadCount > 0 && (
                 <div 
-                  className="absolute top-1 right-1/2 translate-x-3 w-4 h-4 bg-[#00FF66] text-black rounded-full flex items-center justify-center text-[8px] font-bold lg:static lg:translate-x-0 lg:ml-auto"
+                  className={cn(
+                    "bg-[#00FF66] text-black rounded-full flex items-center justify-center text-[8px] font-bold",
+                    collapsed
+                      ? "absolute -top-1 -right-1 w-4 h-4 lg:static lg:absolute lg:-top-1 lg:-right-1"
+                      : "absolute top-1 right-1/2 translate-x-3 w-4 h-4 lg:static lg:translate-x-0 lg:ml-auto"
+                  )}
                   style={{ fontFamily: 'JetBrains Mono, monospace' }}
                 >
                   {unreadCount}
                 </div>
               )}
-              <span className={cn(
-                "text-[9px] mt-0.5 font-medium truncate max-w-full lg:text-sm lg:mt-0",
-                isActive ? "text-[#00FF66]" : "text-[#9AA0A6]"
-              )}>
-                {item.name}
-              </span>
+              {!collapsed && (
+                <span className={cn(
+                  "text-[9px] mt-0.5 font-medium truncate max-w-full lg:text-sm lg:mt-0",
+                  isActive ? "text-[#00FF66]" : "text-[#9AA0A6]"
+                )}>
+                  {item.name}
+                </span>
+              )}
             </Link>
           );
         })}

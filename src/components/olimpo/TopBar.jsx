@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Award, Bell, BellOff } from 'lucide-react';
+import { Award, Bell, BellOff, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import OlimpoLogo from './OlimpoLogo';
 import LevelPopover from './LevelPopover';
 import TitlePopover from '../titles/TitlePopover';
@@ -10,7 +10,7 @@ import NotificationsPopover from './NotificationsPopover';
 import { getLevelFromXP } from './levelSystem';
 import { toast } from 'sonner';
 
-export default function TopBar() {
+export default function TopBar({ sidebarCollapsed, onToggleSidebar }) {
   const queryClient = useQueryClient();
 
   const { data: xpTransactions = [] } = useQuery({
@@ -43,7 +43,20 @@ export default function TopBar() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-[rgba(0,255,102,0.18)]">
-      <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto">
+      <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto lg:max-w-none">
+        {/* Desktop: Sidebar Toggle Button */}
+        <button
+          onClick={onToggleSidebar}
+          className="hidden lg:block p-2 rounded-lg text-[#9AA0A6] hover:text-[#00FF66] hover:bg-[rgba(0,255,102,0.1)] transition-all"
+          title={sidebarCollapsed ? 'Mostrar menu' : 'Ocultar menu'}
+        >
+          {sidebarCollapsed ? (
+            <ChevronsRight className="w-5 h-5" />
+          ) : (
+            <ChevronsLeft className="w-5 h-5" />
+          )}
+        </button>
+
         {/* Left: Level Badge with Popover */}
         <LevelPopover levelInfo={levelInfo} xpTotal={xpTotal}>
           <button className="flex flex-col items-start gap-0.5 bg-[#0B0F0C] px-3 py-1.5 rounded-lg border border-[rgba(0,255,102,0.18)] hover:bg-[rgba(0,255,102,0.1)] transition-all">

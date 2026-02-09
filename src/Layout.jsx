@@ -2,14 +2,38 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import MatrixColumns from '@/components/olimpo/MatrixColumns';
 import TitleEquipEffect from '@/components/olimpo/TitleEquipEffect';
 import SplashScreen from '@/components/olimpo/SplashScreen';
+import TopBar from '@/components/olimpo/TopBar';
+import BottomNav from '@/components/olimpo/BottomNav';
 
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isChecking, setIsChecking] = useState(true);
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.list();
+      return profiles[0] || null;
+    }
+  });
+
+  const toggleSidebarMutation = useMutation({
+    mutationFn: async (collapsed) => {
+      if (!userProfile?.id) return;
+      return base44.entities.UserProfile.update(userProfile.id, { sidebarCollapsed: collapsed });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userProfile']);
+    }
+  });
+
+  const sidebarCollapsed = userProfile?.sidebarCollapsed ?? false;
 
   useEffect(() => {
     // Initialize and check for overdue tasks with minimum 3s splash duration
@@ -58,7 +82,17 @@ export default function Layout({ children, currentPageName }) {
     <>
       <MatrixColumns opacity={0.05} />
       <TitleEquipEffect />
-      <div className="min-h-screen bg-black relative overflow-hidden">
+      <TopBar 
+        sidebarCollapsed={sidebarCollapsed} 
+        onToggleSidebar={() => toggleSidebarMutation.mutate(!sidebarCollapsed)}
+      />
+      <BottomNav collapsed={sidebarCollapsed} />
+      <div 
+        className="min-h-screen bg-black relative overflow-hidden transition-all duration-200"
+        style={{
+          paddingLeft: sidebarCollapsed ? '72px' : '256px'
+        }}
+      >
         <style>{`
           /* Desktop responsive container */
           @media (min-width: 1024px) {
@@ -67,17 +101,23 @@ export default function Layout({ children, currentPageName }) {
               margin-left: auto;
               margin-right: auto;
             }
-            
+
             .olimpo-grid-2 {
               display: grid;
               grid-template-columns: repeat(2, 1fr);
               gap: 1rem;
             }
-            
+
             .olimpo-grid-4 {
               display: grid;
               grid-template-columns: repeat(4, 1fr);
               gap: 1rem;
+            }
+          }
+
+          @media (max-width: 1023px) {
+            body {
+              padding-left: 0 !important;
             }
           }
         `}</style>
