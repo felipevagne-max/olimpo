@@ -223,15 +223,7 @@ export default function Community() {
             <LevelDetails />
           </div>
 
-          <div>
-            <h3 
-              className="text-sm font-semibold text-[#E8E8E8] mb-3"
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
-              RANKING TOP 10
-            </h3>
-            <RankingList />
-          </div>
+          <RankingList />
         </div>
       </div>
 
