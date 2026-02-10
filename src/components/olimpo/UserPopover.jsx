@@ -108,6 +108,7 @@ export default function UserPopover() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['userProfile']);
+      queryClient.invalidateQueries(['user']);
       setIsOpen(false);
       
       // Play lightning sound + vibration if enabled
@@ -125,6 +126,7 @@ export default function UserPopover() {
     onError: (error) => {
       toast.error(error.message);
       setShowConfirm(false);
+      setIsOpen(false); // Close popover on error
     }
   });
 
@@ -200,7 +202,15 @@ export default function UserPopover() {
 
   const handleSaveClick = () => {
     const trimmed = username.trim();
-    if (!trimmed || trimmed === userProfile?.displayName) return;
+    
+    if (!trimmed) {
+      toast.error('Nome não pode ser vazio');
+      return;
+    }
+    
+    if (trimmed === userProfile?.displayName) {
+      return;
+    }
 
     // Check 24h lock before showing confirmation
     if (userProfile?.username_last_changed_at) {
@@ -210,6 +220,7 @@ export default function UserPopover() {
       if (hoursSince < 24) {
         const hoursRemaining = Math.ceil(24 - hoursSince);
         toast.error(`Não permito, tente em ${hoursRemaining} ${hoursRemaining === 1 ? 'hora' : 'horas'}.`);
+        setIsOpen(false); // Close popover
         return;
       }
     }

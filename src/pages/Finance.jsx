@@ -102,25 +102,38 @@ export default function Finance() {
   // SALDO MÊS (renda - gastos - investmentTransfers)
   const saldoMes = renda - gastos - investmentTransfers;
 
-  // SEU CAPITAL (all-time, excluding PERDIDO)
-  const rendaAcumulada = activeExpenses
-    .filter(e => e.type === 'receita' && e.incomeSubstatus !== 'PERDIDO')
+  // SEU CAPITAL (month calculation)
+  // ENTRADAS: RECEBIDO (pago) + PROGRAMADO (planned with substatus PROGRAMADO)
+  const entradasMes = monthExpenses
+    .filter(e => {
+      if (e.type !== 'receita') return false;
+      if (e.incomeSubstatus === 'PERDIDO') return false;
+      if (e.incomeSubstatus === 'ADIADO') return false;
+      if (e.incomeSubstatus === 'AGUARDANDO') return false;
+      
+      // Include RECEBIDO (paid)
+      if (e.status === 'pago') return true;
+      
+      // Include PROGRAMADO (planned with substatus PROGRAMADO)
+      if (e.status === 'programado' && e.incomeSubstatus === 'PROGRAMADO') return true;
+      
+      return false;
+    })
     .reduce((sum, e) => sum + (e.amount || 0), 0);
   
-  const investidoAcumulado = activeExpenses
-    .filter(e => e.isInvestment === true)
-    .reduce((sum, e) => sum + (e.amount || 0), 0);
-  
-  const despesasTotal = activeExpenses
-    .filter(e => 
-      e.type === 'despesa' && 
-      !e.isCardBillPayment && 
-      !e.isInvestment
-    )
+  // SAÍDAS: PAGO + PROGRAMADO (excluding card bill payments)
+  const saidasMes = monthExpenses
+    .filter(e => {
+      if (e.type !== 'despesa') return false;
+      if (e.isCardBillPayment) return false;
+      
+      // Include both paid and planned expenses
+      return e.status === 'pago' || e.status === 'programado';
+    })
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // Capital = caixa + investimentos
-  const capital = rendaAcumulada - despesasTotal + investidoAcumulado;
+  // Capital = Entradas - Saídas
+  const capital = entradasMes - saidasMes;
 
   if (isLoading) {
     return (
@@ -224,8 +237,8 @@ export default function Finance() {
         {/* SEU CAPITAL */}
         <OlimpoCard className="mb-6 p-5 border-[rgba(0,255,102,0.3)]">
           <div className="text-center">
-            <p className="text-sm text-[#9AA0A6] mb-1">Seu Capital</p>
-            <p className="text-xs text-[#9AA0A6] mb-3">Panorama geral do seu dinheiro</p>
+            <p className="text-sm text-[#9AA0A6] mb-1">Seu Capital (Mês)</p>
+            <p className="text-xs text-[#9AA0A6] mb-3">Entradas - Saídas do período</p>
             <p 
               className="text-3xl font-bold"
               style={{ 
