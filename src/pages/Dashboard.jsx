@@ -113,6 +113,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.CheckIn.list()
   });
 
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list()
+  });
+
   const todayCheckIn = checkIns.find(c => c.date === today);
   const hasCheckedInToday = !!todayCheckIn;
 
@@ -816,11 +821,6 @@ export default function Dashboard() {
            });
 
            // Get ALL today's financial movements
-           const { data: expenses = [] } = useQuery({
-             queryKey: ['expenses'],
-             queryFn: () => base44.entities.Expense.list()
-           });
-
            const todayExpenses = expenses.filter(e => {
              if (e.deleted_at) return false;
              return e.date === today;
