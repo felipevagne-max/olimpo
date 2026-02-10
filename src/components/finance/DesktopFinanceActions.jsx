@@ -36,6 +36,17 @@ const ACTIONS = [
 ];
 
 export default function DesktopFinanceActions({ onAction }) {
+  const handleClick = (actionId) => {
+    // Map to the correct sheet names used in Finance.jsx
+    const sheetMap = {
+      'income': 'receita',
+      'expense': 'despesa',
+      'investment': 'investimento',
+      'card': 'cartao'
+    };
+    onAction(sheetMap[actionId] || actionId);
+  };
+
   return (
     <div className="hidden lg:grid lg:grid-cols-4 gap-3 mb-6">
       {ACTIONS.map(action => {
@@ -43,8 +54,8 @@ export default function DesktopFinanceActions({ onAction }) {
         return (
           <button
             key={action.id}
-            onClick={() => onAction(action.id)}
-            className="p-4 rounded-xl transition-all hover:scale-105"
+            onClick={() => handleClick(action.id)}
+            className="p-4 rounded-xl transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
             style={{
               backgroundColor: action.bgColor,
               borderLeft: `3px solid ${action.color}`,

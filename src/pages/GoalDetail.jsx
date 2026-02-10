@@ -10,7 +10,7 @@ import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import GoalActionSheet from '@/components/goals/GoalActionSheet';
-import GoalCompletionModal from '@/components/goals/GoalCompletionModal';
+import GoalLightningEffect from '@/components/goals/GoalLightningEffect';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { ArrowLeft, Check, Target, Calendar, Zap, Trophy, Plus, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,11 +20,11 @@ export default function GoalDetail() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const goalId = searchParams.get('id');
+  const shouldComplete = searchParams.get('complete') === 'true';
 
   const [updateValue, setUpdateValue] = useState('');
   const [showActionSheet, setShowActionSheet] = useState(false);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [wasIncomplete, setWasIncomplete] = useState(false);
+  const [showLightning, setShowLightning] = useState(false);
 
   const { data: goal, isLoading } = useQuery({
     queryKey: ['goal', goalId],
@@ -67,37 +67,105 @@ export default function GoalDetail() {
     enabled: !!goalId
   });
 
+  // Auto-complete if coming from Goals page with complete=true
+  useEffect(() => {
+    if (shouldComplete && goal && !showLightning) {
+      const progress = getProgress();
+      if (progress.percent >= 100) {
+        completeGoalMutation.mutate();
+      }
+    }
+  }, [shouldComplete, goal, showLightning]);
+
   const updateProgressMutation = useMutation({
     mutationFn: async (newValue) => {
       const prevValue = goal?.currentValue || 0;
-      await base44.entities.Goal.update(goalId, { currentValue: newValue });
       
-      // Award progress XP
-      const { awardXp } = await import('@/components/xpSystem');
-      const GOAL_PROGRESS_XP = 5;
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      // Check if crossing 100%
+      const prevPercent = goal?.targetValue ? (prevValue / goal.targetValue) * 100 : 0;
+      const newPercent = goal?.targetValue ? (newValue / goal.targetValue) * 100 : 0;
+      const crossedCompletion = prevPercent < 100 && newPercent >= 100;
       
-      await awardXp({
-        amount: GOAL_PROGRESS_XP,
-        sourceType: 'goal',
-        sourceId: goalId,
-        note: 'Progresso na meta',
-        sfxEnabled
-      });
-      
-      return { newValue, prevValue, xpGained: GOAL_PROGRESS_XP };
+      if (crossedCompletion) {
+        // Delete goal and award completion XP
+        await base44.entities.Goal.update(goalId, { 
+          deleted_at: new Date().toISOString(),
+          status: 'completed',
+          currentValue: newValue
+        });
+        
+        const { awardXp } = await import('@/components/xpSystem');
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        
+        await awardXp({
+          amount: goal.xpOnComplete || 200,
+          sourceType: 'goal',
+          sourceId: goalId,
+          note: `Meta concluída: ${goal.title}`,
+          sfxEnabled
+        });
+        
+        return { newValue, prevValue, xpGained: goal.xpOnComplete || 200, completed: true };
+      } else {
+        // Normal progress update
+        await base44.entities.Goal.update(goalId, { currentValue: newValue });
+        
+        const { awardXp } = await import('@/components/xpSystem');
+        const GOAL_PROGRESS_XP = 5;
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        
+        await awardXp({
+          amount: GOAL_PROGRESS_XP,
+          sourceType: 'goal',
+          sourceId: goalId,
+          note: 'Progresso na meta',
+          sfxEnabled
+        });
+        
+        return { newValue, prevValue, xpGained: GOAL_PROGRESS_XP, completed: false };
+      }
     },
-    onSuccess: ({ newValue, prevValue }) => {
+    onSuccess: ({ completed }) => {
       queryClient.invalidateQueries(['goal', goalId]);
+      queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
       setUpdateValue('');
       
-      // Check if just crossed 100%
-      const prevPercent = goal?.targetValue ? (prevValue / goal.targetValue) * 100 : 0;
-      const newPercent = goal?.targetValue ? (newValue / goal.targetValue) * 100 : 0;
-      
-      if (prevPercent < 100 && newPercent >= 100) {
-        setShowCompletionModal(true);
+      if (completed) {
+        // Show lightning effect and play sound
+        setShowLightning(true);
+        
+        // Play 16-bit lightning sound
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        if (sfxEnabled) {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const playLightningSFX = () => {
+            // 16-bit lightning/electric sound
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+          };
+          
+          playLightningSFX();
+          setTimeout(playLightningSFX, 100);
+        }
+        
+        // Navigate back after effect
+        setTimeout(() => {
+          navigate(createPageUrl('Goals'));
+        }, 1500);
       }
     }
   });
@@ -117,58 +185,150 @@ export default function GoalDetail() {
         completedAt: new Date().toISOString()
       });
       
-      // Award XP using centralized function
-      const { awardXp } = await import('@/components/xpSystem');
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      
-      await awardXp({
-        amount: milestone.xpReward || 30,
-        sourceType: 'milestone',
-        sourceId: milestone.id,
-        note: `Etapa: ${milestone.title}`,
-        sfxEnabled
-      });
-      
-      return { xpGained: milestone.xpReward || 30, prevCompleted };
-    },
-    onSuccess: ({ xpGained, prevCompleted }) => {
-      queryClient.invalidateQueries(['milestones', goalId]);
-      queryClient.invalidateQueries(['xpTransactions']);
-      
       // Check if just crossed 100%
       const newCompleted = prevCompleted + 1;
       const totalMilestones = milestones.length;
       const prevPercent = totalMilestones > 0 ? (prevCompleted / totalMilestones) * 100 : 0;
       const newPercent = totalMilestones > 0 ? (newCompleted / totalMilestones) * 100 : 0;
+      const crossedCompletion = prevPercent < 100 && newPercent >= 100;
       
-      if (prevPercent < 100 && newPercent >= 100) {
-        setShowCompletionModal(true);
+      if (crossedCompletion) {
+        // Delete goal and award completion XP
+        await base44.entities.Goal.update(goalId, { 
+          deleted_at: new Date().toISOString(),
+          status: 'completed'
+        });
+        
+        const { awardXp } = await import('@/components/xpSystem');
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        
+        await awardXp({
+          amount: goal.xpOnComplete || 200,
+          sourceType: 'goal',
+          sourceId: goalId,
+          note: `Meta concluída: ${goal.title}`,
+          sfxEnabled
+        });
+        
+        return { xpGained: goal.xpOnComplete || 200, prevCompleted, completed: true };
+      } else {
+        // Award milestone XP
+        const { awardXp } = await import('@/components/xpSystem');
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        
+        await awardXp({
+          amount: milestone.xpReward || 30,
+          sourceType: 'milestone',
+          sourceId: milestone.id,
+          note: `Etapa: ${milestone.title}`,
+          sfxEnabled
+        });
+        
+        return { xpGained: milestone.xpReward || 30, prevCompleted, completed: false };
+      }
+    },
+    onSuccess: ({ completed }) => {
+      queryClient.invalidateQueries(['milestones', goalId]);
+      queryClient.invalidateQueries(['goal', goalId]);
+      queryClient.invalidateQueries(['goals']);
+      queryClient.invalidateQueries(['xpTransactions']);
+      
+      if (completed) {
+        // Show lightning effect and play sound
+        setShowLightning(true);
+        
+        // Play 16-bit lightning sound
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        if (sfxEnabled) {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const playLightningSFX = () => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+          };
+          
+          playLightningSFX();
+          setTimeout(playLightningSFX, 100);
+        }
+        
+        // Navigate back after effect
+        setTimeout(() => {
+          navigate(createPageUrl('Goals'));
+        }, 1500);
       }
     }
   });
 
   const completeGoalMutation = useMutation({
     mutationFn: async () => {
-      await base44.entities.Goal.update(goalId, { status: 'completed' });
-      await base44.entities.XPTransaction.create({
+      await base44.entities.Goal.update(goalId, { 
+        deleted_at: new Date().toISOString(),
+        status: 'completed'
+      });
+      
+      const { awardXp } = await import('@/components/xpSystem');
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: goal.xpOnComplete || 200,
         sourceType: 'goal',
         sourceId: goalId,
-        amount: goal.xpOnComplete || 200,
-        note: `Meta concluída: ${goal.title}`
+        note: `Meta concluída: ${goal.title}`,
+        sfxEnabled
       });
       
       return goal.xpOnComplete || 200;
     },
-    onSuccess: (xpGained) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['goal', goalId]);
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
       
-      // Trigger XP gain effect
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(xpGained, sfxEnabled);
+      // Show lightning effect
+      setShowLightning(true);
       
-      toast.success(`Meta concluída! +${xpGained} XP`);
+      // Play 16-bit lightning sound
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      if (sfxEnabled) {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const playLightningSFX = () => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.type = 'sawtooth';
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+          
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.15);
+        };
+        
+        playLightningSFX();
+        setTimeout(playLightningSFX, 100);
+      }
+      
+      // Navigate back after effect
+      setTimeout(() => {
+        navigate(createPageUrl('Goals'));
+      }, 1500);
     }
   });
 
@@ -201,63 +361,7 @@ export default function GoalDetail() {
 
   // Track completion state (handled in mutations now)
 
-  const handleRestartGoal = async () => {
-    try {
-      if (goal.goalType === 'checklist') {
-        // Reset all milestones
-        for (const m of milestones) {
-          if (m.completed) {
-            await base44.entities.GoalMilestone.update(m.id, { 
-              completed: false,
-              completedAt: null 
-            });
-          }
-        }
-      } else {
-        // Reset accumulative goal
-        await base44.entities.Goal.update(goalId, { currentValue: 0 });
-      }
-      
-      queryClient.invalidateQueries(['goal', goalId]);
-      queryClient.invalidateQueries(['milestones', goalId]);
-      setShowCompletionModal(false);
-      toast.success('Pronto.');
-    } catch (error) {
-      toast.error('Erro ao reiniciar meta');
-    }
-  };
 
-  const handleCompleteGoal = async () => {
-    try {
-      await base44.entities.Goal.update(goalId, { 
-        status: 'archived',
-        deleted_at: new Date().toISOString()
-      });
-      
-      await base44.entities.XPTransaction.create({
-        sourceType: 'goal',
-        sourceId: goalId,
-        amount: goal.xpOnComplete || 200,
-        note: `Meta concluída: ${goal.title}`
-      });
-      
-      queryClient.invalidateQueries(['goals']);
-      queryClient.invalidateQueries(['xpTransactions']);
-      
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(goal.xpOnComplete || 200, sfxEnabled);
-      
-      setShowCompletionModal(false);
-      toast.success('Pronto.');
-      
-      // Navigate back to goals list
-      setTimeout(() => {
-        navigate(createPageUrl('Goals'));
-      }, 1000);
-    } catch (error) {
-      toast.error('Erro ao concluir meta');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-black pb-8">
@@ -465,11 +569,9 @@ export default function GoalDetail() {
         goalId={goalId}
       />
 
-      <GoalCompletionModal
-        open={showCompletionModal}
-        goal={goal}
-        onRestart={handleRestartGoal}
-        onComplete={handleCompleteGoal}
+      <GoalLightningEffect 
+        show={showLightning}
+        onComplete={() => setShowLightning(false)}
       />
 
       <XPGainManager />

@@ -35,7 +35,6 @@ export default function Goals() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState('active');
   const [deleteId, setDeleteId] = useState(null);
-  const progressingGoalRef = useRef(null);
 
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['goals'],
@@ -78,6 +77,16 @@ export default function Goals() {
       const prevValue = goal.currentValue || 0;
       const newValue = prevValue + 1;
       
+      // Check if crossing 100%
+      const prevPercent = goal.targetValue ? (prevValue / goal.targetValue) * 100 : 0;
+      const newPercent = goal.targetValue ? (newValue / goal.targetValue) * 100 : 0;
+      const crossedCompletion = prevPercent < 100 && newPercent >= 100;
+      
+      if (crossedCompletion) {
+        // Redirect to detail page which will handle the completion
+        return { redirect: true, goalId: goal.id };
+      }
+      
       await base44.entities.Goal.update(goal.id, {
         currentValue: newValue
       });
@@ -95,28 +104,25 @@ export default function Goals() {
         sfxEnabled
       });
 
-      return { xpGained: GOAL_PROGRESS_XP, prevValue, newValue, targetValue: goal.targetValue };
+      return { xpGained: GOAL_PROGRESS_XP, redirect: false };
     },
-    onSuccess: ({ xpGained, prevValue, newValue, targetValue }) => {
+    onSuccess: ({ redirect, goalId, xpGained }) => {
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
-      toast.success(`+${xpGained} XP`);
       
-      // Check if just crossed 100%
-      const prevPercent = targetValue ? (prevValue / targetValue) * 100 : 0;
-      const newPercent = targetValue ? (newValue / targetValue) * 100 : 0;
-      
-      if (prevPercent < 100 && newPercent >= 100 && progressingGoalRef.current) {
-        // Goal completed! Navigate to detail to show modal
-        setTimeout(() => {
-          navigate(createPageUrl('GoalDetail') + `?id=${progressingGoalRef.current.id}`);
-          progressingGoalRef.current = null;
-        }, 800);
+      if (redirect) {
+        // Navigate to detail page to trigger completion
+        navigate(createPageUrl('GoalDetail') + `?id=${goalId}&complete=true`);
+      } else {
+        toast.success(`+${xpGained} XP`);
       }
     }
   });
 
   const filteredGoals = goals.filter(g => {
+    // Don't show deleted goals
+    if (g.deleted_at) return false;
+    
     if (filter === 'active') return g.status === 'active';
     if (filter === 'completed') return g.status === 'completed';
     if (filter === 'archived') return g.status === 'archived';
@@ -316,7 +322,6 @@ export default function Goals() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        progressingGoalRef.current = goal;
                         progressGoalMutation.mutate(goal);
                       }}
                       className="mt-3 w-full py-2 bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.3)] rounded-lg text-[#00FF66] text-sm font-semibold hover:bg-[rgba(0,255,102,0.15)] transition-all flex items-center justify-center gap-2"
