@@ -51,7 +51,7 @@ export default function Layout({ children, currentPageName }) {
     // Initialize and check for overdue tasks with minimum 3s splash duration
     const init = async () => {
       const startTime = Date.now();
-      const MIN_SPLASH_DURATION = 3000;
+      const MIN_SPLASH_DURATION = 2000;
 
       try {
         const today = format(new Date(), 'yyyy-MM-dd');
@@ -92,7 +92,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <>
-      <MatrixColumns opacity={0.22} />
+      <MatrixColumns opacity={0.15} />
       <TitleEquipEffect />
       <TopBar 
         sidebarCollapsed={isDesktop ? sidebarCollapsed : false} 

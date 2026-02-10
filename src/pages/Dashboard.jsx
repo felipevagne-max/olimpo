@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -230,25 +230,49 @@ export default function Dashboard() {
     }
   });
 
-  // Calculations
-  const totalXP = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-  const levelInfo = getLevelFromXP(totalXP);
+  // Calculations (memoized for performance)
+  const totalXP = useMemo(() => 
+    xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0),
+    [xpTransactions]
+  );
+  const levelInfo = useMemo(() => getLevelFromXP(totalXP), [totalXP]);
 
-  const monthlyXP = xpTransactions
-    .filter(t => t.created_date?.startsWith(currentMonth))
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+  const monthlyXP = useMemo(() => 
+    xpTransactions
+      .filter(t => t.created_date?.startsWith(currentMonth))
+      .reduce((sum, t) => sum + (t.amount || 0), 0),
+    [xpTransactions, currentMonth]
+  );
   const monthlyTargetXP = userProfile?.monthlyTargetXP || 2000;
   const monthlyProgress = (monthlyXP / monthlyTargetXP) * 100;
 
-  const todayTasks = tasks.filter(t => t.date === today && !t.archived);
-  const completedTodayTasks = todayTasks.filter(t => t.completed);
-  const todayHabitLogs = habitLogs.filter(l => l.date === today && l.completed);
-  const activeGoals = goals.filter(g => g.status === 'active');
-  const completedGoals = goals.filter(g => g.status === 'completed');
+  const todayTasks = useMemo(() => 
+    tasks.filter(t => t.date === today && !t.archived),
+    [tasks, today]
+  );
+  const completedTodayTasks = useMemo(() => 
+    todayTasks.filter(t => t.completed),
+    [todayTasks]
+  );
+  const todayHabitLogs = useMemo(() => 
+    habitLogs.filter(l => l.date === today && l.completed),
+    [habitLogs, today]
+  );
+  const activeGoals = useMemo(() => 
+    goals.filter(g => g.status === 'active'),
+    [goals]
+  );
+  const completedGoals = useMemo(() => 
+    goals.filter(g => g.status === 'completed'),
+    [goals]
+  );
 
-  const todayXP = xpTransactions
-    .filter(t => t.created_date?.startsWith(today))
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+  const todayXP = useMemo(() => 
+    xpTransactions
+      .filter(t => t.created_date?.startsWith(today))
+      .reduce((sum, t) => sum + (t.amount || 0), 0),
+    [xpTransactions, today]
+  );
 
   // Month calculations
   const now = new Date();
@@ -280,8 +304,14 @@ export default function Dashboard() {
     return logDate >= monthStart && logDate <= now;
   }).length;
 
-  const habitCompletionRate = expectedHabits > 0 ? doneHabits / expectedHabits : 0;
-  const habitScore = expectedHabits > 0 ? Math.round(10 * habitCompletionRate) : null;
+  const habitCompletionRate = useMemo(() => 
+    expectedHabits > 0 ? doneHabits / expectedHabits : 0,
+    [expectedHabits, doneHabits]
+  );
+  const habitScore = useMemo(() => 
+    expectedHabits > 0 ? Math.round(10 * habitCompletionRate) : null,
+    [expectedHabits, habitCompletionRate]
+  );
 
   // B) EXECUÇÃO ON - Nota 0-10
   const monthTasks = tasks.filter(t => {
@@ -292,13 +322,23 @@ export default function Dashboard() {
 
   const doneTasks = monthTasks.filter(t => t.completed).length;
   const totalTasks = monthTasks.length;
-  const taskCompletionRate = totalTasks > 0 ? doneTasks / totalTasks : 0;
+  const taskCompletionRate = useMemo(() => 
+    totalTasks > 0 ? doneTasks / totalTasks : 0,
+    [doneTasks, totalTasks]
+  );
   
-  const overduePendingTasks = monthTasks.filter(t => !t.completed && t.isOverdue).length;
-  const overduePenalty = Math.min(2, overduePendingTasks / 5);
-  const executionScore = totalTasks > 0 
-    ? Math.max(0, Math.round(10 * taskCompletionRate) - overduePenalty) 
-    : null;
+  const overduePendingTasks = useMemo(() => 
+    monthTasks.filter(t => !t.completed && t.isOverdue).length,
+    [monthTasks]
+  );
+  const overduePenalty = useMemo(() => 
+    Math.min(2, overduePendingTasks / 5),
+    [overduePendingTasks]
+  );
+  const executionScore = useMemo(() => 
+    totalTasks > 0 ? Math.max(0, Math.round(10 * taskCompletionRate) - overduePenalty) : null,
+    [totalTasks, taskCompletionRate, overduePenalty]
+  );
 
   // C) METAS DO MÊS - Percentual
   const goalsInMonth = goals.filter(g => {
@@ -311,35 +351,54 @@ export default function Dashboard() {
     return createdDate >= monthStart && createdDate <= endOfDay(now);
   });
 
-  const completedGoalsMonth = goalsInMonth.filter(g => g.status === 'completed').length;
+  const completedGoalsMonth = useMemo(() => 
+    goalsInMonth.filter(g => g.status === 'completed').length,
+    [goalsInMonth]
+  );
   const totalGoalsMonth = goalsInMonth.length;
-  const goalsPercent = totalGoalsMonth > 0 
-    ? Math.round(100 * completedGoalsMonth / totalGoalsMonth) 
-    : null;
+  const goalsPercent = useMemo(() => 
+    totalGoalsMonth > 0 ? Math.round(100 * completedGoalsMonth / totalGoalsMonth) : null,
+    [totalGoalsMonth, completedGoalsMonth]
+  );
 
-  // D) XP NO MÊS
-  const xpMonth = xpTransactions.filter(t => {
-    if (!t.created_date) return false;
-    const txDate = new Date(t.created_date);
-    return txDate >= monthStart && txDate <= now;
-  }).reduce((sum, t) => sum + (t.amount || 0), 0);
+  // D) XP NO MÊS (memoized)
+  const xpMonth = useMemo(() => 
+    xpTransactions.filter(t => {
+      if (!t.created_date) return false;
+      const txDate = new Date(t.created_date);
+      return txDate >= monthStart && txDate <= now;
+    }).reduce((sum, t) => sum + (t.amount || 0), 0),
+    [xpTransactions, monthStart, now]
+  );
 
-  // BEM-ESTAR MÉDIO
-  const monthCheckIns = checkIns.filter(c => {
-    if (!c.date) return false;
-    const checkDate = new Date(c.date);
-    return checkDate >= monthStart && checkDate <= now;
-  });
+  // BEM-ESTAR MÉDIO (memoized)
+  const monthCheckIns = useMemo(() => 
+    checkIns.filter(c => {
+      if (!c.date) return false;
+      const checkDate = new Date(c.date);
+      return checkDate >= monthStart && checkDate <= now;
+    }),
+    [checkIns, monthStart, now]
+  );
 
-  const avgSleep = monthCheckIns.length > 0
-    ? (monthCheckIns.reduce((sum, c) => sum + (c.sleepScore || 0), 0) / monthCheckIns.length).toFixed(1)
-    : null;
-  const avgProductivity = monthCheckIns.length > 0
-    ? (monthCheckIns.reduce((sum, c) => sum + (c.productivityScore || 0), 0) / monthCheckIns.length).toFixed(1)
-    : null;
-  const avgMood = monthCheckIns.length > 0
-    ? (monthCheckIns.reduce((sum, c) => sum + (c.moodScore || 0), 0) / monthCheckIns.length).toFixed(1)
-    : null;
+  const avgSleep = useMemo(() => 
+    monthCheckIns.length > 0
+      ? (monthCheckIns.reduce((sum, c) => sum + (c.sleepScore || 0), 0) / monthCheckIns.length).toFixed(1)
+      : null,
+    [monthCheckIns]
+  );
+  const avgProductivity = useMemo(() => 
+    monthCheckIns.length > 0
+      ? (monthCheckIns.reduce((sum, c) => sum + (c.productivityScore || 0), 0) / monthCheckIns.length).toFixed(1)
+      : null,
+    [monthCheckIns]
+  );
+  const avgMood = useMemo(() => 
+    monthCheckIns.length > 0
+      ? (monthCheckIns.reduce((sum, c) => sum + (c.moodScore || 0), 0) / monthCheckIns.length).toFixed(1)
+      : null,
+    [monthCheckIns]
+  );
 
   const isLoading = loadingXP || loadingTasks || loadingHabits;
 

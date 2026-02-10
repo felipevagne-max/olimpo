@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -5,6 +6,31 @@ import LevelCrest from '@/components/olimpo/LevelCrest';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
 import { TITLE_COLORS, TITLE_SYMBOLS } from '@/components/titles/TitleSymbols';
 import { Trophy, Medal, Award, User } from 'lucide-react';
+
+// Helper functions outside component (no re-creation)
+const getInitials = (name) => {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const getPositionColor = (position) => {
+  if (position === 1) return '#FFD400';
+  if (position === 2) return '#A855F7';
+  if (position === 3) return '#00FFC8';
+  if (position === 4) return '#00FF66';
+  if (position === 5) return '#FFB020';
+  if (position === 6) return '#14B8A6';
+  if (position === 7) return '#6366F1';
+  if (position === 8) return '#84CC16';
+  if (position === 9) return '#22D3EE';
+  if (position === 10) return '#A78BFA';
+  return 'rgba(0,255,102,0.3)';
+};
 
 export default function RankingList() {
   const { data: currentUser } = useQuery({
@@ -32,8 +58,8 @@ export default function RankingList() {
     queryFn: () => base44.entities.TitleDefinition.list()
   });
 
-  // Build leaderboard with real user data
-  const leaderboard = allUserProfiles.map(profile => {
+  // Build leaderboard with real user data (memoized for performance)
+  const leaderboard = useMemo(() => allUserProfiles.map(profile => {
     const userXP = allXPTransactions
       .filter(tx => tx.created_by === profile.created_by)
       .reduce((sum, tx) => sum + (tx.amount || 0), 0);
@@ -61,25 +87,14 @@ export default function RankingList() {
     if (b.level !== a.level) return b.level - a.level;
     if (b.xpTotal !== a.xpTotal) return b.xpTotal - a.xpTotal;
     return (a.displayName || '').localeCompare(b.displayName || '');
-  });
+  }), [allUserProfiles, allXPTransactions, allUserTitles, currentUser]);
 
-  const top10 = leaderboard.slice(0, 10);
-  const others = leaderboard.slice(10, 60); // Limit to 50 more
-  const currentUserRank = leaderboard.findIndex(u => u.isCurrentUser) + 1;
-
-  const getPositionColor = (position) => {
-    if (position === 1) return '#FFD400'; // Gold tech
-    if (position === 2) return '#A855F7'; // Purple tech
-    if (position === 3) return '#00FFC8'; // Cyan tech
-    if (position === 4) return '#00FF66'; // Matrix green
-    if (position === 5) return '#FFB020'; // Amber tech
-    if (position === 6) return '#14B8A6'; // Teal
-    if (position === 7) return '#6366F1'; // Indigo
-    if (position === 8) return '#84CC16'; // Lime
-    if (position === 9) return '#22D3EE'; // Cyan light
-    if (position === 10) return '#A78BFA'; // Purple light
-    return 'rgba(0,255,102,0.3)'; // Subtle for 11+
-  };
+  const top10 = useMemo(() => leaderboard.slice(0, 10), [leaderboard]);
+  const others = useMemo(() => leaderboard.slice(10, 60), [leaderboard]);
+  const currentUserRank = useMemo(() => 
+    leaderboard.findIndex(u => u.isCurrentUser) + 1,
+    [leaderboard]
+  );
 
   const getPositionBadge = (position) => {
     const color = getPositionColor(position);
@@ -123,15 +138,7 @@ export default function RankingList() {
     );
   };
 
-  const getInitials = (name) => {
-    if (!name) return '?';
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+
 
   const renderTitles = (equippedTitles, size = 'md') => {
     if (!equippedTitles || equippedTitles.length === 0) return null;

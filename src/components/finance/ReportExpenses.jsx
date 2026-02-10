@@ -1,9 +1,9 @@
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
 import FinanceItemStatusPill from './FinanceItemStatusPill';
 import EditExpenseSheet from './EditExpenseSheet';
 
@@ -19,28 +19,46 @@ export default function ReportExpenses({ currentMonth }) {
     queryFn: () => base44.entities.Expense.list('-date')
   });
 
-  const activeExpenses = expenses.filter(e => !e.deleted_at);
+  const activeExpenses = useMemo(() => 
+    expenses.filter(e => !e.deleted_at),
+    [expenses]
+  );
 
-  const outs = activeExpenses
-    .filter(e => e.type === 'despesa' && e.date >= monthStart && e.date <= monthEnd && !e.isInvestment)
-    .map((exp, idx) => ({ ...exp, num: idx + 1 }));
+  const outs = useMemo(() => 
+    activeExpenses
+      .filter(e => e.type === 'despesa' && e.date >= monthStart && e.date <= monthEnd && !e.isInvestment)
+      .map((exp, idx) => ({ ...exp, num: idx + 1 })),
+    [activeExpenses, monthStart, monthEnd]
+  );
 
-  // Totals
-  const totalProgramadoPendente = outs
-    .filter(o => o.planType === 'PREVISTO' && o.status === 'programado')
-    .reduce((sum, o) => sum + o.amount, 0);
+  // Totals (memoized)
+  const totalProgramadoPendente = useMemo(() => 
+    outs
+      .filter(o => o.planType === 'PREVISTO' && o.status === 'programado')
+      .reduce((sum, o) => sum + o.amount, 0),
+    [outs]
+  );
 
-  const totalPago = outs
-    .filter(o => o.status === 'pago')
-    .reduce((sum, o) => sum + o.amount, 0);
+  const totalPago = useMemo(() => 
+    outs
+      .filter(o => o.status === 'pago')
+      .reduce((sum, o) => sum + o.amount, 0),
+    [outs]
+  );
 
-  const totalNaoProgPago = outs
-    .filter(o => o.planType === 'IMPREVISTO' && o.status === 'pago')
-    .reduce((sum, o) => sum + o.amount, 0);
+  const totalNaoProgPago = useMemo(() => 
+    outs
+      .filter(o => o.planType === 'IMPREVISTO' && o.status === 'pago')
+      .reduce((sum, o) => sum + o.amount, 0),
+    [outs]
+  );
 
-  const totalNaoProgPendente = outs
-    .filter(o => o.planType === 'IMPREVISTO' && o.status === 'programado')
-    .reduce((sum, o) => sum + o.amount, 0);
+  const totalNaoProgPendente = useMemo(() => 
+    outs
+      .filter(o => o.planType === 'IMPREVISTO' && o.status === 'programado')
+      .reduce((sum, o) => sum + o.amount, 0),
+    [outs]
+  );
 
   return (
     <>

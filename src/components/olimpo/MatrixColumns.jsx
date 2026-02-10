@@ -21,9 +21,9 @@ export default function MatrixColumns({ opacity = 0.18 }) {
       ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(opacity * 2.5, 0.25)})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Glow effect
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = `rgba(0, 255, 102, ${opacity * 1.2})`;
+      // Glow effect (reduced intensity)
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = `rgba(0, 255, 102, ${opacity * 0.8})`;
       
       ctx.fillStyle = `rgba(0, 255, 102, ${opacity})`;
       ctx.font = 'bold 14px JetBrains Mono, monospace';
@@ -49,7 +49,7 @@ export default function MatrixColumns({ opacity = 0.18 }) {
       ctx.shadowBlur = 0;
     }
 
-    const interval = setInterval(draw, 50);
+    const interval = setInterval(draw, 66); // ~15fps para reduzir CPU
 
     const handleResize = () => {
       canvas.width = window.innerWidth;
