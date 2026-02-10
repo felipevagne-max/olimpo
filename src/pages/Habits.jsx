@@ -62,11 +62,40 @@ export default function Habits() {
     mutationFn: async (habit) => {
       const todayLog = habitLogs.find(l => l.habitId === habit.id && l.date === today);
       
+      // Toggle: if already completed, uncomplete it
       if (todayLog?.completed) {
-        toast.error('Conclusão confirmada. Não é possível desfazer.');
-        throw new Error('Cannot uncomplete habit');
+        const xpAmount = habit.xpReward || 8;
+        const penaltyXP = xpAmount * 2;
+        
+        // Delete the log
+        await base44.entities.HabitLog.delete(todayLog.id);
+        
+        // Remove double XP as penalty
+        const { awardXp } = await import('@/components/xpSystem');
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        
+        await awardXp({
+          amount: -penaltyXP,
+          sourceType: 'habit',
+          sourceId: habit.id,
+          note: `Hábito desmarcado: ${habit.name} (penalidade)`,
+          sfxEnabled
+        });
+
+        // Regress linked goal if exists
+        if (habit.goalId) {
+          const goals = await base44.entities.Goal.list();
+          const linkedGoal = goals.find(g => g.id === habit.goalId);
+          if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+            const newValue = Math.max(0, (linkedGoal.currentValue || 0) - 1);
+            await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+          }
+        }
+
+        return { uncompleted: true, penaltyXP };
       }
       
+      // Complete habit
       const xpAmount = habit.xpReward || 8;
       
       if (todayLog) {
@@ -91,12 +120,29 @@ export default function Habits() {
         note: `Hábito: ${habit.name}`,
         sfxEnabled
       });
+
+      // Progress linked goal if exists
+      if (habit.goalId) {
+        const goals = await base44.entities.Goal.list();
+        const linkedGoal = goals.find(g => g.id === habit.goalId);
+        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+          const newValue = (linkedGoal.currentValue || 0) + 1;
+          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+        }
+      }
       
-      return xpAmount;
+      return { uncompleted: false, xpAmount };
     },
-    onSuccess: () => {
+    onSuccess: ({ uncompleted, penaltyXP, xpAmount }) => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
+      queryClient.invalidateQueries(['goals']);
+      
+      if (uncompleted) {
+        toast.error(`Hábito desmarcado! -${penaltyXP} XP (penalidade dobrada)`, {
+          style: { background: '#FF3B3B', color: '#fff' }
+        });
+      }
     }
   });
 
