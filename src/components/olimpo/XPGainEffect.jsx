@@ -10,21 +10,29 @@ const XPGainEffect = ({ xp, onComplete }) => {
     return () => clearTimeout(timer);
   }, [onComplete]);
 
+  const isNegative = xp < 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 0, scale: 0.8 }}
       animate={{ opacity: [0, 1, 1, 0], y: -80, scale: [0.8, 1.1, 1] }}
       transition={{ duration: 0.9, ease: 'easeOut' }}
       className="fixed left-1/2 bottom-32 -translate-x-1/2 z-[100] pointer-events-none"
-      style={{ filter: 'drop-shadow(0 0 12px rgba(0,255,102,0.6))' }}
+      style={{ 
+        filter: isNegative 
+          ? 'drop-shadow(0 0 12px rgba(255,59,59,0.6))' 
+          : 'drop-shadow(0 0 12px rgba(0,255,102,0.6))' 
+      }}
     >
-      <div className="flex items-center gap-2 bg-[#0B0F0C] px-4 py-2 rounded-full border-2 border-[#00FF66]">
-        <Zap className="w-5 h-5 text-[#00FF66]" fill="#00FF66" />
+      <div className={`flex items-center gap-2 bg-[#0B0F0C] px-4 py-2 rounded-full border-2 ${
+        isNegative ? 'border-[#FF3B3B]' : 'border-[#00FF66]'
+      }`}>
+        <Zap className={`w-5 h-5 ${isNegative ? 'text-[#FF3B3B]' : 'text-[#00FF66]'}`} fill={isNegative ? '#FF3B3B' : '#00FF66'} />
         <span 
-          className="text-2xl font-bold text-[#00FF66]"
+          className={`text-2xl font-bold ${isNegative ? 'text-[#FF3B3B]' : 'text-[#00FF66]'}`}
           style={{ fontFamily: 'JetBrains Mono, monospace' }}
         >
-          +{xp} XP
+          {xp > 0 ? '+' : ''}{xp} XP
         </span>
       </div>
     </motion.div>
