@@ -75,24 +75,50 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me()
   });
 
+  // Calculate date ranges once
+  const monthStart = useMemo(() => startOfMonth(new Date()), []);
+  const sevenDaysAgo = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return format(d, 'yyyy-MM-dd');
+  }, []);
+
   const { data: xpTransactions = [], isLoading: loadingXP } = useQuery({
-    queryKey: ['xpTransactions'],
-    queryFn: () => base44.entities.XPTransaction.list()
+    queryKey: ['xpTransactions', currentMonth],
+    queryFn: () => base44.entities.XPTransaction.list('-created_date', 500),
+    staleTime: 30000
   });
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryKey: ['tasks', today, sevenDaysAgo],
+    queryFn: async () => {
+      const allTasks = await base44.entities.Task.list('-date', 200);
+      // Filter only relevant tasks: today + last 7 days completed + overdue
+      return allTasks.filter(t => {
+        if (t.archived) return false;
+        if (t.date === today) return true;
+        if (t.completed && t.completedAt && t.completedAt >= sevenDaysAgo) return true;
+        if (t.isOverdue && !t.completed) return true;
+        return false;
+      });
+    },
+    staleTime: 30000
   });
 
   const { data: habits = [], isLoading: loadingHabits } = useQuery({
     queryKey: ['habits'],
-    queryFn: () => base44.entities.Habit.filter({ archived: false })
+    queryFn: () => base44.entities.Habit.filter({ archived: false }),
+    staleTime: 60000
   });
 
   const { data: habitLogs = [] } = useQuery({
-    queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list()
+    queryKey: ['habitLogs', today, currentMonth],
+    queryFn: async () => {
+      const all = await base44.entities.HabitLog.list('-date', 300);
+      // Only keep current month logs
+      return all.filter(l => l.date && l.date >= format(monthStart, 'yyyy-MM-dd'));
+    },
+    staleTime: 30000
   });
 
   const { data: userProfile } = useQuery({
@@ -100,22 +126,32 @@ export default function Dashboard() {
     queryFn: async () => {
       const profiles = await base44.entities.UserProfile.list();
       return profiles[0] || null;
-    }
+    },
+    staleTime: 300000
   });
 
   const { data: goals = [] } = useQuery({
     queryKey: ['goals'],
-    queryFn: () => base44.entities.Goal.list()
+    queryFn: () => base44.entities.Goal.list('-created_date', 100),
+    staleTime: 60000
   });
 
   const { data: checkIns = [] } = useQuery({
-    queryKey: ['checkIns'],
-    queryFn: () => base44.entities.CheckIn.list()
+    queryKey: ['checkIns', currentMonth],
+    queryFn: async () => {
+      const all = await base44.entities.CheckIn.list('-date', 50);
+      return all.filter(c => c.date && c.date >= format(monthStart, 'yyyy-MM-dd'));
+    },
+    staleTime: 60000
   });
 
   const { data: expenses = [] } = useQuery({
-    queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list()
+    queryKey: ['expenses', today],
+    queryFn: async () => {
+      const all = await base44.entities.Expense.filter({ deleted_at: null }, '-date', 100);
+      return all.filter(e => e.date === today);
+    },
+    staleTime: 30000
   });
 
   const todayCheckIn = checkIns.find(c => c.date === today);
@@ -341,19 +377,13 @@ export default function Dashboard() {
   const monthlyProgress = (monthlyXP / monthlyTargetXP) * 100;
 
   const todayTasks = useMemo(() => 
-    tasks.filter(t => t.date === today && !t.archived && !t.completed),
+    tasks.filter(t => t.date === today && !t.completed),
     [tasks, today]
   );
-  const completedTodayTasks = useMemo(() => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    return tasks.filter(t => {
-      if (t.date !== today || t.archived || !t.completed) return false;
-      if (!t.completedAt) return false;
-      const completedDate = new Date(t.completedAt);
-      return completedDate >= sevenDaysAgo;
-    });
-  }, [tasks, today]);
+  const completedTodayTasks = useMemo(() => 
+    tasks.filter(t => t.date === today && t.completed),
+    [tasks, today]
+  );
   const todayHabitLogs = useMemo(() => 
     habitLogs.filter(l => l.date === today && l.completed),
     [habitLogs, today]
@@ -374,35 +404,34 @@ export default function Dashboard() {
     [xpTransactions, today]
   );
 
-  // Month calculations
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthName = format(now, 'MMMM', { locale: ptBR });
-  const year = format(now, 'yyyy');
+  // Month calculations (memoized)
+  const now = useMemo(() => new Date(), []);
+  const monthName = useMemo(() => format(now, 'MMMM', { locale: ptBR }), [now]);
+  const year = useMemo(() => format(now, 'yyyy'), [now]);
 
-  // A) HÁBITOS - Nota 0-10
-  const monthDays = [];
-  for (let d = new Date(monthStart); d <= now; d.setDate(d.getDate() + 1)) {
-    monthDays.push(format(d, 'yyyy-MM-dd'));
-  }
+  // A) HÁBITOS - Nota 0-10 (memoized)
+  const { expectedHabits, doneHabits } = useMemo(() => {
+    const monthDays = [];
+    for (let d = new Date(monthStart); d <= now; d.setDate(d.getDate() + 1)) {
+      monthDays.push(format(d, 'yyyy-MM-dd'));
+    }
 
-  let expectedHabits = 0;
-  monthDays.forEach(day => {
-    const dayOfWeek = format(new Date(day), 'EEE', { locale: ptBR }).toLowerCase();
-    habits.forEach(habit => {
-      if (habit.frequencyType === 'daily') {
-        expectedHabits++;
-      } else if (habit.frequencyType === 'weekdays' && habit.weekdays?.includes(dayOfWeek)) {
-        expectedHabits++;
-      }
+    let expected = 0;
+    monthDays.forEach(day => {
+      const dayOfWeek = format(new Date(day), 'EEE', { locale: ptBR }).toLowerCase();
+      habits.forEach(habit => {
+        if (habit.frequencyType === 'daily') {
+          expected++;
+        } else if (habit.frequencyType === 'weekdays' && habit.weekdays?.includes(dayOfWeek)) {
+          expected++;
+        }
+      });
     });
-  });
 
-  const doneHabits = habitLogs.filter(l => {
-    if (!l.date || !l.completed) return false;
-    const logDate = new Date(l.date);
-    return logDate >= monthStart && logDate <= now;
-  }).length;
+    const done = habitLogs.filter(l => l.completed).length;
+
+    return { expectedHabits: expected, doneHabits: done };
+  }, [habits, habitLogs, monthStart, now]);
 
   const habitCompletionRate = useMemo(() => 
     expectedHabits > 0 ? doneHabits / expectedHabits : 0,
@@ -413,15 +442,19 @@ export default function Dashboard() {
     [expectedHabits, habitCompletionRate]
   );
 
-  // B) EXECUÇÃO ON - Nota 0-10
-  const monthTasks = tasks.filter(t => {
-    if (t.archived) return false;
-    const taskDate = new Date(t.date);
-    return taskDate >= monthStart && taskDate <= now;
-  });
-
-  const doneTasks = monthTasks.filter(t => t.completed).length;
-  const totalTasks = monthTasks.length;
+  // B) EXECUÇÃO ON - Nota 0-10 (memoized)
+  const { monthTasks, doneTasks, totalTasks } = useMemo(() => {
+    const filtered = tasks.filter(t => {
+      if (t.archived) return false;
+      const taskDate = new Date(t.date);
+      return taskDate >= monthStart && taskDate <= now;
+    });
+    return {
+      monthTasks: filtered,
+      doneTasks: filtered.filter(t => t.completed).length,
+      totalTasks: filtered.length
+    };
+  }, [tasks, monthStart, now]);
   const taskCompletionRate = useMemo(() => 
     totalTasks > 0 ? doneTasks / totalTasks : 0,
     [doneTasks, totalTasks]
@@ -440,16 +473,19 @@ export default function Dashboard() {
     [totalTasks, taskCompletionRate, overduePenalty]
   );
 
-  // C) METAS DO MÊS - Percentual
-  const goalsInMonth = goals.filter(g => {
-    if (g.status === 'archived') return false;
-    if (g.dueDate) {
-      const dueDate = new Date(g.dueDate);
-      return dueDate >= monthStart && dueDate <= endOfDay(now);
-    }
-    const createdDate = new Date(g.created_date);
-    return createdDate >= monthStart && createdDate <= endOfDay(now);
-  });
+  // C) METAS DO MÊS - Percentual (memoized)
+  const goalsInMonth = useMemo(() => 
+    goals.filter(g => {
+      if (g.status === 'archived') return false;
+      if (g.dueDate) {
+        const dueDate = new Date(g.dueDate);
+        return dueDate >= monthStart && dueDate <= endOfDay(now);
+      }
+      const createdDate = new Date(g.created_date);
+      return createdDate >= monthStart && createdDate <= endOfDay(now);
+    }),
+    [goals, monthStart, now]
+  );
 
   const completedGoalsMonth = useMemo(() => 
     goalsInMonth.filter(g => g.status === 'completed').length,
@@ -461,25 +497,16 @@ export default function Dashboard() {
     [totalGoalsMonth, completedGoalsMonth]
   );
 
-  // D) XP NO MÊS (memoized)
+  // D) XP NO MÊS (memoized and optimized)
   const xpMonth = useMemo(() => 
-    xpTransactions.filter(t => {
-      if (!t.created_date) return false;
-      const txDate = new Date(t.created_date);
-      return txDate >= monthStart && txDate <= now;
-    }).reduce((sum, t) => sum + (t.amount || 0), 0),
-    [xpTransactions, monthStart, now]
+    xpTransactions
+      .filter(t => t.created_date?.startsWith(currentMonth))
+      .reduce((sum, t) => sum + (t.amount || 0), 0),
+    [xpTransactions, currentMonth]
   );
 
-  // BEM-ESTAR MÉDIO (memoized)
-  const monthCheckIns = useMemo(() => 
-    checkIns.filter(c => {
-      if (!c.date) return false;
-      const checkDate = new Date(c.date);
-      return checkDate >= monthStart && checkDate <= now;
-    }),
-    [checkIns, monthStart, now]
-  );
+  // BEM-ESTAR MÉDIO (already filtered in query)
+  const monthCheckIns = checkIns;
 
   const avgSleep = useMemo(() => 
     monthCheckIns.length > 0
@@ -851,11 +878,8 @@ export default function Dashboard() {
              return { ...habit, completedToday: !!completedToday };
            });
 
-           // Get ALL today's financial movements
-           const todayExpenses = expenses.filter(e => {
-             if (e.deleted_at) return false;
-             return e.date === today;
-           });
+           // Get ALL today's financial movements (already filtered in query)
+           const todayExpenses = expenses;
 
            const allItems = [
              ...incompleteTasks.map(t => ({ ...t, type: 'task', completed: false })),
