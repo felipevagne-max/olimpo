@@ -167,17 +167,19 @@ export default function UserPopover() {
         reader.readAsDataURL(file);
       });
 
-      // Upload to storage
+      // Upload to storage with cache-bust timestamp
       const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
+      const cacheBustUrl = `${file_url}?v=${Date.now()}`;
       
       // Update profile
       if (!userProfile?.id) throw new Error('Profile not found');
-      await base44.entities.UserProfile.update(userProfile.id, { avatar_url: file_url });
+      await base44.entities.UserProfile.update(userProfile.id, { avatar_url: cacheBustUrl });
       
-      return file_url;
+      return cacheBustUrl;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['userProfile']);
+      queryClient.invalidateQueries(['user']);
       toast.success('Foto atualizada!');
       setUploadingAvatar(false);
     },

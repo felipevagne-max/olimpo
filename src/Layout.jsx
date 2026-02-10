@@ -48,10 +48,10 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    // Initialize with minimum 2s splash duration
+    // Initialize with minimum 1s splash duration
     const init = async () => {
       const startTime = Date.now();
-      const MIN_SPLASH_DURATION = 2000;
+      const MIN_SPLASH_DURATION = 1000;
       
       // Ensure minimum splash duration
       const elapsed = Date.now() - startTime;
