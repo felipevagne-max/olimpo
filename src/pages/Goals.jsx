@@ -85,8 +85,29 @@ export default function Goals() {
       const crossedCompletion = prevPercent < 100 && newPercent >= 100;
       
       if (crossedCompletion) {
-        // Redirect to detail page which will handle the completion
-        return { redirect: true, goalId: goal.id };
+        // Award completion XP
+        const { awardXp } = await import('@/components/xpSystem');
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        
+        await awardXp({
+          amount: goal.xpOnComplete || 200,
+          sourceType: 'goal',
+          sourceId: goal.id,
+          note: `Meta completa: ${goal.title}`,
+          sfxEnabled
+        });
+
+        // Play 16-bit lightning sound
+        if (sfxEnabled) {
+          const audio = new Audio('data:audio/wav;base64,UklGRhYAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQIAAAABAQ==');
+          audio.volume = 0.3;
+          audio.play().catch(() => {});
+        }
+
+        // Delete/archive goal
+        await base44.entities.Goal.update(goal.id, { deleted_at: new Date().toISOString() });
+
+        return { completed: true, xpGained: goal.xpOnComplete || 200 };
       }
       
       await base44.entities.Goal.update(goal.id, {
@@ -106,15 +127,14 @@ export default function Goals() {
         sfxEnabled
       });
 
-      return { xpGained: GOAL_PROGRESS_XP, redirect: false };
+      return { xpGained: GOAL_PROGRESS_XP, completed: false };
     },
-    onSuccess: ({ redirect, goalId, xpGained }) => {
+    onSuccess: ({ completed, xpGained }) => {
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
       
-      if (redirect) {
-        // Navigate to detail page to trigger completion
-        navigate(createPageUrl('GoalDetail') + `?id=${goalId}&complete=true`);
+      if (completed) {
+        setShowLightning(true);
       } else {
         toast.success(`+${xpGained} XP`);
       }
@@ -361,6 +381,10 @@ export default function Goals() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showLightning && (
+        <GoalLightningEffect onComplete={() => setShowLightning(false)} />
+      )}
 
       <BottomNav />
     </div>
