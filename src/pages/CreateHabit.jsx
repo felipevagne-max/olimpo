@@ -73,6 +73,14 @@ export default function CreateHabit() {
     enabled: !!editId
   });
 
+  const { data: activeGoals = [] } = useQuery({
+    queryKey: ['activeGoals'],
+    queryFn: async () => {
+      const goals = await base44.entities.Goal.list();
+      return goals.filter(g => g.status === 'active' && !g.deleted_at);
+    }
+  });
+
   useEffect(() => {
     if (editHabit) {
       // Migrate legacy reminderTime to reminderTimes
@@ -390,6 +398,26 @@ export default function CreateHabit() {
                 </p>
               </div>
             )}
+          </OlimpoCard>
+
+          <OlimpoCard>
+            <Label className="text-[#9AA0A6] text-xs mb-2 block">Vincular à meta (opcional)</Label>
+            <Select
+              value={formData.goalId || '_none'}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, goalId: v === '_none' ? null : v }))}
+            >
+              <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+                <SelectValue placeholder="Nenhuma meta" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                <SelectItem value="_none" className="text-[#9AA0A6]">Nenhuma meta</SelectItem>
+                {activeGoals.map(goal => (
+                  <SelectItem key={goal.id} value={goal.id} className="text-[#E8E8E8]">
+                    {goal.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </OlimpoCard>
 
           {/* Fixed footer buttons for mobile */}
