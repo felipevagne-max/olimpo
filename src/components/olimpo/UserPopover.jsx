@@ -47,6 +47,8 @@ export default function UserPopover() {
     }
   });
 
+
+
   const playLightningSound = () => {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -56,14 +58,14 @@ export default function UserPopover() {
     gainNode.connect(audioContext.destination);
     
     oscillator.type = 'sawtooth';
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.15);
+    oscillator.frequency.setValueAtTime(900, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(120, audioContext.currentTime + 0.18);
     
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+    gainNode.gain.setValueAtTime(0.35, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.18);
     
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.15);
+    oscillator.stop(audioContext.currentTime + 0.18);
   };
 
   const updateNameMutation = useMutation({
@@ -73,14 +75,14 @@ export default function UserPopover() {
         throw new Error('Nome não pode ser vazio');
       }
 
-      // Check 90-day lock
+      // Check 1-day (24h) lock
       if (userProfile?.username_last_changed_at) {
         const lastChanged = new Date(userProfile.username_last_changed_at);
         const now = new Date();
-        const daysSince = Math.floor((now - lastChanged) / (1000 * 60 * 60 * 24));
-        if (daysSince < 90) {
-          const daysRemaining = 90 - daysSince;
-          throw new Error(`Você poderá alterar novamente em ${daysRemaining} dias.`);
+        const hoursSince = (now - lastChanged) / (1000 * 60 * 60);
+        if (hoursSince < 24) {
+          const hoursRemaining = Math.ceil(24 - hoursSince);
+          throw new Error(`Não permito, tente em ${hoursRemaining} ${hoursRemaining === 1 ? 'hora' : 'horas'}.`);
         }
       }
 
@@ -108,10 +110,14 @@ export default function UserPopover() {
       queryClient.invalidateQueries(['userProfile']);
       setIsOpen(false);
       
-      // Play lightning sound if SFX enabled
+      // Play lightning sound + vibration if enabled
       const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      if (sfxEnabled) {
+      const notificationsEnabled = userProfile?.notificationsEnabled ?? true;
+      if (sfxEnabled && notificationsEnabled) {
         playLightningSound();
+        if ('vibrate' in navigator) {
+          navigator.vibrate(100);
+        }
       }
       
       setShowSuccess(true);
@@ -196,14 +202,14 @@ export default function UserPopover() {
     const trimmed = username.trim();
     if (!trimmed || trimmed === userProfile?.displayName) return;
 
-    // Check 90-day lock before showing confirmation
+    // Check 24h lock before showing confirmation
     if (userProfile?.username_last_changed_at) {
       const lastChanged = new Date(userProfile.username_last_changed_at);
       const now = new Date();
-      const daysSince = Math.floor((now - lastChanged) / (1000 * 60 * 60 * 24));
-      if (daysSince < 90) {
-        const daysRemaining = Math.ceil(90 - daysSince);
-        toast.error(`Não permito, tente em ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}.`);
+      const hoursSince = (now - lastChanged) / (1000 * 60 * 60);
+      if (hoursSince < 24) {
+        const hoursRemaining = Math.ceil(24 - hoursSince);
+        toast.error(`Não permito, tente em ${hoursRemaining} ${hoursRemaining === 1 ? 'hora' : 'horas'}.`);
         return;
       }
     }
@@ -384,7 +390,7 @@ export default function UserPopover() {
             Herói, deseja realmente alterar seu nome?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-[#9AA0A6]">
-            Você não poderá alterar pelos próximos 90 dias.
+            Você não poderá alterar pelas próximas 24 horas.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -402,35 +408,37 @@ export default function UserPopover() {
     </AlertDialog>
 
     <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
-      <AlertDialogContent className="bg-[#0B0F0C] border-[#00FF66] border-2 relative overflow-hidden">
-        {/* Lightning animation */}
+      <AlertDialogContent className="bg-[#0B0F0C] border-[#3B82F6] border-2 relative overflow-hidden">
+        {/* AZUL Lightning animation */}
         {showSuccess && (
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'radial-gradient(circle at center, rgba(0,255,102,0.2) 0%, transparent 70%)',
-              animation: 'lightning-pulse 800ms ease-out'
+              background: 'radial-gradient(circle at center, rgba(59,130,246,0.25) 0%, transparent 70%)',
+              animation: 'blue-lightning-pulse 700ms ease-out'
             }}
           />
         )}
         <style>{`
-          @keyframes lightning-pulse {
-            0% { opacity: 0; transform: scale(0.8); }
-            30% { opacity: 1; transform: scale(1.1); }
-            60% { opacity: 0.8; transform: scale(1); }
+          @keyframes blue-lightning-pulse {
+            0% { opacity: 0; transform: scale(0.85); }
+            25% { opacity: 1; transform: scale(1.15); }
+            50% { opacity: 0.9; transform: scale(1.05); }
+            75% { opacity: 1; transform: scale(1); }
             100% { opacity: 0; transform: scale(1.2); }
           }
-          @keyframes lightning-glow {
-            0%, 100% { filter: drop-shadow(0 0 10px rgba(0,255,102,0.4)); }
-            50% { filter: drop-shadow(0 0 20px rgba(0,255,102,0.8)); }
+          @keyframes blue-lightning-glow {
+            0%, 100% { filter: drop-shadow(0 0 12px rgba(59,130,246,0.5)); }
+            50% { filter: drop-shadow(0 0 24px rgba(59,130,246,0.9)); }
           }
         `}</style>
         <AlertDialogHeader>
           <AlertDialogTitle 
-            className="text-[#00FF66] text-center text-lg"
+            className="text-center text-lg"
             style={{ 
               fontFamily: 'Orbitron, sans-serif',
-              animation: showSuccess ? 'lightning-glow 800ms ease-out' : 'none'
+              color: '#3B82F6',
+              animation: showSuccess ? 'blue-lightning-glow 700ms ease-out' : 'none'
             }}
           >
             Tudo certo {pendingName}, sua jornada continua...
@@ -439,7 +447,11 @@ export default function UserPopover() {
         <AlertDialogFooter className="sm:justify-center">
           <AlertDialogAction 
             onClick={() => setShowSuccess(false)}
-            className="bg-[#00FF66] text-black hover:bg-[#00DD55] font-semibold"
+            className="font-semibold"
+            style={{
+              backgroundColor: '#3B82F6',
+              color: 'white'
+            }}
           >
             Continuar
           </AlertDialogAction>

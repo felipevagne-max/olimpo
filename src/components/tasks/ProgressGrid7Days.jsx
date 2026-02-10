@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format, subDays } from 'date-fns';
-import { CheckSquare, Calendar } from 'lucide-react';
+import { format, subDays, addDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CheckSquare, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import OlimpoCard from '../olimpo/OlimpoCard';
 
 export default function ProgressGrid7Days() {
+  const [showFuture, setShowFuture] = useState(false);
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list()
@@ -25,21 +28,41 @@ export default function ProgressGrid7Days() {
     queryFn: () => base44.entities.CheckIn.list()
   });
 
-  // Generate last 7 days
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(new Date(), 6 - i);
-    return {
-      date: format(date, 'yyyy-MM-dd'),
-      dayName: format(date, 'EEE').substring(0, 3),
-      dayNum: format(date, 'dd'),
-      isToday: i === 6
-    };
-  });
+  // Generate 7 days (past or future based on state)
+  const get7Days = () => {
+    if (showFuture) {
+      // Next 7 days (future)
+      return Array.from({ length: 7 }, (_, i) => {
+        const date = addDays(new Date(), i + 1);
+        return {
+          date: format(date, 'yyyy-MM-dd'),
+          dayName: format(date, 'EEE', { locale: ptBR }).substring(0, 3).replace('.', ''),
+          dayNum: format(date, 'dd'),
+          isToday: false,
+          isFuture: true
+        };
+      });
+    } else {
+      // Last 7 days (past)
+      return Array.from({ length: 7 }, (_, i) => {
+        const date = subDays(new Date(), 6 - i);
+        return {
+          date: format(date, 'yyyy-MM-dd'),
+          dayName: format(date, 'EEE', { locale: ptBR }).substring(0, 3).replace('.', ''),
+          dayNum: format(date, 'dd'),
+          isToday: i === 6,
+          isFuture: false
+        };
+      });
+    }
+  };
+
+  const days7 = get7Days();
 
   // Items to track
   const activeHabits = habits.slice(0, 10);
   const recentTasks = tasks
-    .filter(t => !t.archived && last7Days.some(d => t.date === d.date))
+    .filter(t => !t.archived && days7.some(d => t.date === d.date))
     .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
     .slice(0, 20);
 
@@ -66,20 +89,48 @@ export default function ProgressGrid7Days() {
 
   return (
     <OlimpoCard className="border-[rgba(191,255,74,0.2)]">
-      <h3 
-        className="text-sm font-semibold mb-1"
-        style={{ fontFamily: 'Orbitron, sans-serif', color: '#BFFF4A' }}
-      >
-        PROGRESSO (7 DIAS)
-      </h3>
-      <p className="text-xs text-[#9AA0A6] mb-4">Linha do tempo do que foi feito</p>
+      <div className="flex items-center justify-between mb-1">
+        <h3 
+          className="text-sm font-semibold"
+          style={{ fontFamily: 'Orbitron, sans-serif', color: '#BFFF4A' }}
+        >
+          PROGRESSO (7 DIAS)
+        </h3>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowFuture(false)}
+            disabled={!showFuture}
+            className={`p-1 rounded transition-colors ${
+              !showFuture 
+                ? 'text-[#BFFF4A] bg-[rgba(191,255,74,0.15)]' 
+                : 'text-[#9AA0A6] hover:text-[#BFFF4A]'
+            }`}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowFuture(true)}
+            disabled={showFuture}
+            className={`p-1 rounded transition-colors ${
+              showFuture 
+                ? 'text-[#BFFF4A] bg-[rgba(191,255,74,0.15)]' 
+                : 'text-[#9AA0A6] hover:text-[#BFFF4A]'
+            }`}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      <p className="text-xs text-[#9AA0A6] mb-4">
+        {showFuture ? 'Próximos 7 dias' : 'Últimos 7 dias'}
+      </p>
 
       <div className="overflow-x-auto -mx-2 px-2">
         <table className="w-full min-w-[600px]">
           <thead>
             <tr className="border-b border-[rgba(0,255,102,0.18)]">
               <th className="text-left py-2 px-2 text-xs text-[#9AA0A6] w-32">Item</th>
-              {last7Days.map((day) => {
+              {days7.map((day) => {
                 const prodScore = getProductivityScore(day.date);
                 return (
                   <th 
@@ -119,7 +170,7 @@ export default function ProgressGrid7Days() {
                     </span>
                   </div>
                 </td>
-                {last7Days.map((day) => {
+                {days7.map((day) => {
                   const completed = isItemCompleted(item, day.date);
                   return (
                     <td 

@@ -92,7 +92,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <>
-      <MatrixColumns opacity={0.05} />
+      <MatrixColumns opacity={0.22} />
       <TitleEquipEffect />
       <TopBar 
         sidebarCollapsed={isDesktop ? sidebarCollapsed : false} 

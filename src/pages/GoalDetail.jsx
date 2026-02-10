@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -10,6 +10,7 @@ import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import GoalActionSheet from '@/components/goals/GoalActionSheet';
+import GoalCompletionModal from '@/components/goals/GoalCompletionModal';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { ArrowLeft, Check, Target, Calendar, Zap, Trophy, Plus, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,6 +23,8 @@ export default function GoalDetail() {
 
   const [updateValue, setUpdateValue] = useState('');
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [wasIncomplete, setWasIncomplete] = useState(false);
 
   const { data: goal, isLoading } = useQuery({
     queryKey: ['goal', goalId],
@@ -157,6 +160,76 @@ export default function GoalDetail() {
 
   const progress = getProgress();
   const isComplete = progress.percent >= 100;
+
+  // Trigger completion modal when goal reaches 100%
+  useEffect(() => {
+    if (goal && goal.status === 'active') {
+      if (progress.percent >= 100 && !wasIncomplete) {
+        setShowCompletionModal(true);
+        setWasIncomplete(true);
+      } else if (progress.percent < 100) {
+        setWasIncomplete(false);
+      }
+    }
+  }, [goal, progress.percent, wasIncomplete]);
+
+  const handleRestartGoal = async () => {
+    try {
+      if (goal.goalType === 'checklist') {
+        // Reset all milestones
+        for (const m of milestones) {
+          if (m.completed) {
+            await base44.entities.GoalMilestone.update(m.id, { 
+              completed: false,
+              completedAt: null 
+            });
+          }
+        }
+      } else {
+        // Reset accumulative goal
+        await base44.entities.Goal.update(goalId, { currentValue: 0 });
+      }
+      
+      queryClient.invalidateQueries(['goal', goalId]);
+      queryClient.invalidateQueries(['milestones', goalId]);
+      setShowCompletionModal(false);
+      toast.success('Pronto.');
+    } catch (error) {
+      toast.error('Erro ao reiniciar meta');
+    }
+  };
+
+  const handleCompleteGoal = async () => {
+    try {
+      await base44.entities.Goal.update(goalId, { 
+        status: 'archived',
+        deleted_at: new Date().toISOString()
+      });
+      
+      await base44.entities.XPTransaction.create({
+        sourceType: 'goal',
+        sourceId: goalId,
+        amount: goal.xpOnComplete || 200,
+        note: `Meta concluída: ${goal.title}`
+      });
+      
+      queryClient.invalidateQueries(['goals']);
+      queryClient.invalidateQueries(['xpTransactions']);
+      
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      triggerXPGain(goal.xpOnComplete || 200, sfxEnabled);
+      
+      setShowCompletionModal(false);
+      toast.success('Pronto.');
+      
+      // Navigate back to goals list
+      setTimeout(() => {
+        navigate(createPageUrl('Goals'));
+      }, 1000);
+    } catch (error) {
+      toast.error('Erro ao concluir meta');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black pb-8">
@@ -362,6 +435,13 @@ export default function GoalDetail() {
         open={showActionSheet}
         onClose={() => setShowActionSheet(false)}
         goalId={goalId}
+      />
+
+      <GoalCompletionModal
+        open={showCompletionModal}
+        goal={goal}
+        onRestart={handleRestartGoal}
+        onComplete={handleCompleteGoal}
       />
 
       <XPGainManager />
