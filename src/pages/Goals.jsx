@@ -87,17 +87,18 @@ export default function Goals() {
       
       await awardXp({
         amount: GOAL_PROGRESS_XP,
-        sourceType: 'goal_progress',
+        sourceType: 'goal',
         sourceId: goal.id,
-        note: 'Goal progress',
+        note: 'Progresso na meta',
         sfxEnabled
       });
 
       return GOAL_PROGRESS_XP;
     },
-    onSuccess: () => {
+    onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
+      toast.success(`+${xpGained} XP`);
     }
   });
 
@@ -302,7 +303,6 @@ export default function Goals() {
                       onClick={(e) => {
                         e.stopPropagation();
                         progressGoalMutation.mutate(goal);
-                        toast.success('+5 XP por progresso na meta!');
                       }}
                       className="mt-3 w-full py-2 bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.3)] rounded-lg text-[#00FF66] text-sm font-semibold hover:bg-[rgba(0,255,102,0.15)] transition-all flex items-center justify-center gap-2"
                       disabled={progressGoalMutation.isPending}

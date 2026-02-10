@@ -175,7 +175,7 @@ export default function CreateGoal() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-8">
+    <div className="min-h-screen bg-black pb-32">
       <div className="px-4 pt-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-2">
@@ -348,22 +348,25 @@ export default function CreateGoal() {
             )}
           </OlimpoCard>
 
-          <div className="flex gap-3 pt-4">
-            <OlimpoButton
-              type="button"
-              variant="secondary"
-              className="flex-1"
-              onClick={() => navigate(createPageUrl('Goals'))}
-            >
-              Cancelar
-            </OlimpoButton>
-            <OlimpoButton
-              type="submit"
-              className="flex-1"
-              disabled={saveMutation.isPending}
-            >
-              {saveMutation.isPending ? 'Salvando...' : editId ? 'Atualizar' : 'Criar Meta'}
-            </OlimpoButton>
+          {/* Fixed footer buttons for mobile */}
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0B0F0C] border-t border-[rgba(0,255,102,0.18)] p-4 lg:static lg:border-0 lg:bg-transparent lg:pt-4 z-50">
+            <div className="flex gap-3 max-w-lg mx-auto">
+              <OlimpoButton
+                type="button"
+                variant="secondary"
+                className="flex-1"
+                onClick={() => navigate(createPageUrl('Goals'))}
+              >
+                Cancelar
+              </OlimpoButton>
+              <OlimpoButton
+                type="submit"
+                className="flex-1"
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? 'Salvando...' : editId ? 'Atualizar' : 'Criar Meta'}
+              </OlimpoButton>
+            </div>
           </div>
         </form>
       </div>

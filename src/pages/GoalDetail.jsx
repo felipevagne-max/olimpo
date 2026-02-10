@@ -69,11 +69,36 @@ export default function GoalDetail() {
 
   const updateProgressMutation = useMutation({
     mutationFn: async (newValue) => {
-      return base44.entities.Goal.update(goalId, { currentValue: newValue });
+      const prevValue = goal?.currentValue || 0;
+      await base44.entities.Goal.update(goalId, { currentValue: newValue });
+      
+      // Award progress XP
+      const { awardXp } = await import('@/components/xpSystem');
+      const GOAL_PROGRESS_XP = 5;
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: GOAL_PROGRESS_XP,
+        sourceType: 'goal',
+        sourceId: goalId,
+        note: 'Progresso na meta',
+        sfxEnabled
+      });
+      
+      return { newValue, prevValue, xpGained: GOAL_PROGRESS_XP };
     },
-    onSuccess: () => {
+    onSuccess: ({ newValue, prevValue }) => {
       queryClient.invalidateQueries(['goal', goalId]);
+      queryClient.invalidateQueries(['xpTransactions']);
       setUpdateValue('');
+      
+      // Check if just crossed 100%
+      const prevPercent = goal?.targetValue ? (prevValue / goal.targetValue) * 100 : 0;
+      const newPercent = goal?.targetValue ? (newValue / goal.targetValue) * 100 : 0;
+      
+      if (prevPercent < 100 && newPercent >= 100) {
+        setShowCompletionModal(true);
+      }
     }
   });
 
@@ -85,27 +110,40 @@ export default function GoalDetail() {
         throw new Error('Cannot uncomplete milestone');
       }
       
+      const prevCompleted = milestones.filter(m => m.completed).length;
+      
       await base44.entities.GoalMilestone.update(milestone.id, { 
         completed: true,
         completedAt: new Date().toISOString()
       });
       
-      await base44.entities.XPTransaction.create({
+      // Award XP using centralized function
+      const { awardXp } = await import('@/components/xpSystem');
+      const sfxEnabled = userProfile?.sfxEnabled ?? true;
+      
+      await awardXp({
+        amount: milestone.xpReward || 30,
         sourceType: 'milestone',
         sourceId: milestone.id,
-        amount: milestone.xpReward || 30,
-        note: `Etapa: ${milestone.title}`
+        note: `Etapa: ${milestone.title}`,
+        sfxEnabled
       });
       
-      return milestone.xpReward || 30;
+      return { xpGained: milestone.xpReward || 30, prevCompleted };
     },
-    onSuccess: (xpGained) => {
+    onSuccess: ({ xpGained, prevCompleted }) => {
       queryClient.invalidateQueries(['milestones', goalId]);
       queryClient.invalidateQueries(['xpTransactions']);
       
-      // Trigger XP gain effect
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      triggerXPGain(xpGained, sfxEnabled);
+      // Check if just crossed 100%
+      const newCompleted = prevCompleted + 1;
+      const totalMilestones = milestones.length;
+      const prevPercent = totalMilestones > 0 ? (prevCompleted / totalMilestones) * 100 : 0;
+      const newPercent = totalMilestones > 0 ? (newCompleted / totalMilestones) * 100 : 0;
+      
+      if (prevPercent < 100 && newPercent >= 100) {
+        setShowCompletionModal(true);
+      }
     }
   });
 
@@ -161,17 +199,7 @@ export default function GoalDetail() {
   const progress = getProgress();
   const isComplete = progress.percent >= 100;
 
-  // Trigger completion modal when goal reaches 100%
-  useEffect(() => {
-    if (goal && goal.status === 'active') {
-      if (progress.percent >= 100 && !wasIncomplete) {
-        setShowCompletionModal(true);
-        setWasIncomplete(true);
-      } else if (progress.percent < 100) {
-        setWasIncomplete(false);
-      }
-    }
-  }, [goal, progress.percent, wasIncomplete]);
+  // Track completion state (handled in mutations now)
 
   const handleRestartGoal = async () => {
     try {
