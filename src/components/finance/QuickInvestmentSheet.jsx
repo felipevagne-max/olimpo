@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
+import CurrencyInput from './CurrencyInput';
 import { TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -110,13 +111,11 @@ export default function QuickInvestmentSheet({ open, onOpenChange }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label className="text-[#9AA0A6] text-xs mb-1.5 block">Valor *</Label>
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="0.00"
+            <CurrencyInput
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]"
+              placeholder="0,00"
+              className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8] placeholder:text-[#9AA0A6] focus:border-[#00FF66]"
             />
           </div>
 
