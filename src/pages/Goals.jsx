@@ -382,9 +382,7 @@ export default function Goals() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {showLightning && (
-        <GoalLightningEffect onComplete={() => setShowLightning(false)} />
-      )}
+      <GoalLightningEffect show={showLightning} onComplete={() => setShowLightning(false)} />
 
       <BottomNav />
     </div>

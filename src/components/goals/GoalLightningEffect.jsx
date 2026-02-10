@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Zap } from 'lucide-react';
 
-export default function GoalLightningEffect({ onComplete }) {
-  const [show, setShow] = useState(true);
-
+export default function GoalLightningEffect({ show, onComplete }) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShow(false);
-      onComplete?.();
-    }, 1200);
+    if (show) {
+      const timer = setTimeout(() => {
+        onComplete?.();
+      }, 1200);
 
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+      return () => clearTimeout(timer);
+    }
+  }, [show, onComplete]);
 
   if (!show) return null;
 
