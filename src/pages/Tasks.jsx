@@ -75,6 +75,11 @@ export default function Tasks() {
     queryFn: () => base44.entities.HabitLog.list()
   });
 
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.filter({ deleted_at: null })
+  });
+
   const completeTaskMutation = useMutation({
     mutationFn: async (task) => {
       if (task.completed) {
@@ -211,6 +216,8 @@ export default function Tasks() {
     // For timesPerWeek, show in all days for now (stable approach)
     return habit.frequencyType === 'timesPerWeek';
   });
+
+  const dayExpenses = showOverdue ? [] : expenses.filter(e => e.date === selectedDateStr);
 
   const combinedItems = showOverdue ? dayTasks.map(t => ({
     ...t,
@@ -370,7 +377,7 @@ export default function Tasks() {
         </div>
 
         {/* Combined List */}
-        {combinedItems.length === 0 ? (
+        {combinedItems.length === 0 && dayExpenses.length === 0 ? (
           <EmptyState
             icon={Calendar}
             title={showOverdue ? "Sem tarefas atrasadas" : "Nenhum novo desafio à vista"}
@@ -487,12 +494,7 @@ export default function Tasks() {
           </div>
         )}
 
-        {/* Expectancy Next 7 Days */}
-        <div className="mt-6">
-          <ExpectancyNext7Days />
-        </div>
-
-        {/* Completed Tasks Section */}
+        {/* Completed Tasks Section - Moved here */}
         {!showOverdue && completedDayTasks.length > 0 && (
           <div className="mt-6">
             <h3 
@@ -537,6 +539,71 @@ export default function Tasks() {
             </div>
           </div>
         )}
+
+        {/* Financial Transactions Section */}
+        {!showOverdue && dayExpenses.length > 0 && (
+          <div className="mt-6">
+            <h3 
+              className="text-sm font-semibold text-[#9AA0A6] mb-3"
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
+            >
+              PROGRAMAÇÕES FINANCEIRAS
+            </h3>
+            <div className="space-y-3">
+              {dayExpenses.map(expense => (
+                <OlimpoCard key={expense.id}>
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center ${
+                      expense.status === 'pago' 
+                        ? 'bg-[#00FF66] border-[#00FF66]' 
+                        : 'border-[#FFC107]'
+                    }`}>
+                      {expense.status === 'pago' && <Check className="w-4 h-4 text-black" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-medium text-sm ${
+                        expense.status === 'pago' ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'
+                      }`}>
+                        {expense.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          expense.status === 'pago'
+                            ? 'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
+                            : 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]'
+                        }`}>
+                          {expense.type === 'receita' ? 'Receita' : 'Despesa'} • {
+                            expense.status === 'pago' ? 'Pago' : 
+                            expense.status === 'pendente' ? 'Pendente' : 'Programado'
+                          }
+                        </span>
+                        {expense.paymentMethod && (
+                          <span className="text-xs text-[#9AA0A6]">
+                            {expense.paymentMethod === 'debito' ? 'Débito' :
+                             expense.paymentMethod === 'pix' ? 'PIX' :
+                             expense.paymentMethod === 'cartao' ? 'Cartão' :
+                             expense.paymentMethod === 'dinheiro' ? 'Dinheiro' :
+                             expense.paymentMethod === 'debit_pix' ? 'Déb/PIX' : expense.paymentMethod}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`text-sm font-mono font-semibold ${
+                      expense.type === 'receita' ? 'text-[#00FF66]' : 'text-[#FF3B3B]'
+                    }`}>
+                      {expense.type === 'receita' ? '+' : '-'}R$ {expense.amount?.toFixed(2)}
+                    </span>
+                  </div>
+                </OlimpoCard>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Expectancy Next 7 Days */}
+        <div className="mt-6">
+          <ExpectancyNext7Days />
+        </div>
 
         {/* Progress Grid */}
         <div className="mt-6">
