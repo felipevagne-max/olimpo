@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import { X, Repeat } from 'lucide-react';
@@ -34,6 +34,14 @@ const WEEKDAYS = [
 
 export default function TaskModal({ open, onClose, task, defaultDate, goalId }) {
   const queryClient = useQueryClient();
+  const { data: activeGoals = [] } = useQuery({
+    queryKey: ['activeGoals'],
+    queryFn: async () => {
+      const goals = await base44.entities.Goal.list();
+      return goals.filter(g => g.status === 'active' && !g.deleted_at);
+    },
+    enabled: open
+  });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -252,6 +260,26 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
                 onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
               />
             </div>
+          </div>
+
+          <div>
+            <Label className="text-[#9AA0A6] text-xs">Vincular à meta (opcional)</Label>
+            <Select
+              value={formData.goalId || '_none'}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, goalId: v === '_none' ? null : v }))}
+            >
+              <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+                <SelectValue placeholder="Nenhuma meta" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                <SelectItem value="_none" className="text-[#9AA0A6]">Nenhuma meta</SelectItem>
+                {activeGoals.map(goal => (
+                  <SelectItem key={goal.id} value={goal.id} className="text-[#E8E8E8]">
+                    {goal.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-3 pt-4">

@@ -97,11 +97,22 @@ export default function Tasks() {
         sfxEnabled
       });
       
+      // Progress linked goal if exists
+      if (task.goalId) {
+        const goals = await base44.entities.Goal.list();
+        const linkedGoal = goals.find(g => g.id === task.goalId);
+        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+          const newValue = (linkedGoal.currentValue || 0) + 1;
+          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+        }
+      }
+      
       return xpAmount;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
+      queryClient.invalidateQueries(['goals']);
     }
   });
 
@@ -133,11 +144,22 @@ export default function Tasks() {
         sfxEnabled
       });
       
+      // Progress linked goal if exists (once per day)
+      if (habit.goalId) {
+        const goals = await base44.entities.Goal.list();
+        const linkedGoal = goals.find(g => g.id === habit.goalId);
+        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+          const newValue = (linkedGoal.currentValue || 0) + 1;
+          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+        }
+      }
+      
       return xpAmount;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
+      queryClient.invalidateQueries(['goals']);
     }
   });
 
