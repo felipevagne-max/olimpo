@@ -55,12 +55,12 @@ import Finance from './pages/Finance';
 import GoalDetail from './pages/GoalDetail';
 import Goals from './pages/Goals';
 import Habits from './pages/Habits';
+import Notes from './pages/Notes';
 import Oracle from './pages/Oracle';
 import Progress from './pages/Progress';
 import Tasks from './pages/Tasks';
 import Titles from './pages/Titles';
 import UnifiedTasks from './pages/UnifiedTasks';
-import Notes from './pages/Notes';
 import __Layout from './Layout.jsx';
 
 
@@ -73,12 +73,12 @@ export const PAGES = {
     "GoalDetail": GoalDetail,
     "Goals": Goals,
     "Habits": Habits,
+    "Notes": Notes,
     "Oracle": Oracle,
     "Progress": Progress,
     "Tasks": Tasks,
     "Titles": Titles,
     "UnifiedTasks": UnifiedTasks,
-    "Notes": Notes,
 }
 
 export const pagesConfig = {

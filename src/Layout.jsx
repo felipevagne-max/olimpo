@@ -48,32 +48,10 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    // Initialize and check for overdue tasks with minimum 3s splash duration
+    // Initialize with minimum 2s splash duration
     const init = async () => {
       const startTime = Date.now();
       const MIN_SPLASH_DURATION = 2000;
-
-      try {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const tasks = await base44.entities.Task.list();
-        
-        // Roll overdue tasks to today
-        const overdueTasks = tasks.filter(t => 
-          !t.completed && 
-          !t.archived && 
-          t.date < today
-        );
-
-        for (const task of overdueTasks) {
-          await base44.entities.Task.update(task.id, {
-            rolledFromDate: task.date,
-            date: today,
-            isOverdue: true
-          });
-        }
-      } catch (error) {
-        console.error('Error rolling overdue tasks:', error);
-      }
       
       // Ensure minimum splash duration
       const elapsed = Date.now() - startTime;
@@ -84,7 +62,7 @@ export default function Layout({ children, currentPageName }) {
     };
 
     init();
-  }, [currentPageName, navigate]);
+  }, []);
 
   if (isChecking) {
     return <SplashScreen />;
