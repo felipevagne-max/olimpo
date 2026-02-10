@@ -185,11 +185,22 @@ export default function Dashboard() {
         sfxEnabled
       });
       
+      // Progress linked goal if exists
+      if (task.goalId) {
+        const goals = await base44.entities.Goal.list();
+        const linkedGoal = goals.find(g => g.id === task.goalId);
+        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+          const newValue = (linkedGoal.currentValue || 0) + 1;
+          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+        }
+      }
+      
       return xpAmount;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
+      queryClient.invalidateQueries(['goals']);
     }
   });
 
@@ -222,11 +233,22 @@ export default function Dashboard() {
         sfxEnabled
       });
 
+      // Progress linked goal if exists
+      if (habit.goalId) {
+        const goals = await base44.entities.Goal.list();
+        const linkedGoal = goals.find(g => g.id === habit.goalId);
+        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+          const newValue = (linkedGoal.currentValue || 0) + 1;
+          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+        }
+      }
+
       return xpAmount;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
+      queryClient.invalidateQueries(['goals']);
     }
   });
 
@@ -247,13 +269,19 @@ export default function Dashboard() {
   const monthlyProgress = (monthlyXP / monthlyTargetXP) * 100;
 
   const todayTasks = useMemo(() => 
-    tasks.filter(t => t.date === today && !t.archived),
+    tasks.filter(t => t.date === today && !t.archived && !t.completed),
     [tasks, today]
   );
-  const completedTodayTasks = useMemo(() => 
-    todayTasks.filter(t => t.completed),
-    [todayTasks]
-  );
+  const completedTodayTasks = useMemo(() => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return tasks.filter(t => {
+      if (t.date !== today || t.archived || !t.completed) return false;
+      if (!t.completedAt) return false;
+      const completedDate = new Date(t.completedAt);
+      return completedDate >= sevenDaysAgo;
+    });
+  }, [tasks, today]);
   const todayHabitLogs = useMemo(() => 
     habitLogs.filter(l => l.date === today && l.completed),
     [habitLogs, today]
@@ -734,7 +762,7 @@ export default function Dashboard() {
           </div>
 
           {(() => {
-            const incompleteTasks = todayTasks.filter(t => !t.completed);
+            const incompleteTasks = todayTasks;
             
             // Get today's pending habits
             const todayWeekday = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][new Date().getDay()];
@@ -755,9 +783,24 @@ export default function Dashboard() {
               return !completedToday;
             });
 
+            const { data: expenses = [] } = useQuery({
+              queryKey: ['expenses'],
+              queryFn: () => base44.entities.Expense.list()
+            });
+
+            const todayExpenses = expenses.filter(e => {
+              if (e.deleted_at) return false;
+              return e.date === today;
+            });
+
+            const pendingPayments = todayExpenses.filter(e => e.status === 'programado');
+            const paidPayments = todayExpenses.filter(e => e.status === 'pago');
+
             const allItems = [
               ...incompleteTasks.map(t => ({ ...t, type: 'task' })),
-              ...pendingHabits.map(h => ({ ...h, type: 'habit' }))
+              ...pendingHabits.map(h => ({ ...h, type: 'habit' })),
+              ...pendingPayments.map(p => ({ ...p, type: 'payment', isPending: true })),
+              ...paidPayments.map(p => ({ ...p, type: 'payment', isPending: false }))
             ];
 
             return allItems.length === 0 ? (
@@ -768,31 +811,54 @@ export default function Dashboard() {
               <div className="space-y-2">
                 {allItems.map(item => (
                   <div 
-                    key={item.type === 'task' ? `task-${item.id}` : `habit-${item.id}`}
+                    key={
+                      item.type === 'task' ? `task-${item.id}` : 
+                      item.type === 'habit' ? `habit-${item.id}` : 
+                      `payment-${item.id}`
+                    }
                     className={`flex items-center gap-3 p-3 rounded-lg border ${
                       item.type === 'task' && item.isOverdue
                         ? 'bg-[rgba(255,59,59,0.05)] border-[rgba(255,59,59,0.3)]'
+                        : item.type === 'payment' && !item.isPending
+                        ? 'bg-[rgba(0,255,102,0.05)] border-[rgba(0,255,102,0.2)]'
                         : 'bg-[#070A08] border-[rgba(0,255,102,0.1)]'
                     }`}
                   >
-                    <button
-                      onClick={() => {
-                        if (item.type === 'task') {
-                          completeTaskMutation.mutate(item);
-                        } else {
-                          completeHabitMutation.mutate(item);
-                        }
-                      }}
-                      className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all border-[#9AA0A6] hover:border-[#00FF66]"
-                    />
+                    {item.type !== 'payment' ? (
+                      <button
+                        onClick={() => {
+                          if (item.type === 'task') {
+                            completeTaskMutation.mutate(item);
+                          } else {
+                            completeHabitMutation.mutate(item);
+                          }
+                        }}
+                        className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all border-[#9AA0A6] hover:border-[#00FF66]"
+                      />
+                    ) : (
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        item.isPending ? 'border-[#FFC107]' : 'bg-[#00FF66] border-[#00FF66]'
+                      }`}>
+                        {!item.isPending && <Check className="w-3 h-3 text-black" />}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <p className="text-sm text-[#E8E8E8]">
-                        {item.type === 'task' ? item.title : item.name}
+                        {item.type === 'task' ? item.title : item.type === 'habit' ? item.name : item.title}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         {item.type === 'habit' && (
                           <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
                             Rotina
+                          </span>
+                        )}
+                        {item.type === 'payment' && (
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            item.isPending 
+                              ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' 
+                              : 'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
+                          }`}>
+                            {item.type === 'receita' ? 'Receita' : 'Despesa'} • {item.isPending ? 'Programado' : 'Pago'}
                           </span>
                         )}
                         {item.type === 'task' && item.isOverdue && (
@@ -811,12 +877,18 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                    <span className="text-xs text-[#00FF66] font-mono">
-                      +{item.type === 'task' 
-                        ? (item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10))
-                        : (item.xpReward || 8)
-                      }
-                    </span>
+                    {item.type === 'payment' ? (
+                      <span className="text-xs font-mono" style={{ color: item.type === 'receita' ? '#00FF66' : '#FF3B3B' }}>
+                        {item.type === 'receita' ? '+' : '-'}R$ {item.amount?.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-[#00FF66] font-mono">
+                        +{item.type === 'task' 
+                          ? (item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10))
+                          : (item.xpReward || 8)
+                        }
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -275,6 +275,7 @@ export default function UserPopover() {
       type="file"
       ref={fileInputRef}
       accept="image/*"
+      capture={false}
       onChange={handleAvatarChange}
       className="hidden"
     />

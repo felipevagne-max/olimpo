@@ -10,6 +10,8 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
 import TaskModal from '@/components/tasks/TaskModal';
+import QuickTaskSheet from '@/components/tasks/QuickTaskSheet';
+import TaskTypeSelector from '@/components/tasks/TaskTypeSelector';
 import ProgressGrid7Days from '@/components/tasks/ProgressGrid7Days';
 import ExpectancyNext7Days from '@/components/tasks/ExpectancyNext7Days';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
@@ -36,6 +38,8 @@ export default function Tasks() {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
+  const [showQuickTask, setShowQuickTask] = useState(false);
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [showOverdue, setShowOverdue] = useState(false);
@@ -182,10 +186,21 @@ export default function Tasks() {
     weekDays.push(addDays(new Date(), i));
   }
 
-  // Filter and combine tasks + habits
+  // Filter tasks
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  
   const dayTasks = showOverdue
     ? tasks.filter(t => !t.archived && !t.completed && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate)))
-    : tasks.filter(t => t.date === selectedDateStr && !t.archived);
+    : tasks.filter(t => t.date === selectedDateStr && !t.archived && !t.completed);
+  
+  const completedDayTasks = showOverdue ? [] : tasks.filter(t => {
+    if (t.date !== selectedDateStr || t.archived || !t.completed) return false;
+    // Only show completed tasks from last 7 days
+    if (!t.completedAt) return false;
+    const completedDate = new Date(t.completedAt);
+    return completedDate >= sevenDaysAgo;
+  });
   
   const dayHabits = showOverdue ? [] : habits.filter(habit => {
     if (habit.frequencyType === 'daily') return true;
@@ -285,7 +300,7 @@ export default function Tasks() {
           </div>
           <OlimpoButton 
             className="w-full mt-4"
-            onClick={() => { setEditTask(null); setShowModal(true); }}
+            onClick={() => setShowTypeSelector(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
             Nova Tarefa
@@ -361,7 +376,7 @@ export default function Tasks() {
             title={showOverdue ? "Sem tarefas atrasadas" : "Nenhum novo desafio à vista"}
             description={showOverdue ? "Todas as tarefas estão em dia!" : "Crie sua próxima tarefa."}
             actionLabel="Criar Tarefa"
-            onAction={() => { setEditTask(null); setShowModal(true); }}
+            onAction={() => setShowTypeSelector(true)}
           />
         ) : (
           <div className="space-y-3">
@@ -477,11 +492,70 @@ export default function Tasks() {
           <ExpectancyNext7Days />
         </div>
 
+        {/* Completed Tasks Section */}
+        {!showOverdue && completedDayTasks.length > 0 && (
+          <div className="mt-6">
+            <h3 
+              className="text-sm font-semibold text-[#9AA0A6] mb-3"
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
+            >
+              CONCLUÍDAS
+            </h3>
+            <div className="space-y-3">
+              {completedDayTasks.map(task => (
+                <OlimpoCard key={task.id}>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#00FF66] border-[#00FF66]">
+                      <Check className="w-4 h-4 text-black" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm text-[#9AA0A6] line-through">
+                        {task.title}
+                      </h3>
+                      {task.description && (
+                        <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{task.description}</p>
+                      )}
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                        <DropdownMenuItem 
+                          onClick={() => setDeleteId(task.id)}
+                          className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </OlimpoCard>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Progress Grid */}
         <div className="mt-6">
           <ProgressGrid7Days />
         </div>
       </div>
+
+      <TaskTypeSelector
+        open={showTypeSelector}
+        onClose={() => setShowTypeSelector(false)}
+        onSelectQuick={() => setShowQuickTask(true)}
+        onSelectFull={() => { setEditTask(null); setShowModal(true); }}
+      />
+
+      <QuickTaskSheet
+        open={showQuickTask}
+        onClose={() => setShowQuickTask(false)}
+        defaultDate={selectedDateStr}
+      />
 
       <TaskModal
         open={showModal}
