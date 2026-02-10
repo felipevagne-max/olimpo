@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, LogOut, Camera, Loader2 } from 'lucide-react';
+import { User, LogOut, Camera, Loader2, Download } from 'lucide-react';
+import InstallPrompt from './InstallPrompt';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -28,7 +29,16 @@ export default function UserPopover() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingName, setPendingName] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Detect if app is installed (running as PWA)
+  useState(() => {
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                  window.navigator.standalone === true;
+    setIsInstalled(isPWA);
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -384,6 +394,21 @@ export default function UserPopover() {
             </div>
           </div>
 
+          {/* Install App - only show if not already installed */}
+          {!isInstalled && (
+            <OlimpoButton
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setShowInstallPrompt(true);
+                setIsOpen(false);
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Adicionar à Tela Inicial
+            </OlimpoButton>
+          )}
+
           {/* Logout */}
           <OlimpoButton
             variant="secondary"
@@ -396,6 +421,8 @@ export default function UserPopover() {
         </div>
       </PopoverContent>
     </Popover>
+
+    <InstallPrompt open={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
 
     <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
       <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
