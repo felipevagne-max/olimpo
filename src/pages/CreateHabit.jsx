@@ -311,33 +311,94 @@ export default function CreateHabit() {
                 </Select>
               </div>
 
-              <div>
-                <Label className="text-[#9AA0A6] text-xs">Horário</Label>
-                <OlimpoInput
-                  type="time"
-                  value={formData.timeOfDay}
-                  onChange={(e) => setFormData(prev => ({ ...prev, timeOfDay: e.target.value }))}
-                />
-              </div>
             </div>
 
             <div className="mt-4">
-              <Label className="text-[#9AA0A6] text-xs">Meta/Quantidade (opcional)</Label>
-              <OlimpoInput
-                value={formData.goalText}
-                onChange={(e) => setFormData(prev => ({ ...prev, goalText: e.target.value }))}
-                placeholder="Ex: 20 min, 2L, 10 páginas"
-              />
+              <Label className="text-[#9AA0A6] text-xs mb-2 block">Horários do Hábito</Label>
+              
+              {/* List of habit times */}
+              {formData.reminderTimes.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {formData.reminderTimes.map((time, idx) => (
+                    <div 
+                      key={idx}
+                      className="flex items-center gap-2 p-2 bg-[#070A08] rounded-lg border border-[rgba(0,255,102,0.18)]"
+                    >
+                      <span 
+                        className="flex-1 text-sm text-[#E8E8E8] font-mono"
+                        style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                      >
+                        {time}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeReminderTime(time)}
+                        className="p-1 text-[#9AA0A6] hover:text-[#FF3B3B] transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add new time */}
+              <div className="flex gap-2">
+                <Input
+                  type="time"
+                  value={newReminderTime}
+                  onChange={(e) => setNewReminderTime(e.target.value)}
+                  className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]"
+                  placeholder="Adicionar horário..."
+                />
+                <OlimpoButton
+                  type="button"
+                  onClick={addReminderTime}
+                  className="px-3"
+                  title="Adicionar horário"
+                >
+                  <Plus className="w-4 h-4" />
+                </OlimpoButton>
+              </div>
+              <p className="text-xs text-[#9AA0A6] mt-2">
+                {formData.reminderTimes.length}/10 horários • Adicione múltiplos horários para o hábito
+              </p>
             </div>
           </OlimpoCard>
 
           <OlimpoCard>
-            <div className="flex items-center justify-between mb-4">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-[#9AA0A6] text-xs">Horário Principal (legado)</Label>
+                <OlimpoInput
+                  type="time"
+                  value={formData.timeOfDay}
+                  onChange={(e) => setFormData(prev => ({ ...prev, timeOfDay: e.target.value }))}
+                  placeholder="Opcional"
+                />
+                <p className="text-xs text-[#9AA0A6] mt-1">
+                  Use os horários acima. Este campo será removido em breve.
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-[#9AA0A6] text-xs">Meta/Quantidade (opcional)</Label>
+                <OlimpoInput
+                  value={formData.goalText}
+                  onChange={(e) => setFormData(prev => ({ ...prev, goalText: e.target.value }))}
+                  placeholder="Ex: 20 min, 2L, 10 páginas"
+                />
+              </div>
+            </div>
+          </OlimpoCard>
+
+          <OlimpoCard>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Bell className="w-5 h-5 text-[#00FF66]" />
                 <div>
-                  <p className="text-sm text-[#E8E8E8]">Lembrete</p>
-                  <p className="text-xs text-[#9AA0A6]">Receba notificações</p>
+                  <p className="text-sm text-[#E8E8E8]">Lembretes por Notificação</p>
+                  <p className="text-xs text-[#9AA0A6]">Ativar notificações push</p>
                 </div>
               </div>
               <Switch
@@ -346,58 +407,6 @@ export default function CreateHabit() {
                 className="data-[state=checked]:bg-[#00FF66]"
               />
             </div>
-
-            {formData.reminderEnabled && (
-              <div className="space-y-3">
-                <Label className="text-[#9AA0A6] text-xs">Horários dos Lembretes</Label>
-                
-                {/* List of reminder times */}
-                {formData.reminderTimes.length > 0 && (
-                  <div className="space-y-2 mb-3">
-                    {formData.reminderTimes.map((time, idx) => (
-                      <div 
-                        key={idx}
-                        className="flex items-center gap-2 p-2 bg-[#070A08] rounded-lg border border-[rgba(0,255,102,0.18)]"
-                      >
-                        <span 
-                          className="flex-1 text-sm text-[#E8E8E8] font-mono"
-                          style={{ fontFamily: 'JetBrains Mono, monospace' }}
-                        >
-                          {time}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeReminderTime(time)}
-                          className="p-1 text-[#9AA0A6] hover:text-[#FF3B3B] transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add new time */}
-                <div className="flex gap-2">
-                  <Input
-                    type="time"
-                    value={newReminderTime}
-                    onChange={(e) => setNewReminderTime(e.target.value)}
-                    className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]"
-                  />
-                  <OlimpoButton
-                    type="button"
-                    onClick={addReminderTime}
-                    className="px-3"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </OlimpoButton>
-                </div>
-                <p className="text-xs text-[#9AA0A6]">
-                  {formData.reminderTimes.length}/10 horários
-                </p>
-              </div>
-            )}
           </OlimpoCard>
 
           <OlimpoCard>
@@ -420,23 +429,23 @@ export default function CreateHabit() {
             </Select>
           </OlimpoCard>
 
-          {/* Fixed footer buttons for mobile */}
-          <div className="fixed bottom-0 left-0 right-0 bg-[#0B0F0C] border-t border-[rgba(0,255,102,0.18)] p-4 lg:static lg:border-0 lg:bg-transparent lg:pt-4">
+          {/* Fixed footer buttons - ALWAYS VISIBLE */}
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0B0F0C] border-t border-[rgba(0,255,102,0.18)] p-4 z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.3)]">
             <div className="flex gap-3 max-w-lg mx-auto">
               <OlimpoButton
                 type="button"
                 variant="secondary"
-                className="flex-1"
+                className="flex-1 h-12 font-semibold"
                 onClick={() => navigate(createPageUrl('Habits'))}
               >
                 Cancelar
               </OlimpoButton>
               <OlimpoButton
                 type="submit"
-                className="flex-1"
-                disabled={saveMutation.isPending}
+                className="flex-1 h-12 font-semibold"
+                disabled={saveMutation.isPending || !formData.name.trim()}
               >
-                {saveMutation.isPending ? 'Salvando...' : editId ? 'Atualizar' : 'Criar Hábito'}
+                {saveMutation.isPending ? 'Salvando...' : editId ? 'Salvar Alterações' : 'Criar Hábito'}
               </OlimpoButton>
             </div>
           </div>
