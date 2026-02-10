@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -35,6 +35,7 @@ export default function Goals() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState('active');
   const [deleteId, setDeleteId] = useState(null);
+  const progressingGoalRef = useRef(null);
 
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['goals'],
@@ -74,7 +75,8 @@ export default function Goals() {
 
   const progressGoalMutation = useMutation({
     mutationFn: async (goal) => {
-      const newValue = (goal.currentValue || 0) + 1;
+      const prevValue = goal.currentValue || 0;
+      const newValue = prevValue + 1;
       
       await base44.entities.Goal.update(goal.id, {
         currentValue: newValue
@@ -93,12 +95,24 @@ export default function Goals() {
         sfxEnabled
       });
 
-      return GOAL_PROGRESS_XP;
+      return { xpGained: GOAL_PROGRESS_XP, prevValue, newValue, targetValue: goal.targetValue };
     },
-    onSuccess: (xpGained) => {
+    onSuccess: ({ xpGained, prevValue, newValue, targetValue }) => {
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
       toast.success(`+${xpGained} XP`);
+      
+      // Check if just crossed 100%
+      const prevPercent = targetValue ? (prevValue / targetValue) * 100 : 0;
+      const newPercent = targetValue ? (newValue / targetValue) * 100 : 0;
+      
+      if (prevPercent < 100 && newPercent >= 100 && progressingGoalRef.current) {
+        // Goal completed! Navigate to detail to show modal
+        setTimeout(() => {
+          navigate(createPageUrl('GoalDetail') + `?id=${progressingGoalRef.current.id}`);
+          progressingGoalRef.current = null;
+        }, 800);
+      }
     }
   });
 
@@ -302,6 +316,7 @@ export default function Goals() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        progressingGoalRef.current = goal;
                         progressGoalMutation.mutate(goal);
                       }}
                       className="mt-3 w-full py-2 bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.3)] rounded-lg text-[#00FF66] text-sm font-semibold hover:bg-[rgba(0,255,102,0.15)] transition-all flex items-center justify-center gap-2"

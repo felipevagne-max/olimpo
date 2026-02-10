@@ -10,6 +10,7 @@ import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
+import HabitDetailModal from '@/components/habits/HabitDetailModal';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Flame, Zap, MoreVertical, Pencil, Archive, Trash2, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
@@ -37,6 +38,7 @@ export default function Habits() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const [filter, setFilter] = useState('all');
   const [deleteId, setDeleteId] = useState(null);
+  const [selectedHabitId, setSelectedHabitId] = useState(null);
 
   const { data: habits = [], isLoading } = useQuery({
     queryKey: ['habits'],
@@ -237,7 +239,18 @@ export default function Habits() {
               const streak = calculateStreak(habit.id);
 
               return (
-                <OlimpoCard key={habit.id} className="relative">
+                <OlimpoCard 
+                  key={habit.id} 
+                  className="relative cursor-pointer hover:bg-[rgba(0,255,102,0.03)] transition-all"
+                  onClick={(e) => {
+                    // Don't open modal if clicking on checkbox or dropdown
+                    if (e.target.closest('button[type="button"]') || 
+                        e.target.closest('[data-radix-collection-item]')) {
+                      return;
+                    }
+                    setSelectedHabitId(habit.id);
+                  }}
+                >
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => toggleHabitMutation.mutate(habit)}
@@ -326,6 +339,12 @@ export default function Habits() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <HabitDetailModal
+        open={!!selectedHabitId}
+        onClose={() => setSelectedHabitId(null)}
+        habitId={selectedHabitId}
+      />
 
       <XPGainManager />
       <BottomNav />

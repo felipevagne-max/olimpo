@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Check, ChevronsUpDown, Plus, Pencil, Power, PowerOff } from 'lucide-react';
 import OlimpoInput from '../olimpo/OlimpoInput';
 import OlimpoButton from '../olimpo/OlimpoButton';
+import CurrencyInput from './CurrencyInput';
 import CardPurchaseConfirmDialog from './CardPurchaseConfirmDialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -227,13 +228,11 @@ export default function QuickCardSheet({ open, onClose }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label className="text-[#9AA0A6] text-xs">Valor total *</Label>
-            <OlimpoInput
-              type="number"
-              step="0.01"
-              min="0.01"
+            <CurrencyInput
               value={formData.totalAmount}
               onChange={(e) => setFormData(prev => ({ ...prev, totalAmount: e.target.value }))}
               placeholder="0,00"
+              className="bg-[#070A08] border-[rgba(255,193,7,0.3)] text-[#E8E8E8] placeholder:text-[#9AA0A6] focus:border-[#FFC107]"
               required
               autoFocus
             />

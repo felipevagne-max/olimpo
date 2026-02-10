@@ -154,14 +154,12 @@ export default function QuickExpenseSheet({ open, onClose }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label className="text-[#9AA0A6] text-xs">Valor (R$) *</Label>
-            <OlimpoInput
-              type="number"
-              step="0.01"
-              min="0.01"
+            <Label className="text-[#9AA0A6] text-xs">Valor *</Label>
+            <CurrencyInput
               value={formData.amount}
               onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
               placeholder="0,00"
+              className="bg-[#070A08] border-[rgba(255,59,59,0.3)] text-[#E8E8E8] placeholder:text-[#9AA0A6] focus:border-[#FF3B3B]"
               required
               autoFocus
             />
