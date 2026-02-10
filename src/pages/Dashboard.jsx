@@ -207,11 +207,41 @@ export default function Dashboard() {
   const completeHabitMutation = useMutation({
     mutationFn: async (habit) => {
       const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === today && l.completed);
+      
+      // Toggle: if already completed, uncomplete it
       if (existingLog) {
-        toast.error('Hábito já concluído hoje.');
-        throw new Error('Habit already completed');
+        const xpAmount = habit.xpReward || 8;
+        const penaltyXP = xpAmount * 2;
+        
+        // Delete the log
+        await base44.entities.HabitLog.delete(existingLog.id);
+        
+        // Remove double XP as penalty
+        const { awardXp } = await import('@/components/xpSystem');
+        const sfxEnabled = userProfile?.sfxEnabled ?? true;
+        
+        await awardXp({
+          amount: -penaltyXP,
+          sourceType: 'habit',
+          sourceId: habit.id,
+          note: `Hábito desmarcado: ${habit.name} (penalidade)`,
+          sfxEnabled
+        });
+
+        // Regress linked goal if exists
+        if (habit.goalId) {
+          const goals = await base44.entities.Goal.list();
+          const linkedGoal = goals.find(g => g.id === habit.goalId);
+          if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+            const newValue = Math.max(0, (linkedGoal.currentValue || 0) - 1);
+            await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+          }
+        }
+
+        return { uncompleted: true, penaltyXP };
       }
 
+      // Complete habit
       const xpAmount = habit.xpReward || 8;
       
       await base44.entities.HabitLog.create({
@@ -243,12 +273,18 @@ export default function Dashboard() {
         }
       }
 
-      return xpAmount;
+      return { uncompleted: false, xpAmount };
     },
-    onSuccess: () => {
+    onSuccess: ({ uncompleted, penaltyXP, xpAmount }) => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
       queryClient.invalidateQueries(['goals']);
+      
+      if (uncompleted) {
+        toast.error(`Hábito desmarcado! -${penaltyXP} XP (penalidade dobrada)`, {
+          style: { background: '#FF3B3B', color: '#fff' }
+        });
+      }
     }
   });
 
@@ -764,28 +800,37 @@ export default function Dashboard() {
           {(() => {
            const incompleteTasks = todayTasks;
 
-           // Get today's pending habits
+           // Get ALL today's habits (completed and pending)
            const todayWeekday = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][new Date().getDay()];
-           const pendingHabits = habits.filter(habit => {
+           const todayHabitsAll = habits.filter(habit => {
              if (habit.archived) return false;
 
              // Check if habit is valid for today
              if (habit.frequencyType === 'daily') return true;
              if (habit.frequencyType === 'weekdays' && habit.weekdays?.includes(todayWeekday)) return true;
-             if (habit.frequencyType === 'timesPerWeek') {
-               // For now, allow all days if timesPerWeek (could be enhanced)
-               return true;
-             }
+             if (habit.frequencyType === 'timesPerWeek') return true;
              return false;
-           }).filter(habit => {
-             // Check if not completed today
+           }).map(habit => {
              const completedToday = habitLogs.find(l => l.habitId === habit.id && l.date === today && l.completed);
-             return !completedToday;
+             return { ...habit, completedToday: !!completedToday };
+           });
+
+           // Get ALL today's financial movements
+           const { data: expenses = [] } = useQuery({
+             queryKey: ['expenses'],
+             queryFn: () => base44.entities.Expense.list()
+           });
+
+           const todayExpenses = expenses.filter(e => {
+             if (e.deleted_at) return false;
+             return e.date === today;
            });
 
            const allItems = [
-             ...incompleteTasks.map(t => ({ ...t, type: 'task' })),
-             ...pendingHabits.map(h => ({ ...h, type: 'habit' }))
+             ...incompleteTasks.map(t => ({ ...t, type: 'task', completed: false })),
+             ...completedTodayTasks.map(t => ({ ...t, type: 'task', completed: true })),
+             ...todayHabitsAll.map(h => ({ ...h, type: 'habit', completed: h.completedToday })),
+             ...todayExpenses.map(e => ({ ...e, type: 'payment', completed: e.status === 'pago' }))
            ];
 
             return allItems.length === 0 ? (
@@ -796,31 +841,60 @@ export default function Dashboard() {
               <div className="space-y-2">
                 {allItems.map(item => (
                   <div 
-                    key={item.type === 'task' ? `task-${item.id}` : `habit-${item.id}`}
+                    key={
+                      item.type === 'task' ? `task-${item.id}` : 
+                      item.type === 'habit' ? `habit-${item.id}` :
+                      `payment-${item.id}`
+                    }
                     className={`flex items-center gap-3 p-3 rounded-lg border ${
                       item.type === 'task' && item.isOverdue
                         ? 'bg-[rgba(255,59,59,0.05)] border-[rgba(255,59,59,0.3)]'
+                        : item.completed
+                        ? 'bg-[rgba(0,255,102,0.05)] border-[rgba(0,255,102,0.2)]'
                         : 'bg-[#070A08] border-[rgba(0,255,102,0.1)]'
                     }`}
                   >
-                    <button
-                      onClick={() => {
-                        if (item.type === 'task') {
-                          completeTaskMutation.mutate(item);
-                        } else {
-                          completeHabitMutation.mutate(item);
-                        }
-                      }}
-                      className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all border-[#9AA0A6] hover:border-[#00FF66]"
-                    />
+                    {item.type !== 'payment' ? (
+                      <button
+                        onClick={() => {
+                          if (item.type === 'task') {
+                            completeTaskMutation.mutate(item);
+                          } else {
+                            completeHabitMutation.mutate(item);
+                          }
+                        }}
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                          item.completed
+                            ? 'bg-[#00FF66] border-[#00FF66]'
+                            : 'border-[#9AA0A6] hover:border-[#00FF66]'
+                        }`}
+                      >
+                        {item.completed && <Check className="w-3 h-3 text-black" />}
+                      </button>
+                    ) : (
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        item.completed ? 'bg-[#00FF66] border-[#00FF66]' : 'border-[#FFC107]'
+                      }`}>
+                        {item.completed && <Check className="w-3 h-3 text-black" />}
+                      </div>
+                    )}
                     <div className="flex-1">
-                      <p className="text-sm text-[#E8E8E8]">
-                        {item.type === 'task' ? item.title : item.name}
+                      <p className={`text-sm ${item.completed ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
+                        {item.type === 'task' ? item.title : item.type === 'habit' ? item.name : item.title}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         {item.type === 'habit' && (
                           <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
                             Rotina
+                          </span>
+                        )}
+                        {item.type === 'payment' && (
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            item.completed 
+                              ? 'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
+                              : 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]'
+                          }`}>
+                            {item.type === 'receita' ? 'Receita' : 'Despesa'} • {item.completed ? 'Pago' : 'Programado'}
                           </span>
                         )}
                         {item.type === 'task' && item.isOverdue && (
@@ -839,12 +913,18 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                    <span className="text-xs text-[#00FF66] font-mono">
-                      +{item.type === 'task' 
-                        ? (item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10))
-                        : (item.xpReward || 8)
-                      }
-                    </span>
+                    {item.type === 'payment' ? (
+                      <span className="text-xs font-mono" style={{ color: item.type === 'receita' ? '#00FF66' : '#FF3B3B' }}>
+                        {item.type === 'receita' ? '+' : '-'}R$ {item.amount?.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-[#00FF66] font-mono">
+                        +{item.type === 'task' 
+                          ? (item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10))
+                          : (item.xpReward || 8)
+                        }
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
