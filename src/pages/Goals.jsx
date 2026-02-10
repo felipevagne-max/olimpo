@@ -220,8 +220,15 @@ export default function Goals() {
               return (
                 <OlimpoCard 
                   key={goal.id} 
-                  className="cursor-pointer"
-                  onClick={() => navigate(createPageUrl('GoalDetail') + `?id=${goal.id}`)}
+                  className="cursor-pointer hover:bg-[rgba(0,255,102,0.03)] transition-all"
+                  onClick={(e) => {
+                    // Prevent navigation if clicking on dropdown menu or progress button
+                    if (e.target.closest('[data-radix-collection-item]') || 
+                        e.target.closest('button[type="button"]')) {
+                      return;
+                    }
+                    navigate(createPageUrl('GoalDetail') + `?id=${goal.id}`);
+                  }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">

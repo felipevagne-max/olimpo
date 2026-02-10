@@ -7,10 +7,12 @@ import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
-import { ArrowLeft, Bell } from 'lucide-react';
+import { ArrowLeft, Bell, Plus, X } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -56,9 +58,10 @@ export default function CreateHabit() {
     category: '',
     goalText: '',
     reminderEnabled: false,
-    reminderTime: '09:00',
+    reminderTimes: [],
     goalId: goalId || null
   });
+  const [newReminderTime, setNewReminderTime] = useState('09:00');
 
   const { data: editHabit, isLoading: loadingEdit } = useQuery({
     queryKey: ['habit', editId],
@@ -72,6 +75,12 @@ export default function CreateHabit() {
 
   useEffect(() => {
     if (editHabit) {
+      // Migrate legacy reminderTime to reminderTimes
+      let reminderTimes = editHabit.reminderTimes || [];
+      if (reminderTimes.length === 0 && editHabit.reminderTime) {
+        reminderTimes = [editHabit.reminderTime];
+      }
+      
       setFormData({
         name: editHabit.name || '',
         description: editHabit.description || '',
@@ -84,11 +93,11 @@ export default function CreateHabit() {
         category: editHabit.category || '',
         goalText: editHabit.goalText || '',
         reminderEnabled: editHabit.reminderEnabled || false,
-        reminderTime: editHabit.reminderTime || '09:00',
+        reminderTimes,
         goalId: editHabit.goalId || goalId || null
       });
     }
-  }, [editHabit]);
+  }, [editHabit, goalId]);
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -112,6 +121,29 @@ export default function CreateHabit() {
     }));
   };
 
+  const addReminderTime = () => {
+    if (!newReminderTime) return;
+    if (formData.reminderTimes.includes(newReminderTime)) {
+      toast.error('Horário já adicionado');
+      return;
+    }
+    if (formData.reminderTimes.length >= 10) {
+      toast.error('Máximo de 10 horários');
+      return;
+    }
+    
+    const updated = [...formData.reminderTimes, newReminderTime].sort();
+    setFormData(prev => ({ ...prev, reminderTimes: updated }));
+    setNewReminderTime('09:00');
+  };
+
+  const removeReminderTime = (time) => {
+    setFormData(prev => ({
+      ...prev,
+      reminderTimes: prev.reminderTimes.filter(t => t !== time)
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
@@ -129,7 +161,7 @@ export default function CreateHabit() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-8">
+    <div className="min-h-screen bg-black pb-32">
       <div className="px-4 pt-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-2">
@@ -292,12 +324,12 @@ export default function CreateHabit() {
           </OlimpoCard>
 
           <OlimpoCard>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Bell className="w-5 h-5 text-[#00FF66]" />
                 <div>
                   <p className="text-sm text-[#E8E8E8]">Lembrete</p>
-                  <p className="text-xs text-[#9AA0A6]">Receba uma notificação</p>
+                  <p className="text-xs text-[#9AA0A6]">Receba notificações</p>
                 </div>
               </div>
               <Switch
@@ -308,33 +340,77 @@ export default function CreateHabit() {
             </div>
 
             {formData.reminderEnabled && (
-              <div className="mt-4">
-                <Label className="text-[#9AA0A6] text-xs">Horário do Lembrete</Label>
-                <OlimpoInput
-                  type="time"
-                  value={formData.reminderTime}
-                  onChange={(e) => setFormData(prev => ({ ...prev, reminderTime: e.target.value }))}
-                />
+              <div className="space-y-3">
+                <Label className="text-[#9AA0A6] text-xs">Horários dos Lembretes</Label>
+                
+                {/* List of reminder times */}
+                {formData.reminderTimes.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {formData.reminderTimes.map((time, idx) => (
+                      <div 
+                        key={idx}
+                        className="flex items-center gap-2 p-2 bg-[#070A08] rounded-lg border border-[rgba(0,255,102,0.18)]"
+                      >
+                        <span 
+                          className="flex-1 text-sm text-[#E8E8E8] font-mono"
+                          style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                        >
+                          {time}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeReminderTime(time)}
+                          className="p-1 text-[#9AA0A6] hover:text-[#FF3B3B] transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new time */}
+                <div className="flex gap-2">
+                  <Input
+                    type="time"
+                    value={newReminderTime}
+                    onChange={(e) => setNewReminderTime(e.target.value)}
+                    className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]"
+                  />
+                  <OlimpoButton
+                    type="button"
+                    onClick={addReminderTime}
+                    className="px-3"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </OlimpoButton>
+                </div>
+                <p className="text-xs text-[#9AA0A6]">
+                  {formData.reminderTimes.length}/10 horários
+                </p>
               </div>
             )}
           </OlimpoCard>
 
-          <div className="flex gap-3 pt-4">
-            <OlimpoButton
-              type="button"
-              variant="secondary"
-              className="flex-1"
-              onClick={() => navigate(createPageUrl('Habits'))}
-            >
-              Cancelar
-            </OlimpoButton>
-            <OlimpoButton
-              type="submit"
-              className="flex-1"
-              disabled={saveMutation.isPending}
-            >
-              {saveMutation.isPending ? 'Salvando...' : editId ? 'Atualizar' : 'Criar Hábito'}
-            </OlimpoButton>
+          {/* Fixed footer buttons for mobile */}
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0B0F0C] border-t border-[rgba(0,255,102,0.18)] p-4 lg:static lg:border-0 lg:bg-transparent lg:pt-4">
+            <div className="flex gap-3 max-w-lg mx-auto">
+              <OlimpoButton
+                type="button"
+                variant="secondary"
+                className="flex-1"
+                onClick={() => navigate(createPageUrl('Habits'))}
+              >
+                Cancelar
+              </OlimpoButton>
+              <OlimpoButton
+                type="submit"
+                className="flex-1"
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? 'Salvando...' : editId ? 'Atualizar' : 'Criar Hábito'}
+              </OlimpoButton>
+            </div>
           </div>
         </form>
       </div>

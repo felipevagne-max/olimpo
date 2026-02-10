@@ -31,8 +31,8 @@ export default function CreateGoal() {
     description: '',
     category: '',
     goalType: 'accumulative',
-    targetValue: 100,
-    currentValue: 0,
+    targetValue: '',
+    currentValue: '',
     unit: '',
     dueDate: ''
   });
@@ -66,8 +66,8 @@ export default function CreateGoal() {
         description: editGoal.description || '',
         category: editGoal.category || '',
         goalType: editGoal.goalType || 'accumulative',
-        targetValue: editGoal.targetValue || 100,
-        currentValue: editGoal.currentValue || 0,
+        targetValue: editGoal.targetValue || '',
+        currentValue: editGoal.currentValue || '',
         unit: editGoal.unit || '',
         dueDate: editGoal.dueDate || ''
       });
@@ -146,8 +146,24 @@ export default function CreateGoal() {
     e.preventDefault();
     if (!formData.title.trim()) return;
     
+    // Validate targetValue for accumulative
+    if (formData.goalType === 'accumulative') {
+      const targetVal = parseInt(formData.targetValue) || 0;
+      if (targetVal <= 0) {
+        toast.error('Defina um objetivo maior que zero.');
+        return;
+      }
+    }
+    
     const xpOnComplete = calculateGoalXP(formData.dueDate);
-    saveMutation.mutate({ ...formData, xpOnComplete });
+    const dataToSave = {
+      ...formData,
+      targetValue: parseInt(formData.targetValue) || 100,
+      currentValue: parseInt(formData.currentValue) || 0,
+      xpOnComplete
+    };
+    
+    saveMutation.mutate(dataToSave);
   };
 
   if (editId && loadingEdit) {
@@ -248,12 +264,18 @@ export default function CreateGoal() {
             {formData.goalType === 'accumulative' && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-[#9AA0A6] text-xs">Valor Objetivo</Label>
+                  <Label className="text-[#9AA0A6] text-xs">Valor Objetivo *</Label>
                   <OlimpoInput
                     type="number"
                     min={1}
                     value={formData.targetValue}
-                    onChange={(e) => setFormData(prev => ({ ...prev, targetValue: parseInt(e.target.value) || 100 }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, targetValue: e.target.value }))}
+                    onFocus={(e) => {
+                      if (e.target.value === '0') {
+                        setFormData(prev => ({ ...prev, targetValue: '' }));
+                      }
+                    }}
+                    placeholder="100"
                   />
                 </div>
                 <div>
@@ -270,7 +292,8 @@ export default function CreateGoal() {
                     type="number"
                     min={0}
                     value={formData.currentValue}
-                    onChange={(e) => setFormData(prev => ({ ...prev, currentValue: parseInt(e.target.value) || 0 }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currentValue: e.target.value }))}
+                    placeholder="0"
                   />
                 </div>
               </div>
