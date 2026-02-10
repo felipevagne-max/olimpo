@@ -280,7 +280,38 @@ export default function Dashboard() {
 
       return { uncompleted: false, xpAmount };
     },
-    onSuccess: ({ uncompleted, penaltyXP, xpAmount }) => {
+    onMutate: async (habit) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries(['habitLogs']);
+      
+      // Snapshot previous value
+      const previousLogs = queryClient.getQueryData(['habitLogs']);
+      
+      // Optimistically update
+      const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === today && l.completed);
+      
+      if (existingLog) {
+        // Remove log optimistically
+        queryClient.setQueryData(['habitLogs'], old => old.filter(l => l.id !== existingLog.id));
+      } else {
+        // Add log optimistically
+        const optimisticLog = {
+          id: `temp-${Date.now()}`,
+          habitId: habit.id,
+          date: today,
+          completed: true,
+          xpEarned: habit.xpReward || 8
+        };
+        queryClient.setQueryData(['habitLogs'], old => [...old, optimisticLog]);
+      }
+      
+      return { previousLogs };
+    },
+    onError: (err, habit, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['habitLogs'], context.previousLogs);
+    },
+    onSettled: ({ uncompleted, penaltyXP, xpAmount }) => {
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
       queryClient.invalidateQueries(['goals']);
