@@ -52,7 +52,7 @@ export default function DesktopFinanceActions({ onAction }) {
       {ACTIONS.map(action => {
         const Icon = action.icon;
         return (
-          <button
+          <div
             key={action.id}
             onClick={() => handleClick(action.id)}
             className="p-4 rounded-xl transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
@@ -76,7 +76,7 @@ export default function DesktopFinanceActions({ onAction }) {
                 {action.label}
               </span>
             </div>
-          </button>
+          </div>
         );
       })}
     </div>
