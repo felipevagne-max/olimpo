@@ -206,6 +206,11 @@ export default function Tasks() {
     const completedDate = new Date(t.completedAt);
     return completedDate >= sevenDaysAgo;
   });
+
+  const completedDayHabits = showOverdue ? [] : habits.filter(habit => {
+    const isCompletedToday = habitLogs.some(l => l.habitId === habit.id && l.date === selectedDateStr && l.completed);
+    return isCompletedToday;
+  });
   
   const dayHabits = showOverdue ? [] : habits.filter(habit => {
     if (habit.frequencyType === 'daily') return true;
@@ -494,8 +499,8 @@ export default function Tasks() {
           </div>
         )}
 
-        {/* Completed Tasks Section - Moved here */}
-        {!showOverdue && completedDayTasks.length > 0 && (
+        {/* Completed Tasks & Habits Section - Moved here */}
+        {!showOverdue && (completedDayTasks.length > 0 || completedDayHabits.length > 0) && (
           <div className="mt-6">
             <h3 
               className="text-sm font-semibold text-[#9AA0A6] mb-3"
@@ -505,7 +510,7 @@ export default function Tasks() {
             </h3>
             <div className="space-y-3">
               {completedDayTasks.map(task => (
-                <OlimpoCard key={task.id}>
+                <OlimpoCard key={`completed-task-${task.id}`}>
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#00FF66] border-[#00FF66]">
                       <Check className="w-4 h-4 text-black" />
@@ -533,6 +538,29 @@ export default function Tasks() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  </div>
+                </OlimpoCard>
+              ))}
+              {completedDayHabits.map(habit => (
+                <OlimpoCard key={`completed-habit-${habit.id}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#00FF66] border-[#00FF66]">
+                      <Check className="w-4 h-4 text-black" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
+                        <h3 className="font-medium text-sm text-[#9AA0A6] line-through">
+                          {habit.name}
+                        </h3>
+                      </div>
+                      {habit.description && (
+                        <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{habit.description}</p>
+                      )}
+                      <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6] inline-block mt-2">
+                        Rotina
+                      </span>
+                    </div>
                   </div>
                 </OlimpoCard>
               ))}
