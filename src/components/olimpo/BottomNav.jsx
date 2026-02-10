@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, CheckSquare, Calendar, Target, Swords, Wallet, Eye } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar, Target, Swords, Wallet, Eye, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { name: 'Execução ON', page: 'Tasks', icon: Calendar },
   { name: 'Oráculo', page: 'Oracle', icon: Eye },
   { name: 'Metas', page: 'Goals', icon: Target },
+  { name: 'Notas', page: 'Notes', icon: BookOpen },
   { name: 'Comunidade', page: 'Community', icon: Swords },
   { name: 'Finanças', page: 'Finance', icon: Wallet },
 ];
