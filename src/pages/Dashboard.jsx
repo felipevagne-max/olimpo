@@ -856,7 +856,8 @@ export default function Dashboard() {
                   >
                     {item.type !== 'payment' ? (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (item.type === 'task') {
                             completeTaskMutation.mutate(item);
                           } else {

@@ -299,7 +299,10 @@ export default function Habits() {
                 >
                   <div className="flex items-start gap-3">
                     <button
-                      onClick={() => toggleHabitMutation.mutate(habit)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleHabitMutation.mutate(habit);
+                      }}
                       disabled={habit.archived}
                       className={`mt-1 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
                         isCompleted 
