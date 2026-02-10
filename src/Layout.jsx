@@ -70,6 +70,68 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <>
+      {/* PWA Meta Tags */}
+      <head>
+        {/* Manifest */}
+        <link rel="manifest" href="/manifest.json" />
+        
+        {/* Theme Color */}
+        <meta name="theme-color" content="#000000" />
+        <meta name="msapplication-TileColor" content="#000000" />
+        
+        {/* iOS PWA */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Olimpo" />
+        <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+        
+        {/* Viewport */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        
+        {/* SEO Básico */}
+        <meta name="description" content="Sistema de produtividade e gamificação pessoal" />
+        <meta name="keywords" content="produtividade,gamificação,hábitos,tarefas,metas" />
+        
+        {/* Service Worker Registration */}
+        <script dangerouslySetInnerHTML={{__html: `
+          if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/service-worker.js')
+                .then(function(registration) {
+                  console.log('[PWA] Service Worker registrado:', registration.scope);
+                  
+                  // Check for updates periodically
+                  setInterval(function() {
+                    registration.update();
+                  }, 60000); // Check every minute
+                  
+                  // Handle updates
+                  registration.addEventListener('updatefound', function() {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', function() {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // New version available
+                        if (confirm('Nova versão disponível! Recarregar agora?')) {
+                          newWorker.postMessage({ type: 'SKIP_WAITING' });
+                          window.location.reload();
+                        }
+                      }
+                    });
+                  });
+                })
+                .catch(function(error) {
+                  console.log('[PWA] Falha ao registrar Service Worker:', error);
+                });
+                
+              // Handle controller change (new SW activated)
+              navigator.serviceWorker.addEventListener('controllerchange', function() {
+                window.location.reload();
+              });
+            });
+          }
+        `}} />
+      </head>
+
       <MatrixColumns opacity={0.15} />
       <TitleEquipEffect />
       <TopBar 
