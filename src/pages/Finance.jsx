@@ -9,6 +9,7 @@ import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import FinanceFAB from '@/components/finance/FinanceFAB';
+import DesktopFinanceActions from '@/components/finance/DesktopFinanceActions';
 import QuickExpenseSheet from '@/components/finance/QuickExpenseSheet';
 import QuickCardSheet from '@/components/finance/QuickCardSheet';
 import QuickIncomeSheet from '@/components/finance/QuickIncomeSheet';
@@ -18,6 +19,7 @@ import ReportExpenses from '@/components/finance/ReportExpenses';
 import ReportCard from '@/components/finance/ReportCard';
 import InsightsPrincipais from '@/components/finance/InsightsPrincipais';
 import useOverdueNotifications from '@/components/finance/useOverdueNotifications';
+import { formatCurrency } from '@/components/finance/formatCurrency';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, PiggyBank, Clock, AlertTriangle } from 'lucide-react';
 
 export default function Finance() {
@@ -154,6 +156,9 @@ export default function Finance() {
           </button>
         </div>
 
+        {/* Desktop Actions */}
+        <DesktopFinanceActions onAction={setActiveSheet} />
+
         {/* 4 Cards de Resumo (2x2) */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {/* RENDA */}
@@ -228,7 +233,7 @@ export default function Finance() {
                 color: capital >= 0 ? '#00FF66' : '#FF3B3B'
               }}
             >
-              R$ {capital.toFixed(2)}
+              {formatCurrency(capital)}
             </p>
           </div>
         </OlimpoCard>
@@ -325,8 +330,10 @@ export default function Finance() {
         )}
       </div>
 
-      {/* FAB */}
-      <FinanceFAB onAction={handleFABAction} />
+      {/* FAB only on mobile */}
+      <div className="lg:hidden">
+        <FinanceFAB onAction={handleFABAction} />
+      </div>
 
       {/* Quick Sheets */}
       <QuickExpenseSheet open={activeSheet === 'despesa'} onClose={() => setActiveSheet(null)} />
