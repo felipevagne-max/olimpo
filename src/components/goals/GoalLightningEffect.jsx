@@ -1,96 +1,98 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Zap } from 'lucide-react';
 
-export default function GoalLightningEffect({ show, onComplete }) {
-  const [visible, setVisible] = useState(false);
+export default function GoalLightningEffect({ onComplete }) {
+  const [show, setShow] = useState(true);
 
   useEffect(() => {
-    if (show) {
-      setVisible(true);
-      const timer = setTimeout(() => {
-        setVisible(false);
-        onComplete?.();
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-  }, [show, onComplete]);
+    const timer = setTimeout(() => {
+      setShow(false);
+      onComplete?.();
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [onComplete]);
+
+  if (!show) return null;
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          style={{ pointerEvents: 'none' }}
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      style={{ animation: 'fadeIn 0.2s ease-out' }}
+    >
+      {/* Blue lightning bolt */}
+      <div 
+        className="relative"
+        style={{ animation: 'lightningPulse 0.6s ease-out' }}
+      >
+        <Zap 
+          className="w-32 h-32"
+          style={{ 
+            color: '#3B82F6',
+            filter: 'drop-shadow(0 0 40px rgba(59, 130, 246, 0.8))',
+            animation: 'zapRotate 0.6s ease-out'
+          }}
+        />
+        
+        {/* Glow effect */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%)',
+            filter: 'blur(20px)',
+            animation: 'glowPulse 0.6s ease-out'
+          }}
+        />
+      </div>
+
+      {/* Message */}
+      <div 
+        className="absolute bottom-32 text-center"
+        style={{ animation: 'messageSlideUp 0.4s ease-out 0.2s both' }}
+      >
+        <p 
+          className="text-2xl font-bold px-6 py-3 rounded-lg"
+          style={{ 
+            color: '#3B82F6',
+            fontFamily: 'Orbitron, sans-serif',
+            textShadow: '0 0 20px rgba(59, 130, 246, 0.6)',
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)'
+          }}
         >
-          {/* Lightning Bolt */}
-          <motion.div
-            initial={{ scale: 0, rotate: -45 }}
-            animate={{ 
-              scale: [0, 1.2, 1],
-              rotate: [-45, -30, -45]
-            }}
-            transition={{ 
-              duration: 0.6,
-              times: [0, 0.6, 1]
-            }}
-            className="relative"
-          >
-            <Zap 
-              className="w-32 h-32 text-[#3B82F6]" 
-              fill="#3B82F6"
-              strokeWidth={1.5}
-              style={{
-                filter: 'drop-shadow(0 0 30px rgba(59, 130, 246, 0.8)) drop-shadow(0 0 60px rgba(59, 130, 246, 0.4))',
-              }}
-            />
-          </motion.div>
+          Sua meta foi completa! Parabéns
+        </p>
+      </div>
 
-          {/* Blue Glow Pulses */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ 
-              opacity: [0, 0.6, 0],
-              scale: [0, 2.5, 3]
-            }}
-            transition={{ 
-              duration: 1,
-              times: [0, 0.5, 1]
-            }}
-            className="absolute w-64 h-64 rounded-full bg-[#3B82F6] blur-3xl"
-          />
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
 
-          {/* Message */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.4 }}
-            className="absolute bottom-1/3 text-center"
-          >
-            <p 
-              className="text-2xl font-bold text-[#3B82F6]"
-              style={{ 
-                fontFamily: 'Orbitron, sans-serif',
-                textShadow: '0 0 20px rgba(59, 130, 246, 0.6)'
-              }}
-            >
-              Sua meta foi completa!
-            </p>
-            <p 
-              className="text-xl font-bold text-[#3B82F6] mt-2"
-              style={{ 
-                fontFamily: 'Orbitron, sans-serif',
-                textShadow: '0 0 20px rgba(59, 130, 246, 0.6)'
-              }}
-            >
-              Parabéns
-            </p>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        @keyframes lightningPulse {
+          0% { transform: scale(0.5); opacity: 0; }
+          50% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes zapRotate {
+          0% { transform: rotate(-15deg); }
+          50% { transform: rotate(5deg); }
+          100% { transform: rotate(0deg); }
+        }
+
+        @keyframes glowPulse {
+          0% { opacity: 0; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.5); }
+          100% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        @keyframes messageSlideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
   );
 }

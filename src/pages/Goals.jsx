@@ -10,6 +10,7 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
+import GoalLightningEffect from '@/components/goals/GoalLightningEffect';
 import { Plus, Target, Trophy, Zap, MoreVertical, Pencil, Archive, Trash2, CheckCircle2, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
@@ -35,6 +36,7 @@ export default function Goals() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState('active');
   const [deleteId, setDeleteId] = useState(null);
+  const [showLightning, setShowLightning] = useState(false);
 
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['goals'],
