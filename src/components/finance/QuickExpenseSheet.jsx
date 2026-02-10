@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import OlimpoInput from '../olimpo/OlimpoInput';
 import OlimpoButton from '../olimpo/OlimpoButton';
+import CurrencyInput from './CurrencyInput';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
