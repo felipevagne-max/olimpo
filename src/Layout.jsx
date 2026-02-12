@@ -240,6 +240,17 @@ export default function Layout({ children, currentPageName }) {
           background: var(--olimpo-primary);
         }
 
+        /* Hide Base44 edit button */
+        [class*="base44-edit"],
+        [class*="editWithBase44"],
+        [id*="base44-edit"],
+        iframe[src*="base44"] {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+
         /* Date input styling */
         input[type="date"]::-webkit-calendar-picker-indicator {
           filter: invert(1);
