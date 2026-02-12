@@ -1,7 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 import * as bcrypt from 'npm:bcryptjs@2.4.3';
 
-// Force redeploy - version 2.0
 Deno.serve(async (req) => {
   try {
     console.log('[STEP 1] Parsing payload...');
@@ -43,7 +42,6 @@ Deno.serve(async (req) => {
     console.log('[STEP 9] Processing event type:', eventType);
     if (eventType === 'purchase.approved' || eventType === 'subscription.created') {
       console.log('[STEP 10] Event is purchase/subscription');
-      // Determine plan type
       let planType = 'mensal';
       let expiresAt = new Date();
 
