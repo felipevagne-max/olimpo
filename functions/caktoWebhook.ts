@@ -90,6 +90,7 @@ Deno.serve(async (req) => {
             email: email,
             password: hashedPassword,
             full_name: fullName || email.split('@')[0],
+            is_first_login: true,
             created_at: new Date().toISOString()
           })
           .select('id')
