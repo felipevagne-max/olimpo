@@ -30,10 +30,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_KEY');
     
-    console.log('[DEBUG] SUPABASE_URL value:', supabaseUrl);
-    console.log('[DEBUG] SUPABASE_SERVICE_KEY length:', supabaseKey?.length);
-    console.log('[DEBUG] SUPABASE_URL starts with https:', supabaseUrl?.startsWith('https://'));
-    
     if (!supabaseUrl || !supabaseKey) {
       console.error('[ERROR] Missing Supabase credentials');
       return Response.json({ error: 'Server configuration error' }, { status: 500 });
@@ -44,7 +40,7 @@ Deno.serve(async (req) => {
 
     // Handle different event types
     console.log('[STEP 9] Processing event type:', eventType);
-    if (eventType === 'purchase.approved' || eventType === 'subscription.created') {
+    if (eventType === 'purchase_approved' || eventType === 'purchase.approved' || eventType === 'subscription.created' || eventType === 'subscription_created') {
       console.log('[STEP 10] Event is purchase/subscription');
       let planType = 'mensal';
       let expiresAt = new Date();
