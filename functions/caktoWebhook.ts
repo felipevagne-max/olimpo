@@ -7,8 +7,8 @@ Deno.serve(async (req) => {
     console.log('Cakto Webhook received:', JSON.stringify(payload, null, 2));
 
     const eventType = payload.event || payload.type;
-    const customer = payload.customer || {};
-    const product = payload.product || {};
+    const customer = payload.data?.customer || {};
+    const product = payload.data?.product || {};
     
     const email = customer.email;
     const fullName = customer.name || customer.full_name;
