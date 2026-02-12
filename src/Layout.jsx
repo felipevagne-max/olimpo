@@ -53,6 +53,26 @@ export default function Layout({ children, currentPageName }) {
       const startTime = Date.now();
       const MIN_SPLASH_DURATION = 1000;
       
+      try {
+        // Check if user is authenticated
+        const isAuth = await base44.auth.isAuthenticated();
+        
+        if (isAuth) {
+          const user = await base44.auth.me();
+          
+          // Check if first login and redirect to FirstAccess page
+          const { data } = await base44.functions.invoke('checkFirstLogin', {
+            email: user.email
+          });
+          
+          if (data.is_first_login && data.subscription_status === 'active') {
+            navigate('/FirstAccess');
+          }
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      }
+      
       // Ensure minimum splash duration
       const elapsed = Date.now() - startTime;
       const remainingTime = Math.max(0, MIN_SPLASH_DURATION - elapsed);
