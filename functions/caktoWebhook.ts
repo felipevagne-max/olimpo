@@ -3,8 +3,9 @@ import * as bcrypt from 'npm:bcryptjs@2.4.3';
 
 Deno.serve(async (req) => {
   try {
+    console.log('[WEBHOOK] Request received');
     const payload = await req.json();
-    console.log('Cakto Webhook received:', JSON.stringify(payload, null, 2));
+    console.log('[WEBHOOK] Payload:', JSON.stringify(payload, null, 2));
 
     const eventType = payload.event || payload.type;
     const customer = payload.customer || {};
@@ -14,23 +15,30 @@ Deno.serve(async (req) => {
     const fullName = customer.name || customer.full_name;
     const productName = product.name;
 
+    console.log('[WEBHOOK] Parsed data:', { eventType, email, fullName, productName });
+
     if (!email) {
+      console.error('[WEBHOOK] Email not provided in payload');
       return Response.json({ error: 'Email not provided' }, { status: 400 });
     }
 
     // Initialize Supabase client
+    console.log('[WEBHOOK] Initializing Supabase client');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials');
+      console.error('[WEBHOOK] Missing Supabase credentials', { hasUrl: !!supabaseUrl, hasKey: !!supabaseKey });
       return Response.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
+    console.log('[WEBHOOK] Supabase client created');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Handle different event types
     if (eventType === 'purchase.approved' || eventType === 'subscription.created') {
+      console.log('[WEBHOOK] Processing purchase/subscription event');
+      
       // Determine plan type
       let planType = 'mensal';
       let expiresAt = new Date();
@@ -46,21 +54,27 @@ Deno.serve(async (req) => {
         expiresAt.setDate(expiresAt.getDate() + 30);
       }
 
+      console.log('[WEBHOOK] Plan determined:', { planType, expiresAt: expiresAt.toISOString() });
+
       // Check if user exists
+      console.log('[WEBHOOK] Checking if user exists:', email);
       const { data: existingUser, error: userError } = await supabase
         .from('users')
         .select('id')
         .eq('email', email)
         .single();
+      
+      console.log('[WEBHOOK] User check result:', { exists: !!existingUser, error: userError?.message });
 
       let userId;
 
       if (existingUser) {
         // User exists
         userId = existingUser.id;
-        console.log(`User already exists: ${userId}`);
+        console.log('[WEBHOOK] User already exists:', userId);
 
         // Update subscription
+        console.log('[WEBHOOK] Updating subscription for user:', userId);
         const { error: updateError } = await supabase
           .from('subscriptions')
           .upsert({
@@ -74,15 +88,19 @@ Deno.serve(async (req) => {
           });
 
         if (updateError) {
-          console.error('Error updating subscription:', updateError);
-          return Response.json({ error: 'Failed to update subscription' }, { status: 500 });
+          console.error('[WEBHOOK] Error updating subscription:', updateError);
+          return Response.json({ error: 'Failed to update subscription', details: updateError.message }, { status: 500 });
         }
 
-        console.log(`Subscription updated for user ${userId}`);
+        console.log('[WEBHOOK] Subscription updated successfully for user:', userId);
       } else {
         // User does not exist - create new user
+        console.log('[WEBHOOK] User does not exist, creating new user');
+        console.log('[WEBHOOK] Hashing password...');
         const hashedPassword = await bcrypt.hash('Olimpo12345', 10);
+        console.log('[WEBHOOK] Password hashed');
 
+        console.log('[WEBHOOK] Creating user in database...');
         const { data: newUser, error: createError } = await supabase
           .from('users')
           .insert({
@@ -96,14 +114,15 @@ Deno.serve(async (req) => {
           .single();
 
         if (createError) {
-          console.error('Error creating user:', createError);
-          return Response.json({ error: 'Failed to create user' }, { status: 500 });
+          console.error('[WEBHOOK] Error creating user:', createError);
+          return Response.json({ error: 'Failed to create user', details: createError.message }, { status: 500 });
         }
 
         userId = newUser.id;
-        console.log(`New user created: ${userId}`);
+        console.log('[WEBHOOK] New user created successfully:', userId);
 
         // Create subscription
+        console.log('[WEBHOOK] Creating subscription for new user:', userId);
         const { error: subError } = await supabase
           .from('subscriptions')
           .insert({
@@ -115,13 +134,14 @@ Deno.serve(async (req) => {
           });
 
         if (subError) {
-          console.error('Error creating subscription:', subError);
-          return Response.json({ error: 'Failed to create subscription' }, { status: 500 });
+          console.error('[WEBHOOK] Error creating subscription:', subError);
+          return Response.json({ error: 'Failed to create subscription', details: subError.message }, { status: 500 });
         }
 
-        console.log(`Subscription created for user ${userId}`);
+        console.log('[WEBHOOK] Subscription created successfully for user:', userId);
       }
 
+      console.log('[WEBHOOK] Process completed successfully');
       return Response.json({ 
         success: true, 
         message: 'User processed',
@@ -131,6 +151,7 @@ Deno.serve(async (req) => {
     } 
     
     else if (eventType === 'subscription.canceled') {
+      console.log('[WEBHOOK] Processing subscription.canceled event');
       // Find user and update subscription status
       const { data: user } = await supabase
         .from('users')
@@ -162,6 +183,7 @@ Deno.serve(async (req) => {
     }
     
     else if (eventType === 'subscription.expired') {
+      console.log('[WEBHOOK] Processing subscription.expired event');
       // Find user and update subscription status
       const { data: user } = await supabase
         .from('users')
@@ -202,9 +224,11 @@ Deno.serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('[WEBHOOK] Fatal error:', error);
+    console.error('[WEBHOOK] Error stack:', error.stack);
     return Response.json({ 
-      error: error.message 
+      error: error.message,
+      stack: error.stack 
     }, { status: 500 });
   }
 });
