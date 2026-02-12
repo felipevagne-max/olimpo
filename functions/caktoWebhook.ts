@@ -30,6 +30,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_KEY');
     
+    console.log('[DEBUG] SUPABASE_URL value:', supabaseUrl);
+    console.log('[DEBUG] SUPABASE_SERVICE_KEY length:', supabaseKey?.length);
+    console.log('[DEBUG] SUPABASE_URL starts with https:', supabaseUrl?.startsWith('https://'));
+    
     if (!supabaseUrl || !supabaseKey) {
       console.error('[ERROR] Missing Supabase credentials');
       return Response.json({ error: 'Server configuration error' }, { status: 500 });
