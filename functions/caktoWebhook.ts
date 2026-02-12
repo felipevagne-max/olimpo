@@ -3,34 +3,45 @@ import * as bcrypt from 'npm:bcryptjs@2.4.3';
 
 Deno.serve(async (req) => {
   try {
+    console.log('[STEP 1] Parsing payload...');
     const payload = await req.json();
-    console.log('Cakto Webhook received:', JSON.stringify(payload, null, 2));
+    console.log('[STEP 2] Payload recebido:', JSON.stringify(payload, null, 2));
 
     const eventType = payload.event || payload.type;
-    const customer = payload.customer || {};
-    const product = payload.product || {};
+    console.log('[STEP 3] Event type:', eventType);
+    
+    const customer = payload.data?.customer || {};
+    const product = payload.data?.product || {};
+    console.log('[STEP 4] Customer:', JSON.stringify(customer, null, 2));
+    console.log('[STEP 5] Product:', JSON.stringify(product, null, 2));
     
     const email = customer.email;
     const fullName = customer.name || customer.full_name;
     const productName = product.name;
+    console.log('[STEP 6] Extracted data:', { email, fullName, productName });
 
     if (!email) {
+      console.error('[ERROR] Email not provided');
       return Response.json({ error: 'Email not provided' }, { status: 400 });
     }
 
     // Initialize Supabase client
+    console.log('[STEP 7] Initializing Supabase...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials');
+      console.error('[ERROR] Missing Supabase credentials');
       return Response.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('[STEP 8] Supabase client created');
 
     // Handle different event types
+    console.log('[STEP 9] Processing event type:', eventType);
     if (eventType === 'purchase.approved' || eventType === 'subscription.created') {
+      console.log('[STEP 10] Event is purchase/subscription');
       // Determine plan type
       let planType = 'mensal';
       let expiresAt = new Date();
@@ -46,21 +57,27 @@ Deno.serve(async (req) => {
         expiresAt.setDate(expiresAt.getDate() + 30);
       }
 
+      console.log('[STEP 11] Plan type determined:', planType);
+
       // Check if user exists
+      console.log('[STEP 12] Checking if user exists:', email);
       const { data: existingUser, error: userError } = await supabase
         .from('users')
         .select('id')
         .eq('email', email)
         .single();
+      
+      console.log('[STEP 13] User check result:', { exists: !!existingUser, hasError: !!userError });
 
       let userId;
 
       if (existingUser) {
         // User exists
         userId = existingUser.id;
-        console.log(`User already exists: ${userId}`);
+        console.log('[STEP 14] User already exists:', userId);
 
         // Update subscription
+        console.log('[STEP 15] Updating subscription...');
         const { error: updateError } = await supabase
           .from('subscriptions')
           .upsert({
@@ -74,15 +91,19 @@ Deno.serve(async (req) => {
           });
 
         if (updateError) {
-          console.error('Error updating subscription:', updateError);
-          return Response.json({ error: 'Failed to update subscription' }, { status: 500 });
+          console.error('[ERROR] Error updating subscription:', updateError);
+          return Response.json({ error: 'Failed to update subscription', details: updateError.message }, { status: 500 });
         }
 
-        console.log(`Subscription updated for user ${userId}`);
+        console.log('[STEP 16] Subscription updated successfully');
       } else {
         // User does not exist - create new user
+        console.log('[STEP 14] User does not exist, creating...');
+        console.log('[STEP 15] Hashing password...');
         const hashedPassword = await bcrypt.hash('Olimpo12345', 10);
+        console.log('[STEP 16] Password hashed');
 
+        console.log('[STEP 17] Inserting user in database...');
         const { data: newUser, error: createError } = await supabase
           .from('users')
           .insert({
@@ -96,14 +117,15 @@ Deno.serve(async (req) => {
           .single();
 
         if (createError) {
-          console.error('Error creating user:', createError);
-          return Response.json({ error: 'Failed to create user' }, { status: 500 });
+          console.error('[ERROR] Error creating user:', createError);
+          return Response.json({ error: 'Failed to create user', details: createError.message }, { status: 500 });
         }
 
         userId = newUser.id;
-        console.log(`New user created: ${userId}`);
+        console.log('[STEP 18] New user created:', userId);
 
         // Create subscription
+        console.log('[STEP 19] Creating subscription...');
         const { error: subError } = await supabase
           .from('subscriptions')
           .insert({
@@ -115,13 +137,14 @@ Deno.serve(async (req) => {
           });
 
         if (subError) {
-          console.error('Error creating subscription:', subError);
-          return Response.json({ error: 'Failed to create subscription' }, { status: 500 });
+          console.error('[ERROR] Error creating subscription:', subError);
+          return Response.json({ error: 'Failed to create subscription', details: subError.message }, { status: 500 });
         }
 
-        console.log(`Subscription created for user ${userId}`);
+        console.log('[STEP 20] Subscription created successfully');
       }
 
+      console.log('[SUCCESS] Process completed successfully');
       return Response.json({ 
         success: true, 
         message: 'User processed',
@@ -202,9 +225,11 @@ Deno.serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('ERRO FATAL:', error.message);
+    console.error('Stack trace:', error.stack);
     return Response.json({ 
-      error: error.message 
+      error: error.message,
+      stack: error.stack
     }, { status: 500 });
   }
 });
