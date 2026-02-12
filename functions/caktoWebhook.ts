@@ -96,13 +96,13 @@ Deno.serve(async (req) => {
 
         console.log('[STEP 16] Subscription updated successfully');
       } else {
-        // User does not exist - create new user
-        console.log('[STEP 14] User does not exist, creating...');
+        // User does not exist - create new user in Supabase
+        console.log('[STEP 14] User does not exist, creating in Supabase...');
         console.log('[STEP 15] Hashing password...');
         const hashedPassword = await bcrypt.hash('Olimpo12345', 10);
         console.log('[STEP 16] Password hashed');
 
-        console.log('[STEP 17] Inserting user in database...');
+        console.log('[STEP 17] Inserting user in Supabase...');
         const { data: newUser, error: createError } = await supabase
           .from('users')
           .insert({
@@ -116,15 +116,15 @@ Deno.serve(async (req) => {
           .single();
 
         if (createError) {
-          console.error('[ERROR] Error creating user:', createError);
+          console.error('[ERROR] Error creating user in Supabase:', createError);
           return Response.json({ error: 'Failed to create user', details: createError.message }, { status: 500 });
         }
 
         userId = newUser.id;
-        console.log('[STEP 18] New user created:', userId);
+        console.log('[STEP 18] New user created in Supabase:', userId);
 
-        // Create subscription
-        console.log('[STEP 19] Creating subscription...');
+        // Create subscription in Supabase
+        console.log('[STEP 19] Creating subscription in Supabase...');
         const { error: subError } = await supabase
           .from('subscriptions')
           .insert({
@@ -140,7 +140,26 @@ Deno.serve(async (req) => {
           return Response.json({ error: 'Failed to create subscription', details: subError.message }, { status: 500 });
         }
 
-        console.log('[STEP 20] Subscription created successfully');
+        console.log('[STEP 20] Subscription created successfully in Supabase');
+
+        // Create user in Base44 (for login)
+        console.log('[STEP 21] Creating user in Base44...');
+        try {
+          // Import Base44 SDK
+          const { createClient } = await import('npm:@base44/sdk@0.8.6');
+          const base44 = createClient({
+            appId: Deno.env.get('BASE44_APP_ID'),
+            serviceRoleKey: Deno.env.get('BASE44_SERVICE_ROLE_KEY')
+          });
+
+          // Invite user to Base44 (creates user with email/password)
+          await base44.users.inviteUser(email, 'user');
+          console.log('[STEP 22] User invited to Base44 successfully');
+        } catch (base44Error) {
+          console.error('[ERROR] Error creating user in Base44:', base44Error);
+          // Don't fail the webhook, user is created in Supabase
+          console.log('[WARNING] User created in Supabase but not in Base44');
+        }
       }
 
       console.log('[SUCCESS] Process completed successfully');
