@@ -3,7 +3,6 @@ import * as bcrypt from 'npm:bcryptjs@2.4.3';
 
 Deno.serve(async (req) => {
   try {
-    // Parse Cakto webhook payload
     const payload = await req.json();
     console.log('Cakto Webhook received:', JSON.stringify(payload, null, 2));
 
