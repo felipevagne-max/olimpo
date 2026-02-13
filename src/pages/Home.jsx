@@ -6,19 +6,8 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const redirect = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) {
-          navigate('/App');
-        } else {
-          navigate('/Auth');
-        }
-      } catch (error) {
-        navigate('/Auth');
-      }
-    };
-    redirect();
+    // Sempre redireciona para /Auth independente do status de login
+    navigate('/Auth');
   }, [navigate]);
 
   return (
