@@ -37,7 +37,7 @@ export default function FirstAccess() {
 
       if (!userData.is_first_login) {
         // Não é primeiro acesso, redirecionar para dashboard
-        navigate('/Dashboard');
+        navigate('/App');
         return;
       }
 
@@ -80,7 +80,7 @@ export default function FirstAccess() {
       if (data.success) {
         toast.success('Senha criada com sucesso!');
         setTimeout(() => {
-          navigate('/Dashboard');
+          navigate('/App');
         }, 1000);
       }
     } catch (error) {
