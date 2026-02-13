@@ -10,7 +10,7 @@ export default function Home() {
       try {
         const isAuth = await base44.auth.isAuthenticated();
         if (isAuth) {
-          navigate('/Dashboard');
+          navigate('/App');
         } else {
           navigate('/Auth');
         }

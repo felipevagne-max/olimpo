@@ -67,6 +67,7 @@ export default function Layout({ children, currentPageName }) {
           
           if (data.is_first_login && data.subscription_status === 'active') {
             navigate('/FirstAccess');
+            return;
           }
         }
       } catch (error) {

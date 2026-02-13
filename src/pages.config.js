@@ -64,6 +64,7 @@ import Titles from './pages/Titles';
 import UnifiedTasks from './pages/UnifiedTasks';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
+import App from './pages/App';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +86,7 @@ export const PAGES = {
     "UnifiedTasks": UnifiedTasks,
     "Auth": Auth,
     "Home": Home,
+    "App": App,
 }
 
 export const pagesConfig = {
