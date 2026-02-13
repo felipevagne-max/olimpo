@@ -155,11 +155,15 @@ export default function Layout({ children, currentPageName }) {
 
       <MatrixColumns opacity={0.15} />
       <TitleEquipEffect />
-      <TopBar 
-        sidebarCollapsed={isDesktop ? sidebarCollapsed : false} 
-        onToggleSidebar={() => toggleSidebarMutation.mutate(!sidebarCollapsed)}
-      />
-      <BottomNav collapsed={isDesktop ? sidebarCollapsed : false} />
+      {currentPageName !== 'Auth' && (
+        <>
+          <TopBar 
+            sidebarCollapsed={isDesktop ? sidebarCollapsed : false} 
+            onToggleSidebar={() => toggleSidebarMutation.mutate(!sidebarCollapsed)}
+          />
+          <BottomNav collapsed={isDesktop ? sidebarCollapsed : false} />
+        </>
+      )}
       <div 
         className="min-h-screen bg-black relative overflow-hidden transition-all duration-200"
         style={{
