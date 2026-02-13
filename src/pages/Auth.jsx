@@ -1,9 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
 import { Mail, ArrowRight, Code2 } from 'lucide-react';
 
 export default function Auth() {
+  const navigate = useNavigate();
   const canvasRef = useRef(null);
   const [email, setEmail] = useState('');
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (isAuth) {
+          navigate('/Dashboard');
+          return;
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      }
+      setIsChecking(false);
+    };
+    checkAuth();
+  }, [navigate]);
 
   // Matrix rain effect
   useEffect(() => {
@@ -50,6 +71,16 @@ export default function Auth() {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-[#050508] flex items-center justify-center">
+        <div className="text-[#00FF66] text-sm" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+          Verificando acesso...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#050508] relative overflow-hidden flex items-center justify-center p-4">

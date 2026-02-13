@@ -63,6 +63,7 @@ import Tasks from './pages/Tasks';
 import Titles from './pages/Titles';
 import UnifiedTasks from './pages/UnifiedTasks';
 import Auth from './pages/Auth';
+import Home from './pages/Home';
 import __Layout from './Layout.jsx';
 
 
@@ -83,6 +84,7 @@ export const PAGES = {
     "Titles": Titles,
     "UnifiedTasks": UnifiedTasks,
     "Auth": Auth,
+    "Home": Home,
 }
 
 export const pagesConfig = {
