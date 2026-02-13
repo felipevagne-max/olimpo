@@ -52,6 +52,7 @@ import CreateGoal from './pages/CreateGoal';
 import CreateHabit from './pages/CreateHabit';
 import Dashboard from './pages/Dashboard';
 import Finance from './pages/Finance';
+import FirstAccess from './pages/FirstAccess';
 import GoalDetail from './pages/GoalDetail';
 import Goals from './pages/Goals';
 import Habits from './pages/Habits';
@@ -61,7 +62,7 @@ import Progress from './pages/Progress';
 import Tasks from './pages/Tasks';
 import Titles from './pages/Titles';
 import UnifiedTasks from './pages/UnifiedTasks';
-import FirstAccess from './pages/FirstAccess';
+import Auth from './pages/Auth';
 import __Layout from './Layout.jsx';
 
 
@@ -71,6 +72,7 @@ export const PAGES = {
     "CreateHabit": CreateHabit,
     "Dashboard": Dashboard,
     "Finance": Finance,
+    "FirstAccess": FirstAccess,
     "GoalDetail": GoalDetail,
     "Goals": Goals,
     "Habits": Habits,
@@ -80,7 +82,7 @@ export const PAGES = {
     "Tasks": Tasks,
     "Titles": Titles,
     "UnifiedTasks": UnifiedTasks,
-    "FirstAccess": FirstAccess,
+    "Auth": Auth,
 }
 
 export const pagesConfig = {
