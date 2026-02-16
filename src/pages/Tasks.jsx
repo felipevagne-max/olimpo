@@ -233,10 +233,14 @@ export default function Tasks() {
   
   const dayTasks = showOverdue
     ? tasks.filter(t => !t.archived && !t.completed && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate)))
-    : tasks.filter(t => t.date === selectedDateStr && !t.archived && !t.completed);
+    : tasks.filter(t => {
+        const displayDate = t.dueDate || t.date;
+        return displayDate === selectedDateStr && !t.archived && !t.completed;
+      });
   
   const completedDayTasks = showOverdue ? [] : tasks.filter(t => {
-    if (t.date !== selectedDateStr || t.archived || !t.completed) return false;
+    const displayDate = t.dueDate || t.date;
+    if (displayDate !== selectedDateStr || t.archived || !t.completed) return false;
     // Only show completed tasks from last 7 days
     if (!t.completedAt) return false;
     const completedDate = new Date(t.completedAt);
@@ -399,7 +403,10 @@ export default function Tasks() {
             const isSelected = dayStr === selectedDateStr && !showOverdue;
             
             // Calculate total items for this day (tasks + habits)
-            const dayTasksList = tasks.filter(t => t.date === dayStr && !t.archived);
+            const dayTasksList = tasks.filter(t => {
+              const displayDate = t.dueDate || t.date;
+              return displayDate === dayStr && !t.archived;
+            });
             const dayHabitsList = habits.filter(habit => {
               if (habit.frequencyType === 'daily') return true;
               if (habit.frequencyType === 'weekdays') {
