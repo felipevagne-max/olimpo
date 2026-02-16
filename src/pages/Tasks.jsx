@@ -14,8 +14,9 @@ import QuickTaskSheet from '@/components/tasks/QuickTaskSheet';
 import TaskTypeSelector from '@/components/tasks/TaskTypeSelector';
 import ProgressGrid7Days from '@/components/tasks/ProgressGrid7Days';
 import ExpectancyNext7Days from '@/components/tasks/ExpectancyNext7Days';
+import ProjectsSheet from '@/components/projects/ProjectsSheet';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
-import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare } from 'lucide-react';
+import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare, Folder } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ export default function Tasks() {
   const [showModal, setShowModal] = useState(false);
   const [showQuickTask, setShowQuickTask] = useState(false);
   const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [showProjects, setShowProjects] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [showOverdue, setShowOverdue] = useState(false);
@@ -358,13 +360,21 @@ export default function Tasks() {
                 </p>
             </div>
           </div>
-          <OlimpoButton 
-            className="w-full mt-4"
-            onClick={() => setShowTypeSelector(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Tarefa
-          </OlimpoButton>
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <OlimpoButton 
+              onClick={() => setShowTypeSelector(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Tarefa
+            </OlimpoButton>
+            <OlimpoButton 
+              variant="secondary"
+              onClick={() => setShowProjects(true)}
+            >
+              <Folder className="w-4 h-4 mr-2" />
+              Projetos
+            </OlimpoButton>
+          </div>
         </OlimpoCard>
 
         {/* Day Selector */}
@@ -738,6 +748,11 @@ export default function Tasks() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ProjectsSheet
+        open={showProjects}
+        onClose={() => setShowProjects(false)}
+      />
 
       <XPGainManager />
       <BottomNav />
