@@ -87,6 +87,7 @@ export function getLevelFromXP(xpTotal) {
   const nextRank = RANK_TIERS[rankIndex] || null;
   
   const xpInCurrentLevel = xpTotal % XP_PER_LEVEL;
+  const xpForThisLevel = XP_PER_LEVEL;
   const levelProgressPercent = (xpInCurrentLevel / XP_PER_LEVEL) * 100;
   
   // Passo dentro do rank (1-5)
@@ -95,13 +96,17 @@ export function getLevelFromXP(xpTotal) {
   
   return {
     nivelNum,
+    levelIndex: nivelNum,
     rankIndex: currentRank.index,
     rankName: currentRank.name,
+    levelName: currentRank.name,
     rankDescription: currentRank.description,
     rankRewards: currentRank.rewards,
     rankStep,
     levelsToNextRank,
     levelProgressPercent,
+    xpCurrentLevel: xpInCurrentLevel,
+    xpForThisLevel,
     xpToNextLevel: XP_PER_LEVEL - xpInCurrentLevel,
     nextRankName: nextRank ? nextRank.name : 'Máximo',
     crestDesc: currentRank.crestDesc
