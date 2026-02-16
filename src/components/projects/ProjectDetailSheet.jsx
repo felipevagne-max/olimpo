@@ -47,13 +47,13 @@ export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
     }
   });
 
-  const markAsCompletedMutation = useMutation({
+  const markAsClosedMutation = useMutation({
     mutationFn: async () => {
-      return base44.entities.Project.update(project.id, { status: 'completed' });
+      return base44.entities.Project.update(project.id, { status: 'closed' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
-      toast.success('Projeto concluído! 🎉');
+      toast.success('Projeto fechado! 🎉');
       onClose();
     }
   });
@@ -104,9 +104,6 @@ export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
                 >
                   {project.name}
                 </SheetTitle>
-                {project.category && (
-                  <span className="text-xs text-[#9AA0A6]">{project.category}</span>
-                )}
               </div>
             </div>
             <button
@@ -141,12 +138,6 @@ export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
                 }}
               />
             </div>
-            {project.dueDate && (
-              <div className="flex items-center gap-2 text-sm text-[#9AA0A6]">
-                <Calendar className="w-4 h-4" />
-                Prazo: {format(new Date(project.dueDate), "dd 'de' MMMM", { locale: ptBR })}
-              </div>
-            )}
           </div>
         </OlimpoCard>
 
@@ -266,11 +257,11 @@ export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
           {project.status === 'active' && (
             <OlimpoButton
               className="w-full"
-              onClick={() => markAsCompletedMutation.mutate()}
-              disabled={markAsCompletedMutation.isPending}
+              onClick={() => markAsClosedMutation.mutate()}
+              disabled={markAsClosedMutation.isPending}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
-              Marcar como Concluído
+              Fechar Projeto
             </OlimpoButton>
           )}
           <OlimpoButton

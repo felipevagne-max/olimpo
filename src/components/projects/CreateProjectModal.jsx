@@ -19,15 +19,11 @@ const PROJECT_COLORS = [
   '#FFC107', '#FFD400'
 ];
 
-const CATEGORIES = ['Trabalho', 'Pessoal', 'Estudos', 'Saúde', 'Casa', 'Outro'];
-
 export default function CreateProjectModal({ open, onClose, project }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: '',
-    dueDate: '',
     notes: '',
     color: '#00FF66',
     status: 'active'
@@ -38,8 +34,6 @@ export default function CreateProjectModal({ open, onClose, project }) {
       setFormData({
         name: project.name || '',
         description: project.description || '',
-        category: project.category || '',
-        dueDate: project.dueDate || '',
         notes: project.notes || '',
         color: project.color || '#00FF66',
         status: project.status || 'active'
@@ -48,8 +42,6 @@ export default function CreateProjectModal({ open, onClose, project }) {
       setFormData({
         name: '',
         description: '',
-        category: '',
-        dueDate: '',
         notes: '',
         color: '#00FF66',
         status: 'active'
@@ -112,31 +104,6 @@ export default function CreateProjectModal({ open, onClose, project }) {
               className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8] placeholder:text-[#9AA0A6] focus:border-[#00FF66] resize-none"
               rows={2}
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-[#9AA0A6] text-xs">Categoria</Label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full bg-[#070A08] border border-[rgba(0,255,102,0.18)] text-[#E8E8E8] rounded-lg px-3 py-2 text-sm focus:border-[#00FF66] focus:outline-none"
-              >
-                <option value="">Selecione...</option>
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <Label className="text-[#9AA0A6] text-xs">Prazo</Label>
-              <OlimpoInput
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-              />
-            </div>
           </div>
 
           <div>

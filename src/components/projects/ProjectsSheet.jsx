@@ -44,7 +44,7 @@ export default function ProjectsSheet({ open, onClose }) {
   });
 
   const activeProjects = projects.filter(p => p.status === 'active');
-  const completedProjects = projects.filter(p => p.status === 'completed');
+  const closedProjects = projects.filter(p => p.status === 'closed');
 
   const getProjectStats = (projectId) => {
     const projectTasks = tasks.filter(t => t.projectId === projectId && !t.archived);
@@ -75,7 +75,7 @@ export default function ProjectsSheet({ open, onClose }) {
 
           {isLoading ? (
             <LoadingSpinner size="lg" className="mt-8" />
-          ) : activeProjects.length === 0 && completedProjects.length === 0 ? (
+          ) : activeProjects.length === 0 && closedProjects.length === 0 ? (
             <EmptyState
               icon={Folder}
               title="Nenhum projeto criado"
@@ -116,11 +116,6 @@ export default function ProjectsSheet({ open, onClose }) {
                               )}
                               <div className="flex items-center gap-3 text-xs text-[#9AA0A6]">
                                 <span>{stats.completed}/{stats.total} tarefas</span>
-                                {project.category && (
-                                  <span className="px-2 py-0.5 rounded bg-[rgba(0,255,102,0.1)] text-[#00FF66]">
-                                    {project.category}
-                                  </span>
-                                )}
                               </div>
                               {stats.total > 0 && (
                                 <div className="mt-2 h-1.5 bg-[#070A08] rounded-full overflow-hidden">
@@ -142,14 +137,14 @@ export default function ProjectsSheet({ open, onClose }) {
                 </div>
               )}
 
-              {/* Completed Projects */}
-              {completedProjects.length > 0 && (
+              {/* Closed Projects */}
+              {closedProjects.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-[#9AA0A6] mb-3 uppercase">
-                    Concluídos
+                    Fechados
                   </h3>
                   <div className="space-y-3">
-                    {completedProjects.map(project => {
+                    {closedProjects.map(project => {
                       const stats = getProjectStats(project.id);
                       
                       return (
