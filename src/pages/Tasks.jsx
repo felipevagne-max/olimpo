@@ -12,7 +12,7 @@ import EmptyState from '@/components/olimpo/EmptyState';
 import TaskModal from '@/components/tasks/TaskModal';
 import QuickTaskSheet from '@/components/tasks/QuickTaskSheet';
 import TaskTypeSelector from '@/components/tasks/TaskTypeSelector';
-import ProgressGrid7Days from '@/components/tasks/ProgressGrid7Days';
+
 import ExpectancyNext7Days from '@/components/tasks/ExpectancyNext7Days';
 import ProjectsSheet from '@/components/projects/ProjectsSheet';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
@@ -731,10 +731,7 @@ export default function Tasks() {
           <ExpectancyNext7Days />
         </div>
 
-        {/* Progress Grid */}
-        <div className="mt-6">
-          <ProgressGrid7Days />
-        </div>
+
 
         {/* Calendar */}
         <div className="mt-6 mb-6">
