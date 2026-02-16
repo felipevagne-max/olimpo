@@ -470,7 +470,7 @@ export default function Tasks() {
           <div className="space-y-3">
             {combinedItems.map(item => {
               if (item.type === 'habit') {
-                // Habit card - gamified view, no checkbox
+                // Habit card - gamified view, clickable
                 const habitStreak = (() => {
                   const logs = habitLogs
                     .filter(l => l.habitId === item.id && l.completed)
@@ -491,36 +491,59 @@ export default function Tasks() {
                   return streak;
                 })();
 
+                const isFailed = !item.isCompleted && !isToday(selectedDate);
+
                 return (
                   <OlimpoCard 
                     key={`${item.type}-${item.id}`}
-                    className="cursor-pointer hover:border-[#00FF66] transition-all"
-                    onClick={() => completeHabitMutation.mutate(item)}
+                    className={`cursor-pointer transition-all ${
+                      isFailed 
+                        ? 'border-[rgba(255,59,59,0.3)] hover:border-[#FF3B3B]' 
+                        : 'hover:border-[#00FF66]'
+                    }`}
+                    onClick={() => !isFailed && completeHabitMutation.mutate(item)}
                   >
                     <div className="flex items-center gap-3">
                       {/* Progress indicator */}
                       <div className={`w-1 h-16 rounded-full ${
                         item.isCompleted 
                           ? 'bg-gradient-to-b from-[#00FF66] to-[#00DD55]' 
-                          : 'bg-gradient-to-b from-[rgba(0,255,102,0.3)] to-[rgba(0,255,102,0.1)]'
+                          : isFailed
+                            ? 'bg-gradient-to-b from-[rgba(255,59,59,0.5)] to-[rgba(255,59,59,0.2)]'
+                            : 'bg-gradient-to-b from-[rgba(0,255,102,0.3)] to-[rgba(0,255,102,0.1)]'
                       }`} />
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <CheckSquare className={`w-4 h-4 ${item.isCompleted ? 'text-[#00FF66]' : 'text-[#9AA0A6]'}`} />
-                          <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#00FF66]' : 'text-[#E8E8E8]'}`}>
+                          <CheckSquare className={`w-4 h-4 ${
+                            item.isCompleted ? 'text-[#00FF66]' : 
+                            isFailed ? 'text-[#FF3B3B]' : 
+                            'text-[#9AA0A6]'
+                          }`} />
+                          <h3 className={`font-medium text-sm ${
+                            item.isCompleted ? 'text-[#00FF66]' : 
+                            isFailed ? 'text-[#FF3B3B] line-through' : 
+                            'text-[#E8E8E8]'
+                          }`}>
                             {item.name}
                           </h3>
                         </div>
                         
                         <div className="flex items-center gap-3 mt-2">
+                          {isFailed && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
+                              FALHA
+                            </span>
+                          )}
                           <div className="flex items-center gap-1">
-                            <Flame className="w-3 h-3 text-orange-500" />
-                            <span className="text-xs text-[#E8E8E8] font-mono">{habitStreak}</span>
+                            <Flame className={`w-3 h-3 ${isFailed ? 'text-[#9AA0A6]' : 'text-orange-500'}`} />
+                            <span className={`text-xs font-mono ${isFailed ? 'text-[#9AA0A6]' : 'text-[#E8E8E8]'}`}>{habitStreak}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Zap className="w-3 h-3 text-[#00FF66]" />
-                            <span className="text-xs text-[#00FF66] font-mono">+{item.xpReward || 8}</span>
+                            <Zap className={`w-3 h-3 ${isFailed ? 'text-[#9AA0A6]' : 'text-[#00FF66]'}`} />
+                            <span className={`text-xs font-mono ${isFailed ? 'text-[#9AA0A6]' : 'text-[#00FF66]'}`}>
+                              +{item.xpReward || 8}
+                            </span>
                           </div>
                           {item.goalText && (
                             <span className="text-xs text-[#9AA0A6]">{item.goalText}</span>
