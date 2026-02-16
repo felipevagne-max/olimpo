@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import OlimpoInput from './OlimpoInput';
 import OlimpoButton from './OlimpoButton';
+import SplashScreen from './SplashScreen';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -22,10 +23,8 @@ export default function UserPopover() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState('');
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [pendingName, setPendingName] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -65,55 +64,63 @@ export default function UserPopover() {
     oscillator.stop(audioContext.currentTime + 0.18);
   };
 
-  const updateNameMutation = useMutation({
-    mutationFn: async (newName) => {
-      const trimmed = newName.trim();
-      if (!trimmed) {
-        throw new Error('Nome não pode ser vazio');
+  const handleSaveClick = async () => {
+    const trimmed = username.trim();
+    
+    if (!trimmed) {
+      toast.error('Nome não pode ser vazio');
+      return;
+    }
+    
+    if (trimmed === userProfile?.displayName) {
+      return;
+    }
+
+    // Check 24h lock
+    if (userProfile?.username_last_changed_at) {
+      const lastChanged = new Date(userProfile.username_last_changed_at);
+      const now = new Date();
+      const hoursSince = (now - lastChanged) / (1000 * 60 * 60);
+      if (hoursSince < 24) {
+        const hoursRemaining = Math.ceil(24 - hoursSince);
+        toast.error(`Não permito, tente em ${hoursRemaining} ${hoursRemaining === 1 ? 'hora' : 'horas'}.`);
+        return;
       }
+    }
 
-      // Check 1-day (24h) lock
-      if (userProfile?.username_last_changed_at) {
-        const lastChanged = new Date(userProfile.username_last_changed_at);
-        const now = new Date();
-        const hoursSince = (now - lastChanged) / (1000 * 60 * 60);
-        if (hoursSince < 24) {
-          const hoursRemaining = Math.ceil(24 - hoursSince);
-          throw new Error(`Não permito, tente em ${hoursRemaining} ${hoursRemaining === 1 ? 'hora' : 'horas'}.`);
-        }
-      }
+    // Check uniqueness
+    const allProfiles = await base44.entities.UserProfile.list();
+    const nameExists = allProfiles.some(p => 
+      p.id !== userProfile?.id && 
+      p.displayName?.toLowerCase() === trimmed.toLowerCase()
+    );
 
-      // Check uniqueness (case-insensitive)
-      const allProfiles = await base44.entities.UserProfile.list();
-      const nameExists = allProfiles.some(p => 
-        p.id !== userProfile?.id && 
-        p.displayName?.toLowerCase() === trimmed.toLowerCase()
-      );
+    if (nameExists) {
+      toast.error('Esse nome já está em uso.');
+      return;
+    }
 
-      if (nameExists) {
-        throw new Error('Esse nome já está em uso.');
-      }
+    if (!userProfile?.id) {
+      toast.error('Perfil não encontrado');
+      return;
+    }
 
-      if (!userProfile?.id) {
-        throw new Error('Perfil não encontrado');
-      }
-
-      return base44.entities.UserProfile.update(userProfile.id, {
+    try {
+      setIsSaving(true);
+      setIsOpen(false);
+      
+      await base44.entities.UserProfile.update(userProfile.id, {
         displayName: trimmed,
         username_last_changed_at: new Date().toISOString()
       });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['userProfile']);
-      queryClient.invalidateQueries(['user']);
-      setShowSuccess(true);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-      setShowConfirm(false);
-      setIsOpen(false); // Close popover on error
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      window.location.reload();
+    } catch (error) {
+      setIsSaving(false);
+      toast.error(error.message || 'Erro ao salvar nome');
     }
-  });
+  };
 
   const resetJourneyMutation = useMutation({
     mutationFn: async () => {
@@ -172,39 +179,7 @@ export default function UserPopover() {
     }
   });
 
-  const handleSaveClick = () => {
-    const trimmed = username.trim();
-    
-    if (!trimmed) {
-      toast.error('Nome não pode ser vazio');
-      return;
-    }
-    
-    if (trimmed === userProfile?.displayName) {
-      return;
-    }
 
-    // Check 24h lock before showing confirmation
-    if (userProfile?.username_last_changed_at) {
-      const lastChanged = new Date(userProfile.username_last_changed_at);
-      const now = new Date();
-      const hoursSince = (now - lastChanged) / (1000 * 60 * 60);
-      if (hoursSince < 24) {
-        const hoursRemaining = Math.ceil(24 - hoursSince);
-        toast.error(`Não permito, tente em ${hoursRemaining} ${hoursRemaining === 1 ? 'hora' : 'horas'}.`);
-        setIsOpen(false); // Close popover
-        return;
-      }
-    }
-
-    setPendingName(trimmed);
-    setShowConfirm(true);
-  };
-
-  const confirmUpdate = () => {
-    setShowConfirm(false);
-    updateNameMutation.mutate(pendingName);
-  };
 
   const updateProfileSettingMutation = useMutation({
     mutationFn: (skipConfirm) => {
@@ -232,6 +207,10 @@ export default function UserPopover() {
   const planDaysRemaining = userProfile?.planExpiresAt 
     ? Math.max(0, Math.ceil((new Date(userProfile.planExpiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
     : null;
+
+  if (isSaving) {
+    return <SplashScreen />;
+  }
 
   return (
     <>
@@ -273,7 +252,7 @@ export default function UserPopover() {
               />
               <OlimpoButton
                 onClick={handleSaveClick}
-                disabled={updateNameMutation.isPending || username === userProfile?.displayName}
+                disabled={isSaving || username === userProfile?.displayName}
                 className="px-3"
               >
                 Salvar
@@ -314,87 +293,6 @@ export default function UserPopover() {
         </div>
       </PopoverContent>
     </Popover>
-
-    <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-      <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-[#E8E8E8]">
-            Herói, deseja realmente alterar seu nome?
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-[#9AA0A6]">
-            Você não poderá alterar pelas próximas 24 horas.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="bg-transparent border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
-            Cancelar
-          </AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={confirmUpdate}
-            className="bg-[#00FF66] text-black hover:bg-[#00DD55]"
-          >
-            Confirmar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-
-    <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
-      <AlertDialogContent className="bg-[#0B0F0C] border-[#3B82F6] border-2 relative overflow-hidden">
-        {/* AZUL Lightning animation */}
-        {showSuccess && (
-          <div 
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle at center, rgba(59,130,246,0.25) 0%, transparent 70%)',
-              animation: 'blue-lightning-pulse 700ms ease-out'
-            }}
-          />
-        )}
-        <style>{`
-          @keyframes blue-lightning-pulse {
-            0% { opacity: 0; transform: scale(0.85); }
-            25% { opacity: 1; transform: scale(1.15); }
-            50% { opacity: 0.9; transform: scale(1.05); }
-            75% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.2); }
-          }
-          @keyframes blue-lightning-glow {
-            0%, 100% { filter: drop-shadow(0 0 12px rgba(59,130,246,0.5)); }
-            50% { filter: drop-shadow(0 0 24px rgba(59,130,246,0.9)); }
-          }
-        `}</style>
-        <AlertDialogHeader>
-          <AlertDialogTitle 
-            className="text-center text-lg"
-            style={{ 
-              fontFamily: 'Orbitron, sans-serif',
-              color: '#3B82F6',
-              animation: showSuccess ? 'blue-lightning-glow 700ms ease-out' : 'none'
-            }}
-          >
-            Tudo certo {pendingName}, sua jornada continua...
-          </AlertDialogTitle>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="sm:justify-center">
-          <AlertDialogAction 
-            onClick={() => {
-              setShowSuccess(false);
-              setIsOpen(false);
-              queryClient.invalidateQueries();
-              setTimeout(() => window.location.reload(), 100);
-            }}
-            className="font-semibold"
-            style={{
-              backgroundColor: '#3B82F6',
-              color: 'white'
-            }}
-          >
-            Continuar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
 
     <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
       <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(255,59,59,0.4)]">
