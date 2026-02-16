@@ -80,10 +80,10 @@ export const RANK_TIERS = [
   }
 ];
 
-export function getLevelFromXP(xpTotal) {
+export function getLevelFromXP(xpTotal = 0) {
   const nivelNum = Math.floor(xpTotal / XP_PER_LEVEL) + 1;
   const rankIndex = Math.floor((nivelNum - 1) / 5) + 1;
-  const currentRank = RANK_TIERS[Math.min(rankIndex - 1, RANK_TIERS.length - 1)];
+  const currentRank = RANK_TIERS[Math.min(rankIndex - 1, RANK_TIERS.length - 1)] || RANK_TIERS[0];
   const nextRank = RANK_TIERS[rankIndex] || null;
   
   const xpInCurrentLevel = xpTotal % XP_PER_LEVEL;
@@ -97,11 +97,11 @@ export function getLevelFromXP(xpTotal) {
   return {
     nivelNum,
     levelIndex: nivelNum,
-    rankIndex: currentRank.index,
-    rankName: currentRank.name,
-    levelName: currentRank.name,
-    rankDescription: currentRank.description,
-    rankRewards: currentRank.rewards,
+    rankIndex: currentRank?.index || 1,
+    rankName: currentRank?.name || 'Iniciado',
+    levelName: currentRank?.name || 'Iniciado',
+    rankDescription: currentRank?.description || 'Todo grande herói começa aqui',
+    rankRewards: currentRank?.rewards || [],
     rankStep,
     levelsToNextRank,
     levelProgressPercent,
@@ -109,6 +109,6 @@ export function getLevelFromXP(xpTotal) {
     xpForThisLevel,
     xpToNextLevel: XP_PER_LEVEL - xpInCurrentLevel,
     nextRankName: nextRank ? nextRank.name : 'Máximo',
-    crestDesc: currentRank.crestDesc
+    crestDesc: currentRank?.crestDesc || 'Semente do Raio'
   };
 }
