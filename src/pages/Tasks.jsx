@@ -440,18 +440,39 @@ export default function Tasks() {
               return (
                 <OlimpoCard key={`${item.type}-${item.id}`}>
                   <div className="flex items-start gap-3">
-                    {!isHabitExecution && (
-                      <button
-                        onClick={() => completeTaskMutation.mutate(item)}
-                        className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                          item.isCompleted
-                            ? 'bg-[#00FF66] border-[#00FF66]' 
-                            : 'border-[#9AA0A6] hover:border-[#00FF66]'
-                        }`}
-                      >
-                        {item.isCompleted && <Check className="w-4 h-4 text-black" />}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        if (isHabitExecution) {
+                          // Mark habit execution as complete
+                          base44.entities.HabitLog.create({
+                            habitId: item.habitId,
+                            date: selectedDateStr,
+                            completed: true,
+                            xpEarned: item.xpReward || 8
+                          }).then(() => {
+                            queryClient.invalidateQueries(['tasks']);
+                            queryClient.invalidateQueries(['habitLogs']);
+                            const { awardXp } = require('@/components/xpSystem');
+                            awardXp({
+                              amount: item.xpReward || 8,
+                              sourceType: 'habit',
+                              sourceId: item.habitId,
+                              note: `Rotina: ${item.title}`,
+                              sfxEnabled: userProfile?.sfxEnabled ?? true
+                            });
+                          });
+                        } else {
+                          completeTaskMutation.mutate(item);
+                        }
+                      }}
+                      className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                        item.isCompleted
+                          ? 'bg-[#00FF66] border-[#00FF66]' 
+                          : 'border-[#9AA0A6] hover:border-[#00FF66]'
+                      }`}
+                    >
+                      {item.isCompleted && <Check className="w-4 h-4 text-black" />}
+                    </button>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
