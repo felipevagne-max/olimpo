@@ -61,13 +61,17 @@ export default function Layout({ children, currentPageName }) {
           const user = await base44.auth.me();
           
           // Check if first login and redirect to FirstAccess page
-          const { data } = await base44.functions.invoke('checkFirstLogin', {
-            email: user.email
-          });
-          
-          if (data.is_first_login && data.subscription_status === 'active') {
-            navigate('/FirstAccess');
-            return;
+          try {
+            const { data } = await base44.functions.invoke('checkFirstLogin', {
+              email: user.email
+            });
+
+            if (data.is_first_login && data.subscription_status === 'active') {
+              navigate('/FirstAccess');
+              return;
+            }
+          } catch (err) {
+            console.log('First login check skipped:', err.message);
           }
         }
       } catch (error) {
@@ -92,6 +96,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <>
       {/* PWA Meta Tags */}
+      <div style={{ display: 'none' }}>
       <head>
         {/* Manifest */}
         <link rel="manifest" href="/manifest.json" />
@@ -151,7 +156,8 @@ export default function Layout({ children, currentPageName }) {
             });
           }
         `}} />
-      </head>
+        </head>
+        </div>
 
       <MatrixColumns opacity={0.15} />
       <TitleEquipEffect />

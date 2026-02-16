@@ -49,9 +49,13 @@ export default function SplashScreen() {
         className="absolute inset-0 pointer-events-none"
         style={{ opacity: 0.6 }}
       />
-      <div className="relative z-10 flex flex-col items-center">
-        <OlimpoLogo size={80} />
-        <div className="mt-8 w-12 h-12 border-2 border-[rgba(0,255,102,0.2)] border-t-[#00FF66] rounded-full animate-spin" />
+      <div className="relative z-10 flex flex-col items-center gap-6">
+        <OlimpoLogo size={80} glow={true} />
+        <div className="flex gap-2">
+          <div className="w-2 h-2 bg-[#00FF66] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 bg-[#00FF66] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 bg-[#00FF66] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
       </div>
     </div>
   );
