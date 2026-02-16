@@ -7,19 +7,36 @@ import OlimpoCard from './OlimpoCard';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function DashboardCharts() {
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
-    queryFn: () => base44.entities.XPTransaction.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.XPTransaction.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Task.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
-    queryFn: () => base44.entities.CheckIn.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CheckIn.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   // Generate last 7 days

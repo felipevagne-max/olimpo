@@ -36,22 +36,37 @@ export default function QuickCardSheet({ open, onClose }) {
   const [createdPurchaseId, setCreatedPurchaseId] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: cards = [] } = useQuery({
     queryKey: ['creditCards'],
-    queryFn: () => base44.entities.CreditCard.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CreditCard.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Category.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const activeCards = cards.filter(c => c.active !== false);

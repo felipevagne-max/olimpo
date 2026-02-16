@@ -26,45 +26,58 @@ export default function GoalDetail() {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showLightning, setShowLightning] = useState(false);
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: goal, isLoading } = useQuery({
     queryKey: ['goal', goalId],
     queryFn: async () => {
-      const goals = await base44.entities.Goal.list();
+      if (!user?.email) return null;
+      const goals = await base44.entities.Goal.filter({ created_by: user.email });
       return goals.find(g => g.id === goalId);
     },
-    enabled: !!goalId
+    enabled: !!goalId && !!user?.email
   });
 
   const { data: milestones = [] } = useQuery({
     queryKey: ['milestones', goalId],
-    queryFn: () => base44.entities.GoalMilestone.filter({ goalId }),
-    enabled: !!goalId
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.GoalMilestone.filter({ goalId, created_by: user.email });
+    },
+    enabled: !!goalId && !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: linkedTasks = [] } = useQuery({
     queryKey: ['linkedTasks', goalId],
     queryFn: async () => {
-      const allTasks = await base44.entities.Task.list();
+      if (!user?.email) return [];
+      const allTasks = await base44.entities.Task.filter({ created_by: user.email });
       return allTasks.filter(t => t.goalId === goalId);
     },
-    enabled: !!goalId
+    enabled: !!goalId && !!user?.email
   });
 
   const { data: linkedHabits = [] } = useQuery({
     queryKey: ['linkedHabits', goalId],
     queryFn: async () => {
-      const allHabits = await base44.entities.Habit.list();
+      if (!user?.email) return [];
+      const allHabits = await base44.entities.Habit.filter({ created_by: user.email });
       return allHabits.filter(h => h.goalId === goalId);
     },
-    enabled: !!goalId
+    enabled: !!goalId && !!user?.email
   });
 
   // Auto-complete if coming from Goals page with complete=true

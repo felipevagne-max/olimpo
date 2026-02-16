@@ -11,24 +11,45 @@ export default function ReportCard({ currentMonth }) {
 
   const monthKey = format(currentMonth, 'yyyy-MM');
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: cards = [] } = useQuery({
     queryKey: ['creditCards'],
-    queryFn: () => base44.entities.CreditCard.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CreditCard.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: purchases = [] } = useQuery({
     queryKey: ['cardPurchases'],
-    queryFn: () => base44.entities.CardPurchase.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CardPurchase.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: installments = [] } = useQuery({
     queryKey: ['cardInstallments'],
-    queryFn: () => base44.entities.CardInstallment.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CardInstallment.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Category.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const activePurchases = purchases.filter(p => !p.deleted_at);
