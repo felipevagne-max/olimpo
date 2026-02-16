@@ -488,7 +488,7 @@ export default function Tasks() {
                              queryClient.invalidateQueries(['xpTransactions']);
                            }
                          } else {
-                           if (item.completed) {
+                           if (item.isCompleted) {
                              // Unmark task - apply penalty
                              const penaltyXP = -(item.xpReward || 10) * 2;
                              await base44.entities.XPTransaction.create({
@@ -500,8 +500,8 @@ export default function Tasks() {
                              toast.error(`-${(item.xpReward || 10) * 2} XP - Penalidade por desmarcar`, { style: { background: '#FF3B3B' } });
                              triggerXPGain(penaltyXP);
                              await base44.entities.Task.update(item.id, { completed: false });
-                             queryClient.invalidateQueries(['tasks']);
-                             queryClient.invalidateQueries(['xpTransactions']);
+                             queryClient.invalidateQueries({ queryKey: ['tasks'] });
+                             queryClient.invalidateQueries({ queryKey: ['xpTransactions'] });
                            } else {
                              completeTaskMutation.mutate(item);
                            }
