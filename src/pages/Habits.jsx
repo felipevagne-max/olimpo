@@ -218,7 +218,7 @@ export default function Habits() {
               return (
                 <OlimpoCard 
                   key={habit.id} 
-                  className="relative cursor-pointer hover:bg-[rgba(0,255,102,0.03)] transition-all"
+                  className="relative cursor-pointer hover:border-[#00FF66] transition-all"
                   onClick={(e) => {
                     // Don't open modal if clicking dropdown
                     if (e.target.closest('[data-radix-collection-item]')) {
@@ -227,32 +227,40 @@ export default function Habits() {
                     setSelectedHabitId(habit.id);
                   }}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`mt-1 w-6 h-6 rounded-md border-2 flex items-center justify-center ${
+                  <div className="flex items-center gap-3">
+                    {/* Progress bar visual instead of checkbox */}
+                    <div className={`w-1 h-16 rounded-full ${
                       isCompleted 
-                        ? 'bg-[#00FF66] border-[#00FF66]' 
-                        : 'border-[#9AA0A6]'
-                    } ${habit.archived ? 'opacity-50' : ''}`}>
-                      {isCompleted && <Check className="w-4 h-4 text-black" />}
-                    </div>
+                        ? 'bg-gradient-to-b from-[#00FF66] to-[#00DD55]' 
+                        : 'bg-gradient-to-b from-[rgba(0,255,102,0.3)] to-[rgba(0,255,102,0.1)]'
+                    } ${habit.archived ? 'opacity-30' : ''}`} />
 
                     <div className="flex-1">
-                      <h3 className={`font-medium ${habit.archived ? 'text-[#9AA0A6]' : 'text-[#E8E8E8]'}`}>
-                        {habit.name}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <CheckSquare className={`w-4 h-4 ${isCompleted ? 'text-[#00FF66]' : 'text-[#9AA0A6]'} ${habit.archived ? 'opacity-50' : ''}`} />
+                        <h3 className={`font-medium ${habit.archived ? 'text-[#9AA0A6]' : isCompleted ? 'text-[#00FF66]' : 'text-[#E8E8E8]'}`}>
+                          {habit.name}
+                        </h3>
+                      </div>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-[#9AA0A6]">
+                        <span className={`text-xs ${habit.archived ? 'text-[#6B7280]' : 'text-[#9AA0A6]'}`}>
                           {habit.frequencyType === 'daily' ? 'Diário' : 
                            habit.frequencyType === 'weekdays' ? habit.weekdays?.join(', ') : 
                            `${habit.timesPerWeek}x/semana`}
                         </span>
                         <div className="flex items-center gap-1">
-                          <Flame className="w-3 h-3 text-orange-500" />
-                          <span className="text-xs font-mono text-[#E8E8E8]">{streak}</span>
+                          <Flame className={`w-3 h-3 ${habit.archived ? 'opacity-50' : 'text-orange-500'}`} />
+                          <span className={`text-xs font-mono ${habit.archived ? 'text-[#6B7280]' : 'text-[#E8E8E8]'}`}>{streak}</span>
                         </div>
-                        <span className="text-xs font-mono text-[#00FF66]">+{habit.xpReward || 8} XP</span>
+                        <span className={`text-xs font-mono ${habit.archived ? 'text-[#6B7280]' : 'text-[#00FF66]'}`}>+{habit.xpReward || 8} XP</span>
                       </div>
                     </div>
+
+                    {isCompleted && !habit.archived && (
+                      <div className="text-[#00FF66]">
+                        <Check className="w-6 h-6" />
+                      </div>
+                    )}
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
