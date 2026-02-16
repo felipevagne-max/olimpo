@@ -125,11 +125,14 @@ export default function GoalDetail() {
         return { newValue, prevValue, xpGained: GOAL_PROGRESS_XP, completed: false };
       }
     },
-    onSuccess: ({ completed }) => {
+    onSuccess: ({ completed, xpGained }) => {
       queryClient.invalidateQueries(['goal', goalId]);
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
       setUpdateValue('');
+      
+      // Trigger XP popup
+      triggerXPGain(xpGained);
       
       if (completed) {
         // Show lightning effect and play sound
@@ -227,11 +230,14 @@ export default function GoalDetail() {
         return { xpGained: milestone.xpReward || 30, prevCompleted, completed: false };
       }
     },
-    onSuccess: ({ completed }) => {
+    onSuccess: ({ completed, xpGained }) => {
       queryClient.invalidateQueries(['milestones', goalId]);
       queryClient.invalidateQueries(['goal', goalId]);
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP popup
+      triggerXPGain(xpGained);
       
       if (completed) {
         // Show lightning effect and play sound
@@ -291,10 +297,13 @@ export default function GoalDetail() {
       
       return goal.xpOnComplete || 200;
     },
-    onSuccess: () => {
+    onSuccess: (xpGained) => {
       queryClient.invalidateQueries(['goal', goalId]);
       queryClient.invalidateQueries(['goals']);
       queryClient.invalidateQueries(['xpTransactions']);
+      
+      // Trigger XP popup
+      triggerXPGain(xpGained);
       
       // Show lightning effect
       setShowLightning(true);
