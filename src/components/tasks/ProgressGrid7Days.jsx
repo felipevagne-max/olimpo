@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -8,10 +8,41 @@ import OlimpoCard from '../olimpo/OlimpoCard';
 
 export default function ProgressGrid7Days() {
   const [showFuture, setShowFuture] = useState(false);
+  const queryClient = useQueryClient();
   
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
+  });
+
+  const toggleHabitMutation = useMutation({
+    mutationFn: async ({ habitId, date, completed }) => {
+      if (!completed) {
+        await base44.entities.HabitLog.create({
+          habitId,
+          date,
+          completed: true,
+          xpEarned: 8
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['habitLogs']);
+    }
+  });
+
+  const toggleTaskMutation = useMutation({
+    mutationFn: async ({ taskId, completed }) => {
+      if (!completed) {
+        await base44.entities.Task.update(taskId, {
+          completed: true,
+          completedAt: new Date().toISOString()
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+    }
   });
 
   const { data: tasks = [] } = useQuery({
@@ -193,24 +224,39 @@ export default function ProgressGrid7Days() {
                   </div>
                 </td>
                 {days7.map((day) => {
-                  const completed = isItemCompleted(item, day.date);
-                  return (
-                    <td 
-                      key={day.date} 
-                      className="text-center py-2 px-1"
-                      style={day.isToday ? { backgroundColor: 'rgba(191,255,74,0.05)' } : undefined}
-                    >
-                      <div 
-                        className={`w-5 h-5 rounded border-2 mx-auto ${
-                          completed ? 'bg-[#BFFF4A]' : ''
-                        }`}
-                        style={{ 
-                          borderColor: completed ? '#BFFF4A' : 'rgba(191,255,74,0.18)'
-                        }}
-                      />
-                    </td>
-                  );
-                })}
+                   const completed = isItemCompleted(item, day.date);
+                   const isPastDay = !day.isFuture && !day.isToday;
+                   const isClickable = !isPastDay;
+
+                   const handleToggle = () => {
+                     if (!isClickable) return;
+
+                     if (item.type === 'habit') {
+                       toggleHabitMutation.mutate({ habitId: item.id, date: day.date, completed });
+                     } else {
+                       toggleTaskMutation.mutate({ taskId: item.id, completed });
+                     }
+                   };
+
+                   return (
+                     <td 
+                       key={day.date} 
+                       className="text-center py-2 px-1"
+                       style={day.isToday ? { backgroundColor: 'rgba(191,255,74,0.05)' } : undefined}
+                     >
+                       <button
+                         onClick={handleToggle}
+                         disabled={!isClickable}
+                         className={`w-5 h-5 rounded border-2 mx-auto transition-all ${
+                           !isClickable ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:opacity-80'
+                         } ${completed ? 'bg-[#BFFF4A]' : ''}`}
+                         style={{ 
+                           borderColor: completed ? '#BFFF4A' : 'rgba(191,255,74,0.18)'
+                         }}
+                       />
+                     </td>
+                   );
+                 })}
               </tr>
             ))}
           </tbody>
