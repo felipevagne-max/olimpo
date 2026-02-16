@@ -454,39 +454,33 @@ export default function Tasks() {
                 <OlimpoCard key={`${item.type}-${item.id}`}>
                   <div className="flex items-start gap-3">
                     <button
-                      onClick={async () => {
-                        if (isHabitExecution) {
-                          if (!item.isCompleted) {
-                            // Mark habit execution as complete
-                            await base44.entities.HabitLog.create({
-                              habitId: item.habitId,
-                              date: selectedDateStr,
-                              completed: true,
-                              xpEarned: item.xpReward || 8
-                            });
-                            triggerXPGain(item.xpReward || 8);
-                            queryClient.invalidateQueries(['tasks']);
-                            queryClient.invalidateQueries(['habitLogs']);
-                            queryClient.invalidateQueries(['xpTransactions']);
-                          } else {
-                            toast('Rotinas concluídas não podem ser desmarcadas', { style: { background: '#FFC107', color: '#000' } });
-                          }
-                        } else {
-                          if (!item.completed) {
-                            completeTaskMutation.mutate(item);
-                          } else {
-                            toast('Tarefas concluídas não podem ser desmarcadas', { style: { background: '#FFC107', color: '#000' } });
-                          }
-                        }
-                      }}
-                      className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                        item.isCompleted
-                          ? 'bg-[#00FF66] border-[#00FF66]' 
-                          : 'border-[#9AA0A6] hover:border-[#00FF66]'
-                      }`}
-                    >
-                      {item.isCompleted && <Check className="w-4 h-4 text-black" />}
-                    </button>
+                       onClick={async () => {
+                         if (item.isCompleted) return;
+
+                         if (isHabitExecution) {
+                           await base44.entities.HabitLog.create({
+                             habitId: item.habitId,
+                             date: selectedDateStr,
+                             completed: true,
+                             xpEarned: item.xpReward || 8
+                           });
+                           triggerXPGain(item.xpReward || 8);
+                           queryClient.invalidateQueries(['tasks']);
+                           queryClient.invalidateQueries(['habitLogs']);
+                           queryClient.invalidateQueries(['xpTransactions']);
+                         } else {
+                           completeTaskMutation.mutate(item);
+                         }
+                       }}
+                       disabled={item.isCompleted}
+                       className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                         item.isCompleted
+                           ? 'bg-[#00FF66] border-[#00FF66] cursor-not-allowed opacity-100' 
+                           : 'border-[#9AA0A6] hover:border-[#00FF66] cursor-pointer'
+                       }`}
+                     >
+                       {item.isCompleted && <Check className="w-4 h-4 text-black" />}
+                     </button>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
