@@ -446,26 +446,19 @@ export default function Tasks() {
                 <OlimpoCard key={`${item.type}-${item.id}`}>
                   <div className="flex items-start gap-3">
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (isHabitExecution) {
                           // Mark habit execution as complete
-                          base44.entities.HabitLog.create({
+                          await base44.entities.HabitLog.create({
                             habitId: item.habitId,
                             date: selectedDateStr,
                             completed: true,
                             xpEarned: item.xpReward || 8
-                          }).then(() => {
-                            queryClient.invalidateQueries(['tasks']);
-                            queryClient.invalidateQueries(['habitLogs']);
-                            const { awardXp } = require('@/components/xpSystem');
-                            awardXp({
-                              amount: item.xpReward || 8,
-                              sourceType: 'habit',
-                              sourceId: item.habitId,
-                              note: `Rotina: ${item.title}`,
-                              sfxEnabled: userProfile?.sfxEnabled ?? true
-                            });
                           });
+
+                          queryClient.invalidateQueries(['tasks']);
+                          queryClient.invalidateQueries(['habitLogs']);
+                          triggerXPGain(item.xpReward || 8);
                         } else {
                           completeTaskMutation.mutate(item);
                         }
