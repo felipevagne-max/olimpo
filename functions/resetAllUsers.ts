@@ -83,6 +83,7 @@ Deno.serve(async (req) => {
     // Reset all user profiles
     for (const profile of userProfiles) {
       await base44.asServiceRole.entities.UserProfile.update(profile.id, {
+        displayName: 'USUARIO',
         xpTotal: 0,
         levelIndex: 1,
         levelName: 'Herói',
