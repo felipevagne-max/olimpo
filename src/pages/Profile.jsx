@@ -35,13 +35,15 @@ export default function Profile() {
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       const profile = profiles[0] || null;
       if (profile) {
         setUsername(profile.displayName || 'USUARIO');
       }
       return profile;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: xpTransactions = [] } = useQuery({
