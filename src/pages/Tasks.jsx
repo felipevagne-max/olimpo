@@ -121,11 +121,21 @@ export default function Tasks() {
     staleTime: 600000
   });
 
-  const { data: habits = [] } = useQuery({
+  const { data: habits = [], isLoading: habitsLoading } = useQuery({
     queryKey: ['habits'],
     queryFn: async () => {
       if (!user?.email) return [];
       return base44.entities.Habit.filter({ archived: false, created_by: user.email });
+    },
+    enabled: !!user?.email,
+    staleTime: 300000
+  });
+
+  const { data: habitLogs = [] } = useQuery({
+    queryKey: ['habitLogs'],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
     },
     enabled: !!user?.email,
     staleTime: 300000
@@ -240,26 +250,24 @@ export default function Tasks() {
 
   const dayExpenses = showOverdue ? [] : expenses.filter(e => e.date === selectedDateStr);
 
-  // Get habits that should appear today
+  // Get habits that should appear today with their completion status
   const habitItemsForDay = showOverdue ? [] : habits
-    .filter(habit => {
-      if (habit.archived) return false;
-      const shouldRun = checkHabitSchedule(habit, selectedDateStr);
-      return shouldRun;
-    })
-    .map(habit => ({
-      ...habit,
-      type: 'habit',
-      id: `habit-${habit.id}`,
-      habitId: habit.id,
-      title: habit.name,
-      description: habit.description,
-      xpReward: habit.xpReward || 8,
-      difficulty: habit.difficulty || 'medium',
-      completed: false,
-      isCompleted: false,
-      isHabitExecution: true
-    }));
+    .filter(h => checkHabitSchedule(h, selectedDateStr))
+    .map(habit => {
+      const habitLog = habitLogs.find(log => log.habitId === habit.id && log.date === selectedDateStr);
+      return {
+        ...habit,
+        type: 'habit',
+        id: `habit-${habit.id}`,
+        habitId: habit.id,
+        title: habit.name,
+        description: habit.description,
+        xpReward: habit.xpReward || 8,
+        difficulty: habit.difficulty || 'medium',
+        isCompleted: !!habitLog?.completed,
+        isHabitExecution: true
+      };
+    });
 
   // Combined items now include both tasks and habit executions
   const combinedItems = showOverdue ? dayTasks.map(t => ({
@@ -306,7 +314,7 @@ export default function Tasks() {
   const totalXP = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
   const level = Math.floor(totalXP / 500) + 1;
 
-  if (isLoading) {
+  if (isLoading || habitsLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <LoadingSpinner size="lg" />
