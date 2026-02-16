@@ -248,8 +248,18 @@ export default function Tasks() {
   const dayHabits = showOverdue ? [] : habits.filter(habit => {
     if (habit.frequencyType === 'daily') return true;
     if (habit.frequencyType === 'weekdays') {
-      const dayOfWeek = format(selectedDate, 'EEE', { locale: ptBR }).toLowerCase();
-      return habit.weekdays?.includes(dayOfWeek);
+      const weekdayMap = {
+        'Sun': 'dom',
+        'Mon': 'seg',
+        'Tue': 'ter',
+        'Wed': 'qua',
+        'Thu': 'qui',
+        'Fri': 'sex',
+        'Sat': 'sab'
+      };
+      const dayOfWeekEn = format(selectedDate, 'EEE');
+      const dayOfWeekPt = weekdayMap[dayOfWeekEn];
+      return habit.weekdays?.includes(dayOfWeekPt);
     }
     // For timesPerWeek, show in all days for now (stable approach)
     return habit.frequencyType === 'timesPerWeek';
@@ -377,8 +387,18 @@ export default function Tasks() {
             const dayHabitsList = habits.filter(habit => {
               if (habit.frequencyType === 'daily') return true;
               if (habit.frequencyType === 'weekdays') {
-                const dayOfWeek = format(day, 'EEE', { locale: ptBR }).toLowerCase();
-                return habit.weekdays?.includes(dayOfWeek);
+                const weekdayMap = {
+                  'Sun': 'dom',
+                  'Mon': 'seg',
+                  'Tue': 'ter',
+                  'Wed': 'qua',
+                  'Thu': 'qui',
+                  'Fri': 'sex',
+                  'Sat': 'sab'
+                };
+                const dayOfWeekEn = format(day, 'EEE');
+                const dayOfWeekPt = weekdayMap[dayOfWeekEn];
+                return habit.weekdays?.includes(dayOfWeekPt);
               }
               return habit.frequencyType === 'timesPerWeek';
             });
