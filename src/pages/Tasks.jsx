@@ -47,37 +47,64 @@ export default function Tasks() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Task.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
-    queryFn: () => base44.entities.XPTransaction.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.XPTransaction.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: habits = [] } = useQuery({
     queryKey: ['habits'],
-    queryFn: () => base44.entities.Habit.filter({ archived: false })
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.filter({ deleted_at: null })
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Expense.filter({ deleted_at: null, created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const completeTaskMutation = useMutation({
@@ -107,8 +134,8 @@ export default function Tasks() {
       });
       
       // Progress linked goal if exists
-      if (task.goalId) {
-        const goals = await base44.entities.Goal.list();
+      if (task.goalId && user?.email) {
+        const goals = await base44.entities.Goal.filter({ created_by: user.email });
         const linkedGoal = goals.find(g => g.id === task.goalId);
         if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
           const newValue = (linkedGoal.currentValue || 0) + 1;
@@ -154,8 +181,8 @@ export default function Tasks() {
       });
       
       // Progress linked goal if exists (once per day)
-      if (habit.goalId) {
-        const goals = await base44.entities.Goal.list();
+      if (habit.goalId && user?.email) {
+        const goals = await base44.entities.Goal.filter({ created_by: user.email });
         const linkedGoal = goals.find(g => g.id === habit.goalId);
         if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
           const newValue = (linkedGoal.currentValue || 0) + 1;

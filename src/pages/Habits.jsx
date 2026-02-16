@@ -40,22 +40,37 @@ export default function Habits() {
   const [deleteId, setDeleteId] = useState(null);
   const [selectedHabitId, setSelectedHabitId] = useState(null);
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: habits = [], isLoading } = useQuery({
     queryKey: ['habits'],
-    queryFn: () => base44.entities.Habit.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Habit.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const toggleHabitMutation = useMutation({
@@ -83,8 +98,8 @@ export default function Habits() {
         });
 
         // Regress linked goal if exists
-        if (habit.goalId) {
-          const goals = await base44.entities.Goal.list();
+        if (habit.goalId && user?.email) {
+          const goals = await base44.entities.Goal.filter({ created_by: user.email });
           const linkedGoal = goals.find(g => g.id === habit.goalId);
           if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
             const newValue = Math.max(0, (linkedGoal.currentValue || 0) - 1);
@@ -122,8 +137,8 @@ export default function Habits() {
       });
 
       // Progress linked goal if exists
-      if (habit.goalId) {
-        const goals = await base44.entities.Goal.list();
+      if (habit.goalId && user?.email) {
+        const goals = await base44.entities.Goal.filter({ created_by: user.email });
         const linkedGoal = goals.find(g => g.id === habit.goalId);
         if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
           const newValue = (linkedGoal.currentValue || 0) + 1;
