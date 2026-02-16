@@ -455,27 +455,61 @@ export default function Tasks() {
                   <div className="flex items-start gap-3">
                     <button
                        onClick={async () => {
-                         if (item.isCompleted) return;
-
                          if (isHabitExecution) {
-                           await base44.entities.HabitLog.create({
-                             habitId: item.habitId,
-                             date: selectedDateStr,
-                             completed: true,
-                             xpEarned: item.xpReward || 8
-                           });
-                           triggerXPGain(item.xpReward || 8);
-                           queryClient.invalidateQueries(['tasks']);
-                           queryClient.invalidateQueries(['habitLogs']);
-                           queryClient.invalidateQueries(['xpTransactions']);
+                           if (item.isCompleted) {
+                             // Unmark habit execution - apply penalty
+                             const habitLog = habitLogs.find(log => log.habitId === item.habitId && log.date === selectedDateStr);
+                             if (habitLog) {
+                               await base44.entities.HabitLog.delete(habitLog.id);
+                               const penaltyXP = -(item.xpReward || 8) * 2;
+                               await base44.entities.XPTransaction.create({
+                                 sourceType: 'habit',
+                                 sourceId: item.habitId,
+                                 amount: penaltyXP,
+                                 note: `Penalidade: ${item.title} desmarcado`
+                               });
+                               toast.error(`-${(item.xpReward || 8) * 2} XP - Penalidade por desmarcar`, { style: { background: '#FF3B3B' } });
+                               triggerXPGain(penaltyXP);
+                               queryClient.invalidateQueries(['tasks']);
+                               queryClient.invalidateQueries(['habitLogs']);
+                               queryClient.invalidateQueries(['xpTransactions']);
+                             }
+                           } else {
+                             // Mark habit execution as complete
+                             await base44.entities.HabitLog.create({
+                               habitId: item.habitId,
+                               date: selectedDateStr,
+                               completed: true,
+                               xpEarned: item.xpReward || 8
+                             });
+                             triggerXPGain(item.xpReward || 8);
+                             queryClient.invalidateQueries(['tasks']);
+                             queryClient.invalidateQueries(['habitLogs']);
+                             queryClient.invalidateQueries(['xpTransactions']);
+                           }
                          } else {
-                           completeTaskMutation.mutate(item);
+                           if (item.completed) {
+                             // Unmark task - apply penalty
+                             const penaltyXP = -(item.xpReward || 10) * 2;
+                             await base44.entities.XPTransaction.create({
+                               sourceType: 'task',
+                               sourceId: item.id,
+                               amount: penaltyXP,
+                               note: `Penalidade: ${item.title} desmarcado`
+                             });
+                             toast.error(`-${(item.xpReward || 10) * 2} XP - Penalidade por desmarcar`, { style: { background: '#FF3B3B' } });
+                             triggerXPGain(penaltyXP);
+                             await base44.entities.Task.update(item.id, { completed: false });
+                             queryClient.invalidateQueries(['tasks']);
+                             queryClient.invalidateQueries(['xpTransactions']);
+                           } else {
+                             completeTaskMutation.mutate(item);
+                           }
                          }
                        }}
-                       disabled={item.isCompleted}
                        className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
                          item.isCompleted
-                           ? 'bg-[#00FF66] border-[#00FF66] cursor-not-allowed opacity-100' 
+                           ? 'bg-[#00FF66] border-[#00FF66] hover:bg-[#00DD55] cursor-pointer' 
                            : 'border-[#9AA0A6] hover:border-[#00FF66] cursor-pointer'
                        }`}
                      >
