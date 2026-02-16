@@ -14,7 +14,7 @@ import OlimpoCard from '../olimpo/OlimpoCard';
 import LoadingSpinner from '../olimpo/LoadingSpinner';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, CheckCircle, Pencil, Trash2, Save, Calendar } from 'lucide-react';
+import { Check, CheckCircle, Pencil, Trash2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
