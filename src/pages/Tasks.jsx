@@ -456,19 +456,51 @@ export default function Tasks() {
                     <button
                       onClick={async () => {
                         if (isHabitExecution) {
-                          // Mark habit execution as complete
-                          await base44.entities.HabitLog.create({
-                            habitId: item.habitId,
-                            date: selectedDateStr,
-                            completed: true,
-                            xpEarned: item.xpReward || 8
-                          });
-
+                          if (item.isCompleted) {
+                            // Unmark habit execution - apply penalty
+                            const habitLog = habitLogs.find(log => log.habitId === item.habitId && log.date === selectedDateStr);
+                            if (habitLog) {
+                              await base44.entities.HabitLog.delete(habitLog.id);
+                              const penaltyXP = -(item.xpReward || 8) * 2;
+                              await base44.entities.XPTransaction.create({
+                                sourceType: 'habit',
+                                sourceId: item.habitId,
+                                amount: penaltyXP,
+                                note: `Penalidade: ${item.title} desmarcado`
+                              });
+                              toast.error(`-${(item.xpReward || 8) * 2} XP - Penalidade por desmarcar`, { style: { background: '#FF3B3B' } });
+                              triggerXPGain(penaltyXP);
+                            }
+                          } else {
+                            // Mark habit execution as complete
+                            await base44.entities.HabitLog.create({
+                              habitId: item.habitId,
+                              date: selectedDateStr,
+                              completed: true,
+                              xpEarned: item.xpReward || 8
+                            });
+                            triggerXPGain(item.xpReward || 8);
+                          }
                           queryClient.invalidateQueries(['tasks']);
                           queryClient.invalidateQueries(['habitLogs']);
-                          triggerXPGain(item.xpReward || 8);
+                          queryClient.invalidateQueries(['xpTransactions']);
                         } else {
-                          completeTaskMutation.mutate(item);
+                          if (item.completed) {
+                            // Unmark task - apply penalty
+                            const penaltyXP = -(item.xpReward || 10) * 2;
+                            await base44.entities.XPTransaction.create({
+                              sourceType: 'task',
+                              sourceId: item.id,
+                              amount: penaltyXP,
+                              note: `Penalidade: ${item.title} desmarcado`
+                            });
+                            toast.error(`-${(item.xpReward || 10) * 2} XP - Penalidade por desmarcar`, { style: { background: '#FF3B3B' } });
+                            triggerXPGain(penaltyXP);
+                            queryClient.invalidateQueries(['tasks']);
+                            queryClient.invalidateQueries(['xpTransactions']);
+                          } else {
+                            completeTaskMutation.mutate(item);
+                          }
                         }
                       }}
                       className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
