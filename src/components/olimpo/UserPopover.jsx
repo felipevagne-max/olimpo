@@ -72,7 +72,8 @@ export default function UserPopover() {
       return;
     }
     
-    if (trimmed === userProfile?.displayName) {
+    if (trimmed === (userProfile?.displayName || '').trim()) {
+      toast.info('Nome não foi alterado');
       return;
     }
 
@@ -252,7 +253,7 @@ export default function UserPopover() {
               />
               <OlimpoButton
                 onClick={handleSaveClick}
-                disabled={isSaving || username === userProfile?.displayName}
+                disabled={isSaving || username.trim() === (userProfile?.displayName || '').trim()}
                 className="px-3"
               >
                 Salvar
