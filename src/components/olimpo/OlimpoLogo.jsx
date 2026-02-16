@@ -9,15 +9,14 @@ export default function OlimpoLogo({ size = 40, glow = true, className = '' }) {
       }}
     >
       <img 
-        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69865134dce52b476b98b991/18b76564b_BlueandWhiteModernCompanyLogo.png"
+        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69865134dce52b476b98b991/542801807_Designsemnome4.png"
         alt="Olimpo"
         width={size}
         height={size}
         style={{ 
           width: size, 
           height: size, 
-          objectFit: 'contain',
-          mixBlendMode: 'screen'
+          objectFit: 'contain'
         }}
       />
     </div>
