@@ -5,14 +5,27 @@ import { Calendar, AlertTriangle, TrendingUp } from 'lucide-react';
 import OlimpoCard from '../olimpo/OlimpoCard';
 
 export default function ExpectancyNext7Days() {
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Task.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const today = new Date();

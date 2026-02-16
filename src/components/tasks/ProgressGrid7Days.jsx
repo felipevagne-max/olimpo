@@ -8,24 +8,46 @@ import OlimpoCard from '../olimpo/OlimpoCard';
 
 export default function ProgressGrid7Days() {
   const [showFuture, setShowFuture] = useState(false);
+  
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Task.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habits = [] } = useQuery({
     queryKey: ['habits'],
-    queryFn: () => base44.entities.Habit.filter({ archived: false })
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
-    queryFn: () => base44.entities.CheckIn.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CheckIn.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   // Generate 7 days (past or future based on state)

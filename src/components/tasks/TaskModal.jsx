@@ -34,13 +34,20 @@ const WEEKDAYS = [
 
 export default function TaskModal({ open, onClose, task, defaultDate, goalId }) {
   const queryClient = useQueryClient();
+  
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: activeGoals = [] } = useQuery({
     queryKey: ['activeGoals'],
     queryFn: async () => {
-      const goals = await base44.entities.Goal.list();
+      if (!user?.email) return [];
+      const goals = await base44.entities.Goal.filter({ created_by: user.email });
       return goals.filter(g => g.status === 'active' && !g.deleted_at);
     },
-    enabled: open
+    enabled: open && !!user?.email
   });
 
   const [formData, setFormData] = useState({

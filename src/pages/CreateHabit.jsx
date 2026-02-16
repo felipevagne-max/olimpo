@@ -63,22 +63,29 @@ export default function CreateHabit() {
   });
   const [newReminderTime, setNewReminderTime] = useState('09:00');
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: editHabit, isLoading: loadingEdit } = useQuery({
     queryKey: ['habit', editId],
     queryFn: async () => {
-      if (!editId) return null;
-      const habits = await base44.entities.Habit.list();
+      if (!editId || !user?.email) return null;
+      const habits = await base44.entities.Habit.filter({ created_by: user.email });
       return habits.find(h => h.id === editId);
     },
-    enabled: !!editId
+    enabled: !!editId && !!user?.email
   });
 
   const { data: activeGoals = [] } = useQuery({
     queryKey: ['activeGoals'],
     queryFn: async () => {
-      const goals = await base44.entities.Goal.list();
+      if (!user?.email) return [];
+      const goals = await base44.entities.Goal.filter({ created_by: user.email });
       return goals.filter(g => g.status === 'active' && !g.deleted_at);
-    }
+    },
+    enabled: !!user?.email
   });
 
   useEffect(() => {

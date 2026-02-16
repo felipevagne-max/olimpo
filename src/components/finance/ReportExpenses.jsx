@@ -14,9 +14,18 @@ export default function ReportExpenses({ currentMonth }) {
   const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list('-date')
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Expense.filter({ created_by: user.email }, '-date');
+    },
+    enabled: !!user?.email
   });
 
   const activeExpenses = useMemo(() => 

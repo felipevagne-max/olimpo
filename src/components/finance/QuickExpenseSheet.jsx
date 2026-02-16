@@ -31,9 +31,18 @@ export default function QuickExpenseSheet({ open, onClose }) {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Category.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   useEffect(() => {
