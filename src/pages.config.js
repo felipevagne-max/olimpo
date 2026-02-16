@@ -66,7 +66,6 @@ import Progress from './pages/Progress';
 import Tasks from './pages/Tasks';
 import Titles from './pages/Titles';
 import UnifiedTasks from './pages/UnifiedTasks';
-import Tasks from './pages/Tasks';
 import __Layout from './Layout.jsx';
 
 
@@ -90,7 +89,6 @@ export const PAGES = {
     "Tasks": Tasks,
     "Titles": Titles,
     "UnifiedTasks": UnifiedTasks,
-    "Tasks": Tasks,
 }
 
 export const pagesConfig = {

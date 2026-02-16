@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { checkHabitSchedule } from './Tasks.js.helper';
 import { format, addDays, subDays, isToday, isBefore, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BottomNav from '@/components/olimpo/BottomNav';
@@ -36,6 +35,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+function checkHabitSchedule(habit, dateStr) {
+  const date = new Date(dateStr + 'T00:00:00');
+  
+  if (habit.frequencyType === 'daily') {
+    return true;
+  }
+  
+  if (habit.frequencyType === 'weekdays' && habit.weekdays && habit.weekdays.length > 0) {
+    const weekdayMap = {
+      'dom': 0,
+      'seg': 1,
+      'ter': 2,
+      'qua': 3,
+      'qui': 4,
+      'sex': 5,
+      'sab': 6
+    };
+    
+    const dayOfWeek = date.getDay();
+    return habit.weekdays.some(day => weekdayMap[day] === dayOfWeek);
+  }
+  
+  if (habit.frequencyType === 'timesPerWeek') {
+    const dayOfWeek = date.getDay();
+    const timesPerWeek = habit.timesPerWeek || 3;
+    
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      return dayOfWeek <= timesPerWeek;
+    }
+    return false;
+  }
+  
+  return false;
+}
 
 export default function Tasks() {
   const queryClient = useQueryClient();
