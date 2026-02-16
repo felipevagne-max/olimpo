@@ -11,6 +11,7 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import EmptyState from '@/components/olimpo/EmptyState';
 import HabitDetailModal from '@/components/habits/HabitDetailModal';
+import HabitsProgressGrid from '@/components/habits/HabitsProgressGrid';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Flame, Zap, MoreVertical, Pencil, Archive, Trash2, CheckSquare } from 'lucide-react';
 
@@ -295,6 +296,11 @@ export default function Habits() {
             })}
           </div>
         )}
+        </div>
+
+        {/* Progress Grid */}
+        <div className="mt-6">
+          <HabitsProgressGrid />
         </div>
       </div>
 
