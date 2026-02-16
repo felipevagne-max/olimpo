@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 import bcrypt from 'npm:bcryptjs@2.4.3';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -54,6 +55,24 @@ Deno.serve(async (req) => {
     if (updateError) {
       console.error('Error updating password:', updateError);
       return Response.json({ error: 'Erro ao atualizar senha' }, { status: 500 });
+    }
+
+    // Create UserProfile with default name "USUARIO"
+    try {
+      const base44 = createClientFromRequest(req);
+      const existingProfiles = await base44.asServiceRole.entities.UserProfile.list();
+      
+      if (existingProfiles.length === 0) {
+        await base44.asServiceRole.entities.UserProfile.create({
+          displayName: 'USUARIO',
+          xpTotal: 0,
+          levelIndex: 1,
+          levelName: 'Herói',
+          monthlyTargetXP: 2000
+        });
+      }
+    } catch (profileError) {
+      console.error('Error creating user profile:', profileError);
     }
 
     return Response.json({ 
