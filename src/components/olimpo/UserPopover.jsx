@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, LogOut, Camera, Loader2, Download } from 'lucide-react';
+import { User, LogOut, Download, RefreshCw } from 'lucide-react';
 import InstallPrompt from './InstallPrompt';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
@@ -28,10 +28,9 @@ export default function UserPopover() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingName, setPendingName] = useState('');
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const fileInputRef = useRef(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Detect if app is installed (running as PWA)
   useState(() => {
@@ -128,77 +127,62 @@ export default function UserPopover() {
     }
   });
 
-  const uploadAvatarMutation = useMutation({
-    mutationFn: async (file) => {
-      // Compress and resize image
-      const compressed = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxSize = 512;
-            let width = img.width;
-            let height = img.height;
-            
-            if (width > height) {
-              if (width > maxSize) {
-                height = height * (maxSize / width);
-                width = maxSize;
-              }
-            } else {
-              if (height > maxSize) {
-                width = width * (maxSize / height);
-                height = maxSize;
-              }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
+  const resetJourneyMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.email) throw new Error('Usuário não encontrado');
 
-      // Upload to storage with cache-bust timestamp
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: compressed });
-      const cacheBustUrl = `${file_url}?v=${Date.now()}`;
-      
-      // Update profile
-      if (!userProfile?.id) throw new Error('Profile not found');
-      await base44.entities.UserProfile.update(userProfile.id, { avatar_url: cacheBustUrl });
-      
-      return cacheBustUrl;
+      // Delete all user data
+      const [tasks, habits, habitLogs, goals, milestones, xpTransactions, expenses, checkIns, notes, purchases, installments] = await Promise.all([
+        base44.entities.Task.filter({ created_by: user.email }),
+        base44.entities.Habit.filter({ created_by: user.email }),
+        base44.entities.HabitLog.filter({ created_by: user.email }),
+        base44.entities.Goal.filter({ created_by: user.email }),
+        base44.entities.GoalMilestone.filter({ created_by: user.email }),
+        base44.entities.XPTransaction.filter({ created_by: user.email }),
+        base44.entities.Expense.filter({ created_by: user.email }),
+        base44.entities.CheckIn.filter({ created_by: user.email }),
+        base44.entities.Note.filter({ created_by: user.email }),
+        base44.entities.CardPurchase.filter({ created_by: user.email }),
+        base44.entities.CardInstallment.filter({ created_by: user.email })
+      ]);
+
+      // Delete all entities
+      await Promise.all([
+        ...tasks.map(t => base44.entities.Task.delete(t.id)),
+        ...habits.map(h => base44.entities.Habit.delete(h.id)),
+        ...habitLogs.map(l => base44.entities.HabitLog.delete(l.id)),
+        ...goals.map(g => base44.entities.Goal.delete(g.id)),
+        ...milestones.map(m => base44.entities.GoalMilestone.delete(m.id)),
+        ...xpTransactions.map(x => base44.entities.XPTransaction.delete(x.id)),
+        ...expenses.map(e => base44.entities.Expense.delete(e.id)),
+        ...checkIns.map(c => base44.entities.CheckIn.delete(c.id)),
+        ...notes.map(n => base44.entities.Note.delete(n.id)),
+        ...purchases.map(p => base44.entities.CardPurchase.delete(p.id)),
+        ...installments.map(i => base44.entities.CardInstallment.delete(i.id))
+      ]);
+
+      // Reset user profile
+      if (userProfile?.id) {
+        await base44.entities.UserProfile.update(userProfile.id, {
+          xpTotal: 0,
+          levelIndex: 1,
+          levelName: 'Herói',
+          monthlyTargetXP: 2000
+        });
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['userProfile']);
-      queryClient.invalidateQueries(['user']);
-      toast.success('Foto atualizada!');
-      setUploadingAvatar(false);
+      queryClient.invalidateQueries();
+      toast.success('Jornada reiniciada com sucesso!');
+      setShowResetConfirm(false);
+      setIsOpen(false);
+      setTimeout(() => window.location.reload(), 500);
     },
-    onError: (error) => {
-      toast.error('Não foi possível atualizar sua foto.');
-      setUploadingAvatar(false);
+    onError: () => {
+      toast.error('Erro ao reiniciar jornada');
+      setShowResetConfirm(false);
     }
   });
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-      toast.error('Selecione uma imagem válida');
-      return;
-    }
-    
-    setUploadingAvatar(true);
-    uploadAvatarMutation.mutate(file);
-  };
 
   const handleSaveClick = () => {
     const trimmed = username.trim();
@@ -269,14 +253,6 @@ export default function UserPopover() {
 
   return (
     <>
-    <input
-      type="file"
-      ref={fileInputRef}
-      accept="image/*"
-      capture={false}
-      onChange={handleAvatarChange}
-      className="hidden"
-    />
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button 
@@ -305,28 +281,12 @@ export default function UserPopover() {
         <div className="p-4 space-y-4">
           {/* Avatar Section */}
           <div className="flex flex-col items-center gap-3 pb-4 border-b border-[rgba(0,255,102,0.18)]">
-            <div className="relative">
-              <Avatar className="w-20 h-20 border-2 border-[rgba(0,255,102,0.3)]">
-                <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.displayName || user?.email} />
-                <AvatarFallback className="bg-[#070A08] text-[#00FF66] text-xl font-semibold">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              {uploadingAvatar && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-full">
-                  <Loader2 className="w-6 h-6 text-[#00FF66] animate-spin" />
-                </div>
-              )}
-            </div>
-            <OlimpoButton
-              variant="secondary"
-              className="h-8 text-xs"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar}
-            >
-              <Camera className="w-3 h-3 mr-1" />
-              Trocar foto
-            </OlimpoButton>
+            <Avatar className="w-20 h-20 border-2 border-[rgba(0,255,102,0.3)]">
+              <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.displayName || user?.email} />
+              <AvatarFallback className="bg-[#070A08] text-[#00FF66] text-xl font-semibold">
+                {getInitials()}
+              </AvatarFallback>
+            </Avatar>
           </div>
           {/* Username - Editable */}
           <div>
@@ -397,10 +357,20 @@ export default function UserPopover() {
             </OlimpoButton>
           )}
 
+          {/* Reset Journey */}
+          <OlimpoButton
+            variant="secondary"
+            className="w-full mt-2 text-[#FF3B3B] border-[rgba(255,59,59,0.3)] hover:bg-[rgba(255,59,59,0.1)]"
+            onClick={() => setShowResetConfirm(true)}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reiniciar Jornada
+          </OlimpoButton>
+
           {/* Logout */}
           <OlimpoButton
             variant="secondary"
-            className="w-full mt-2"
+            className="w-full"
             onClick={handleLogout}
           >
             <LogOut className="w-4 h-4 mr-2" />
@@ -487,6 +457,39 @@ export default function UserPopover() {
             }}
           >
             Continuar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+      <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(255,59,59,0.4)]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-[#FF3B3B]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+            ⚠️ REINICIAR JORNADA
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-[#9AA0A6]">
+            Todos os seus dados serão <span className="text-[#FF3B3B] font-semibold">PERMANENTEMENTE APAGADOS</span>:
+            <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
+              <li>Experiência e níveis</li>
+              <li>Tarefas e hábitos</li>
+              <li>Metas e progressos</li>
+              <li>Dados financeiros</li>
+              <li>Check-ins e notas</li>
+            </ul>
+            <p className="mt-3 text-[#FF3B3B] font-semibold">Esta ação NÃO pode ser desfeita!</p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-transparent border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={() => resetJourneyMutation.mutate()}
+            disabled={resetJourneyMutation.isPending}
+            className="bg-[#FF3B3B] text-white hover:bg-[#DD2222]"
+          >
+            {resetJourneyMutation.isPending ? 'Reiniciando...' : 'Confirmar Reinício'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
