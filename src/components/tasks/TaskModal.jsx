@@ -50,6 +50,16 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
     enabled: open && !!user?.email
   });
 
+  const { data: activeProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const projects = await base44.entities.Project.filter({ created_by: user.email });
+      return projects.filter(p => p.status === 'active');
+    },
+    enabled: open && !!user?.email
+  });
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -60,7 +70,8 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
     isRecurring: false,
     recurringDays: [],
     xpReward: 10,
-    goalId: goalId || null
+    goalId: goalId || null,
+    projectId: null
   });
 
   useEffect(() => {
@@ -75,7 +86,8 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
         isRecurring: task.isRecurring || false,
         recurringDays: task.recurringDays || [],
         xpReward: task.xpReward || 10,
-        goalId: task.goalId || goalId || null
+        goalId: task.goalId || goalId || null,
+        projectId: task.projectId || null
       });
     } else {
       setFormData({
@@ -88,7 +100,8 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
         isRecurring: false,
         recurringDays: [],
         xpReward: 10,
-        goalId: goalId || null
+        goalId: goalId || null,
+        projectId: null
       });
     }
   }, [task, defaultDate, open]);
@@ -269,24 +282,46 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
             </div>
           </div>
 
-          <div>
-            <Label className="text-[#9AA0A6] text-xs">Vincular à meta (opcional)</Label>
-            <Select
-              value={formData.goalId || '_none'}
-              onValueChange={(v) => setFormData(prev => ({ ...prev, goalId: v === '_none' ? null : v }))}
-            >
-              <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
-                <SelectValue placeholder="Nenhuma meta" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-                <SelectItem value="_none" className="text-[#9AA0A6]">Nenhuma meta</SelectItem>
-                {activeGoals.map(goal => (
-                  <SelectItem key={goal.id} value={goal.id} className="text-[#E8E8E8]">
-                    {goal.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-[#9AA0A6] text-xs">Meta (opcional)</Label>
+              <Select
+                value={formData.goalId || '_none'}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, goalId: v === '_none' ? null : v }))}
+              >
+                <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+                  <SelectValue placeholder="Nenhuma" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                  <SelectItem value="_none" className="text-[#9AA0A6]">Nenhuma</SelectItem>
+                  {activeGoals.map(goal => (
+                    <SelectItem key={goal.id} value={goal.id} className="text-[#E8E8E8]">
+                      {goal.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-[#9AA0A6] text-xs">Projeto (opcional)</Label>
+              <Select
+                value={formData.projectId || '_none'}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, projectId: v === '_none' ? null : v }))}
+              >
+                <SelectTrigger className="bg-[#070A08] border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+                  <SelectValue placeholder="Nenhum" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                  <SelectItem value="_none" className="text-[#9AA0A6]">Nenhum</SelectItem>
+                  {activeProjects.map(project => (
+                    <SelectItem key={project.id} value={project.id} className="text-[#E8E8E8]">
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">
