@@ -13,7 +13,6 @@ import EmptyState from '@/components/olimpo/EmptyState';
 import HabitDetailModal from '@/components/habits/HabitDetailModal';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Flame, Zap, MoreVertical, Pencil, Archive, Trash2, CheckSquare } from 'lucide-react';
-import { toast } from 'sonner';
 
 import {
   DropdownMenu,
@@ -76,93 +75,7 @@ export default function Habits() {
     staleTime: 600000
   });
 
-  const toggleHabitMutation = useMutation({
-    mutationFn: async (habit) => {
-      const todayLog = habitLogs.find(l => l.habitId === habit.id && l.date === today);
-      
-      // Toggle: if already completed, uncomplete it
-      if (todayLog?.completed) {
-        const xpAmount = habit.xpReward || 8;
-        const penaltyXP = xpAmount * 2;
-        
-        // Delete the log
-        await base44.entities.HabitLog.delete(todayLog.id);
-        
-        // Remove double XP as penalty
-        const { awardXp } = await import('@/components/xpSystem');
-        const sfxEnabled = userProfile?.sfxEnabled ?? true;
-        
-        await awardXp({
-          amount: -penaltyXP,
-          sourceType: 'habit',
-          sourceId: habit.id,
-          note: `Hábito desmarcado: ${habit.name} (penalidade)`,
-          sfxEnabled
-        });
 
-        // Regress linked goal if exists
-        if (habit.goalId && user?.email) {
-          const goals = await base44.entities.Goal.filter({ created_by: user.email });
-          const linkedGoal = goals.find(g => g.id === habit.goalId);
-          if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
-            const newValue = Math.max(0, (linkedGoal.currentValue || 0) - 1);
-            await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
-          }
-        }
-
-        return { uncompleted: true, penaltyXP };
-      }
-      
-      // Complete habit
-      const xpAmount = habit.xpReward || 8;
-      
-      if (todayLog) {
-        await base44.entities.HabitLog.update(todayLog.id, { completed: true, xpEarned: xpAmount });
-      } else {
-        await base44.entities.HabitLog.create({
-          habitId: habit.id,
-          date: today,
-          completed: true,
-          xpEarned: xpAmount
-        });
-      }
-      
-      // Award XP using centralized function
-      const { awardXp } = await import('@/components/xpSystem');
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      
-      await awardXp({
-        amount: xpAmount,
-        sourceType: 'habit',
-        sourceId: habit.id,
-        note: `Hábito: ${habit.name}`,
-        sfxEnabled
-      });
-
-      // Progress linked goal if exists
-      if (habit.goalId && user?.email) {
-        const goals = await base44.entities.Goal.filter({ created_by: user.email });
-        const linkedGoal = goals.find(g => g.id === habit.goalId);
-        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
-          const newValue = (linkedGoal.currentValue || 0) + 1;
-          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
-        }
-      }
-      
-      return { uncompleted: false, xpAmount };
-    },
-    onSuccess: ({ uncompleted, penaltyXP, xpAmount }) => {
-      queryClient.invalidateQueries(['habitLogs']);
-      queryClient.invalidateQueries(['xpTransactions']);
-      queryClient.invalidateQueries(['goals']);
-      
-      if (uncompleted) {
-        toast.error(`Hábito desmarcado! -${penaltyXP} XP (penalidade dobrada)`, {
-          style: { background: '#FF3B3B', color: '#fff' }
-        });
-      }
-    }
-  });
 
   const archiveMutation = useMutation({
     mutationFn: (id) => base44.entities.Habit.update(id, { archived: true }),
@@ -307,29 +220,21 @@ export default function Habits() {
                   key={habit.id} 
                   className="relative cursor-pointer hover:bg-[rgba(0,255,102,0.03)] transition-all"
                   onClick={(e) => {
-                    // Don't open modal if clicking on checkbox or dropdown
-                    if (e.target.closest('button[type="button"]') || 
-                        e.target.closest('[data-radix-collection-item]')) {
+                    // Don't open modal if clicking dropdown
+                    if (e.target.closest('[data-radix-collection-item]')) {
                       return;
                     }
                     setSelectedHabitId(habit.id);
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleHabitMutation.mutate(habit);
-                      }}
-                      disabled={habit.archived}
-                      className={`mt-1 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                        isCompleted 
-                          ? 'bg-[#00FF66] border-[#00FF66]' 
-                          : 'border-[#9AA0A6] hover:border-[#00FF66]'
-                      } ${habit.archived ? 'opacity-50' : ''}`}
-                    >
+                    <div className={`mt-1 w-6 h-6 rounded-md border-2 flex items-center justify-center ${
+                      isCompleted 
+                        ? 'bg-[#00FF66] border-[#00FF66]' 
+                        : 'border-[#9AA0A6]'
+                    } ${habit.archived ? 'opacity-50' : ''}`}>
                       {isCompleted && <Check className="w-4 h-4 text-black" />}
-                    </button>
+                    </div>
 
                     <div className="flex-1">
                       <h3 className={`font-medium ${habit.archived ? 'text-[#9AA0A6]' : 'text-[#E8E8E8]'}`}>
