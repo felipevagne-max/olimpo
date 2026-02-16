@@ -9,7 +9,7 @@ export default function OlimpoLogo({ size = 40, glow = true, className = '' }) {
       }}
     >
       <img 
-        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69865134dce52b476b98b991/91f04a337_Editedimage_1770571274899.png"
+        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69865134dce52b476b98b991/18b76564b_BlueandWhiteModernCompanyLogo.png"
         alt="Olimpo"
         width={size}
         height={size}
