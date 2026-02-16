@@ -87,24 +87,24 @@ export default function Tasks() {
   });
 
   // Generate habit tasks when page loads
-  const { data: habitTasksGenerated } = useQuery({
-    queryKey: ['habitTasksGenerated', todayStr],
-    queryFn: async () => {
+  React.useEffect(() => {
+    if (!user?.email) return;
+    
+    const generateTasks = async () => {
       try {
         const response = await base44.functions.invoke('generateHabitTasks', {});
         console.log('Habit tasks generated:', response.data);
-        queryClient.invalidateQueries(['tasks']); // Force refresh tasks
-        return response.data;
+        // Wait a moment then force refresh
+        setTimeout(() => {
+          queryClient.invalidateQueries(['tasks']);
+        }, 500);
       } catch (error) {
         console.error('Error generating habit tasks:', error);
-        return null;
       }
-    },
-    enabled: !!user?.email,
-    staleTime: 300000, // 5 minutes
-    refetchOnMount: true,
-    refetchOnWindowFocus: false
-  });
+    };
+    
+    generateTasks();
+  }, [user?.email]);
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],

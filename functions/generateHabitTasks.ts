@@ -75,7 +75,10 @@ Deno.serve(async (req) => {
 function checkHabitSchedule(habit, dateStr) {
   const date = new Date(dateStr + 'T00:00:00');
   
+  console.log(`[checkHabitSchedule] Habit: ${habit.name}, Type: ${habit.frequencyType}, Date: ${dateStr}`);
+  
   if (habit.frequencyType === 'daily') {
+    console.log(`[checkHabitSchedule] Daily habit - MATCH`);
     return true;
   }
   
@@ -91,7 +94,11 @@ function checkHabitSchedule(habit, dateStr) {
     };
     
     const dayOfWeek = date.getDay();
-    return habit.weekdays.some(day => weekdayMap[day] === dayOfWeek);
+    const weekdayNames = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+    const matched = habit.weekdays.some(day => weekdayMap[day] === dayOfWeek);
+    
+    console.log(`[checkHabitSchedule] Weekday habit - dayOfWeek: ${dayOfWeek} (${weekdayNames[dayOfWeek]}), habit.weekdays: ${habit.weekdays.join(',')}, MATCH: ${matched}`);
+    return matched;
   }
   
   if (habit.frequencyType === 'timesPerWeek') {
@@ -102,10 +109,14 @@ function checkHabitSchedule(habit, dateStr) {
     
     // Map: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      return dayOfWeek <= timesPerWeek;
+      const matched = dayOfWeek <= timesPerWeek;
+      console.log(`[checkHabitSchedule] TimesPerWeek habit - dayOfWeek: ${dayOfWeek}, timesPerWeek: ${timesPerWeek}, MATCH: ${matched}`);
+      return matched;
     }
+    console.log(`[checkHabitSchedule] TimesPerWeek habit - weekend, NO MATCH`);
     return false;
   }
   
+  console.log(`[checkHabitSchedule] Unknown frequency type, NO MATCH`);
   return false;
 }
