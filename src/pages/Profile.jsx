@@ -38,7 +38,7 @@ export default function Profile() {
       const profiles = await base44.entities.UserProfile.list();
       const profile = profiles[0] || null;
       if (profile) {
-        setUsername(profile.displayName || '');
+        setUsername(profile.displayName || 'USUARIO');
       }
       return profile;
     }
@@ -60,7 +60,7 @@ export default function Profile() {
       return;
     }
     
-    if (trimmed === (userProfile?.displayName || '').trim()) {
+    if (trimmed === (userProfile?.displayName || 'USUARIO').trim()) {
       toast.info('Nome não foi alterado');
       return;
     }
@@ -77,18 +77,6 @@ export default function Profile() {
       }
     }
 
-    // Check uniqueness
-    const allProfiles = await base44.entities.UserProfile.list();
-    const nameExists = allProfiles.some(p => 
-      p.id !== userProfile?.id && 
-      p.displayName?.toLowerCase() === trimmed.toLowerCase()
-    );
-
-    if (nameExists) {
-      toast.error('Esse nome já está em uso.');
-      return;
-    }
-
     if (!userProfile?.id) {
       toast.error('Perfil não encontrado');
       return;
@@ -103,6 +91,7 @@ export default function Profile() {
       });
 
       await new Promise(resolve => setTimeout(resolve, 1000));
+      navigate('/Dashboard');
       window.location.reload();
     } catch (error) {
       setIsSaving(false);
@@ -239,7 +228,7 @@ export default function Profile() {
                 </OlimpoButton>
                 <OlimpoButton
                   onClick={handleSaveClick}
-                  disabled={isSaving || username.trim() === (userProfile?.displayName || '').trim()}
+                  disabled={isSaving || !username.trim() || username.trim() === (userProfile?.displayName || 'USUARIO').trim()}
                   className="flex-1"
                 >
                   Confirmar
