@@ -49,7 +49,8 @@ export default function Goals() {
       if (!user?.email) return [];
       return base44.entities.Goal.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   const { data: milestones = [] } = useQuery({
@@ -58,7 +59,8 @@ export default function Goals() {
       if (!user?.email) return [];
       return base44.entities.GoalMilestone.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   const { data: xpTransactions = [] } = useQuery({
@@ -67,7 +69,8 @@ export default function Goals() {
       if (!user?.email) return [];
       return base44.entities.XPTransaction.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 600000
   });
 
   const archiveMutation = useMutation({
@@ -90,7 +93,8 @@ export default function Goals() {
       const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 600000
   });
 
   const progressGoalMutation = useMutation({

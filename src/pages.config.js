@@ -61,11 +61,11 @@ import Habits from './pages/Habits';
 import Home from './pages/Home';
 import Notes from './pages/Notes';
 import Oracle from './pages/Oracle';
+import Profile from './pages/Profile';
 import Progress from './pages/Progress';
 import Tasks from './pages/Tasks';
 import Titles from './pages/Titles';
 import UnifiedTasks from './pages/UnifiedTasks';
-import Profile from './pages/Profile';
 import __Layout from './Layout.jsx';
 
 
@@ -84,11 +84,11 @@ export const PAGES = {
     "Home": Home,
     "Notes": Notes,
     "Oracle": Oracle,
+    "Profile": Profile,
     "Progress": Progress,
     "Tasks": Tasks,
     "Titles": Titles,
     "UnifiedTasks": UnifiedTasks,
-    "Profile": Profile,
 }
 
 export const pagesConfig = {

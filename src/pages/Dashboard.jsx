@@ -90,7 +90,7 @@ export default function Dashboard() {
       return base44.entities.XPTransaction.filter({ created_by: user.email }, '-created_date', 500);
     },
     enabled: !!user?.email,
-    staleTime: 120000
+    staleTime: 600000
   });
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
@@ -101,7 +101,7 @@ export default function Dashboard() {
       return allTasks.filter(t => !t.archived && (t.date === today || (t.isOverdue && !t.completed)));
     },
     enabled: !!user?.email,
-    staleTime: 60000
+    staleTime: 300000
   });
 
   const { data: habits = [], isLoading: loadingHabits } = useQuery({
@@ -111,7 +111,7 @@ export default function Dashboard() {
       return base44.entities.Habit.filter({ archived: false, created_by: user.email });
     },
     enabled: !!user?.email,
-    staleTime: 300000
+    staleTime: 600000
   });
 
   const { data: habitLogs = [] } = useQuery({
@@ -122,7 +122,7 @@ export default function Dashboard() {
       return all.filter(l => l.date && l.date >= format(monthStart, 'yyyy-MM-dd'));
     },
     enabled: !!user?.email,
-    staleTime: 60000
+    staleTime: 300000
   });
 
   const { data: userProfile } = useQuery({
@@ -150,7 +150,7 @@ export default function Dashboard() {
       return profile;
     },
     enabled: !!user?.email,
-    staleTime: 300000
+    staleTime: 600000
   });
 
   const { data: goals = [] } = useQuery({
@@ -160,7 +160,7 @@ export default function Dashboard() {
       return base44.entities.Goal.filter({ created_by: user.email }, '-created_date', 100);
     },
     enabled: !!user?.email,
-    staleTime: 60000
+    staleTime: 300000
   });
 
   const { data: checkIns = [] } = useQuery({
@@ -171,7 +171,7 @@ export default function Dashboard() {
       return all.filter(c => c.date && c.date >= format(monthStart, 'yyyy-MM-dd'));
     },
     enabled: !!user?.email,
-    staleTime: 60000
+    staleTime: 300000
   });
 
   const { data: expenses = [] } = useQuery({
@@ -182,7 +182,7 @@ export default function Dashboard() {
       return all.filter(e => e.date === today);
     },
     enabled: !!user?.email,
-    staleTime: 30000
+    staleTime: 300000
   });
 
   const todayCheckIn = checkIns.find(c => c.date === today);

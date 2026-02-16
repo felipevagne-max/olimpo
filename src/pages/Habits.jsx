@@ -51,7 +51,8 @@ export default function Habits() {
       if (!user?.email) return [];
       return base44.entities.Habit.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 600000
   });
 
   const { data: habitLogs = [] } = useQuery({
@@ -60,7 +61,8 @@ export default function Habits() {
       if (!user?.email) return [];
       return base44.entities.HabitLog.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   const { data: userProfile } = useQuery({
@@ -70,7 +72,8 @@ export default function Habits() {
       const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 600000
   });
 
   const toggleHabitMutation = useMutation({

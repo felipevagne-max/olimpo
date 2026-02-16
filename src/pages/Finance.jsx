@@ -61,7 +61,8 @@ export default function Finance() {
       if (!user?.email) return [];
       return base44.entities.Expense.filter({ created_by: user.email }, '-date');
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   useOverdueNotifications();

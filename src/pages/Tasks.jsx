@@ -58,7 +58,8 @@ export default function Tasks() {
       if (!user?.email) return [];
       return base44.entities.Task.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   const { data: xpTransactions = [] } = useQuery({
@@ -67,7 +68,8 @@ export default function Tasks() {
       if (!user?.email) return [];
       return base44.entities.XPTransaction.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 600000
   });
 
   const { data: userProfile } = useQuery({
@@ -77,7 +79,8 @@ export default function Tasks() {
       const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 600000
   });
 
   const { data: habits = [] } = useQuery({
@@ -86,7 +89,8 @@ export default function Tasks() {
       if (!user?.email) return [];
       return base44.entities.Habit.filter({ archived: false, created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 600000
   });
 
   const { data: habitLogs = [] } = useQuery({
@@ -95,7 +99,8 @@ export default function Tasks() {
       if (!user?.email) return [];
       return base44.entities.HabitLog.filter({ created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   const { data: expenses = [] } = useQuery({
@@ -104,7 +109,8 @@ export default function Tasks() {
       if (!user?.email) return [];
       return base44.entities.Expense.filter({ deleted_at: null, created_by: user.email });
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   const completeTaskMutation = useMutation({
