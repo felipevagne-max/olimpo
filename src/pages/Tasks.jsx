@@ -17,6 +17,7 @@ import ExpectancyNext7Days from '@/components/tasks/ExpectancyNext7Days';
 import ProjectsSheet from '@/components/projects/ProjectsSheet';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare, Folder } from 'lucide-react';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -704,6 +705,45 @@ export default function Tasks() {
         {/* Progress Grid */}
         <div className="mt-6">
           <ProgressGrid7Days />
+        </div>
+
+        {/* Calendar */}
+        <div className="mt-6 mb-6">
+          <OlimpoCard>
+            <h3 
+              className="text-sm font-semibold text-[#9AA0A6] mb-4"
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
+            >
+              CALENDÁRIO
+            </h3>
+            <CalendarComponent
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
+              className="rounded-lg border-none"
+              classNames={{
+                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                month: "space-y-4",
+                caption: "flex justify-center pt-1 relative items-center text-[#E8E8E8]",
+                caption_label: "text-sm font-medium",
+                nav: "space-x-1 flex items-center",
+                nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-[#9AA0A6] hover:text-[#00FF66]",
+                nav_button_previous: "absolute left-1",
+                nav_button_next: "absolute right-1",
+                table: "w-full border-collapse space-y-1",
+                head_row: "flex",
+                head_cell: "text-[#9AA0A6] rounded-md w-9 font-normal text-[0.8rem]",
+                row: "flex w-full mt-2",
+                cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-[rgba(0,255,102,0.1)] first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-[rgba(0,255,102,0.1)] rounded-md text-[#E8E8E8]",
+                day_selected: "bg-[#00FF66] text-black hover:bg-[#00DD55] hover:text-black focus:bg-[#00FF66] focus:text-black",
+                day_today: "bg-[rgba(0,255,102,0.15)] text-[#00FF66]",
+                day_outside: "text-[#9AA0A6] opacity-30",
+                day_disabled: "text-[#9AA0A6] opacity-30",
+                day_hidden: "invisible",
+              }}
+            />
+          </OlimpoCard>
         </div>
       </div>
 
