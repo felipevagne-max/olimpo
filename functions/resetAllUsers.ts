@@ -51,39 +51,45 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.CommunityPost.list('-created_date', 10000)
     ]);
 
-    // Delete all records
-    await Promise.all([
-      ...tasks.map(t => base44.asServiceRole.entities.Task.delete(t.id)),
-      ...habits.map(h => base44.asServiceRole.entities.Habit.delete(h.id)),
-      ...habitLogs.map(l => base44.asServiceRole.entities.HabitLog.delete(l.id)),
-      ...goals.map(g => base44.asServiceRole.entities.Goal.delete(g.id)),
-      ...milestones.map(m => base44.asServiceRole.entities.GoalMilestone.delete(m.id)),
-      ...xpTransactions.map(x => base44.asServiceRole.entities.XPTransaction.delete(x.id)),
-      ...expenses.map(e => base44.asServiceRole.entities.Expense.delete(e.id)),
-      ...checkIns.map(c => base44.asServiceRole.entities.CheckIn.delete(c.id)),
-      ...notes.map(n => base44.asServiceRole.entities.Note.delete(n.id)),
-      ...purchases.map(p => base44.asServiceRole.entities.CardPurchase.delete(p.id)),
-      ...installments.map(i => base44.asServiceRole.entities.CardInstallment.delete(i.id)),
-      ...categories.map(c => base44.asServiceRole.entities.Category.delete(c.id)),
-      ...creditCards.map(c => base44.asServiceRole.entities.CreditCard.delete(c.id)),
-      ...agendaItems.map(a => base44.asServiceRole.entities.AgendaItem.delete(a.id)),
-      ...oracleInsights.map(o => base44.asServiceRole.entities.OracleInsight.delete(o.id)),
-      ...userTitles.map(u => base44.asServiceRole.entities.UserTitles.delete(u.id)),
-      ...communityPosts.map(p => base44.asServiceRole.entities.CommunityPost.delete(p.id))
-    ]);
+    // Delete all records in batches to avoid rate limits
+    const batchSize = 50;
+    
+    const deleteInBatches = async (items, deleteFn) => {
+      for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        await Promise.all(batch.map(item => deleteFn(item.id)));
+      }
+    };
+
+    // Delete all data
+    await deleteInBatches(tasks, (id) => base44.asServiceRole.entities.Task.delete(id));
+    await deleteInBatches(habits, (id) => base44.asServiceRole.entities.Habit.delete(id));
+    await deleteInBatches(habitLogs, (id) => base44.asServiceRole.entities.HabitLog.delete(id));
+    await deleteInBatches(goals, (id) => base44.asServiceRole.entities.Goal.delete(id));
+    await deleteInBatches(milestones, (id) => base44.asServiceRole.entities.GoalMilestone.delete(id));
+    await deleteInBatches(xpTransactions, (id) => base44.asServiceRole.entities.XPTransaction.delete(id));
+    await deleteInBatches(expenses, (id) => base44.asServiceRole.entities.Expense.delete(id));
+    await deleteInBatches(checkIns, (id) => base44.asServiceRole.entities.CheckIn.delete(id));
+    await deleteInBatches(notes, (id) => base44.asServiceRole.entities.Note.delete(id));
+    await deleteInBatches(purchases, (id) => base44.asServiceRole.entities.CardPurchase.delete(id));
+    await deleteInBatches(installments, (id) => base44.asServiceRole.entities.CardInstallment.delete(id));
+    await deleteInBatches(categories, (id) => base44.asServiceRole.entities.Category.delete(id));
+    await deleteInBatches(creditCards, (id) => base44.asServiceRole.entities.CreditCard.delete(id));
+    await deleteInBatches(agendaItems, (id) => base44.asServiceRole.entities.AgendaItem.delete(id));
+    await deleteInBatches(oracleInsights, (id) => base44.asServiceRole.entities.OracleInsight.delete(id));
+    await deleteInBatches(userTitles, (id) => base44.asServiceRole.entities.UserTitles.delete(id));
+    await deleteInBatches(communityPosts, (id) => base44.asServiceRole.entities.CommunityPost.delete(id));
 
     // Reset all user profiles
-    await Promise.all(
-      userProfiles.map(profile => 
-        base44.asServiceRole.entities.UserProfile.update(profile.id, {
-          xpTotal: 0,
-          levelIndex: 1,
-          levelName: 'Herói',
-          monthlyTargetXP: 2000,
-          avatar_url: null
-        })
-      )
-    );
+    for (const profile of userProfiles) {
+      await base44.asServiceRole.entities.UserProfile.update(profile.id, {
+        xpTotal: 0,
+        levelIndex: 1,
+        levelName: 'Herói',
+        monthlyTargetXP: 2000,
+        avatar_url: null
+      });
+    }
 
     return Response.json({ 
       success: true,
