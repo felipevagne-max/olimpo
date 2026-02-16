@@ -381,7 +381,8 @@ export default function UserPopover() {
             onClick={() => {
               setShowSuccess(false);
               setIsOpen(false);
-              window.location.href = '/Dashboard';
+              queryClient.invalidateQueries();
+              setTimeout(() => window.location.reload(), 100);
             }}
             className="font-semibold"
             style={{
