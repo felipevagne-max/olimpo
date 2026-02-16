@@ -86,32 +86,15 @@ export default function Tasks() {
     staleTime: 600000
   });
 
-  // Generate habit tasks on load
-  const { data: habitTasksGenerated } = useQuery({
-    queryKey: ['habitTasksGenerated', todayStr],
+  const { data: habits = [] } = useQuery({
+    queryKey: ['habits'],
     queryFn: async () => {
-      try {
-        const response = await base44.functions.invoke('generateHabitTasks', {});
-        console.log('Habit tasks generated:', response.data);
-        // Force immediate refresh of tasks
-        await new Promise(resolve => setTimeout(resolve, 300));
-        return response.data;
-      } catch (error) {
-        console.error('Error generating habit tasks:', error);
-        return null;
-      }
+      if (!user?.email) return [];
+      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
     },
     enabled: !!user?.email,
-    staleTime: 0, // Always fresh
-    refetchOnMount: 'stale'
+    staleTime: 300000
   });
-
-  // Force refresh tasks when habitTasksGenerated changes
-  React.useEffect(() => {
-    if (habitTasksGenerated) {
-      queryClient.invalidateQueries(['tasks']);
-    }
-  }, [habitTasksGenerated, queryClient]);
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
@@ -222,30 +205,60 @@ export default function Tasks() {
 
   const dayExpenses = showOverdue ? [] : expenses.filter(e => e.date === selectedDateStr);
 
-  // Combined items now only include tasks (habits generate tasks automatically)
+  // Get habits that should appear today
+  const habitItemsForDay = showOverdue ? [] : habits
+    .filter(habit => {
+      if (habit.archived) return false;
+      const shouldRun = checkHabitSchedule(habit, selectedDateStr);
+      return shouldRun;
+    })
+    .map(habit => ({
+      ...habit,
+      type: 'habit',
+      id: `habit-${habit.id}`,
+      habitId: habit.id,
+      title: habit.name,
+      description: habit.description,
+      xpReward: habit.xpReward || 8,
+      difficulty: habit.difficulty || 'medium',
+      completed: false,
+      isCompleted: false,
+      isHabitExecution: true
+    }));
+
+  // Combined items now include both tasks and habit executions
   const combinedItems = showOverdue ? dayTasks.map(t => ({
     ...t,
     type: 'task',
     isCompleted: t.completed
-  })) : dayTasks.map(t => ({
+  })) : [
+    ...habitItemsForDay,
+    ...dayTasks.map(t => ({
     ...t,
     type: 'task',
     sortTime: t.timeOfDay || '99:99',
     sortPriority: t.priority === 'high' ? 1 : t.priority === 'medium' ? 2 : 3,
     sortUrgency: t.dueDate ? (isBefore(parseISO(t.dueDate), new Date()) ? 0 : 1) : 2,
     isCompleted: t.completed
-  })).sort((a, b) => {
-    // First: Separate completed from pending
-    if (a.isCompleted !== b.isCompleted) {
-      return a.isCompleted ? 1 : -1; // pending first, completed last
-    }
-    // Then: Sort by time, priority, urgency
-    if (a.sortTime !== '99:99' || b.sortTime !== '99:99') {
-      if (a.sortTime !== b.sortTime) return a.sortTime.localeCompare(b.sortTime);
-    }
-    if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
-    if (a.sortUrgency !== b.sortUrgency) return a.sortUrgency - b.sortUrgency;
-    return new Date(a.created_date || 0) - new Date(b.created_date || 0);
+  }))
+  ].sort((a, b) => {
+  // First: Separate completed from pending
+  if (a.isCompleted !== b.isCompleted) {
+    return a.isCompleted ? 1 : -1;
+  }
+  // Then: Sort by time, priority, urgency
+  const timeA = a.sortTime || a.timeOfDay || '99:99';
+  const timeB = b.sortTime || b.timeOfDay || '99:99';
+  if (timeA !== '99:99' || timeB !== '99:99') {
+    if (timeA !== timeB) return timeA.localeCompare(timeB);
+  }
+  const priorA = a.sortPriority !== undefined ? a.sortPriority : 3;
+  const priorB = b.sortPriority !== undefined ? b.sortPriority : 3;
+  if (priorA !== priorB) return priorA - priorB;
+  const urgA = a.sortUrgency !== undefined ? a.sortUrgency : 2;
+  const urgB = b.sortUrgency !== undefined ? b.sortUrgency : 2;
+  if (urgA !== urgB) return urgA - urgB;
+  return new Date(a.created_date || 0) - new Date(b.created_date || 0);
   });
 
   const completedCount = combinedItems.filter(i => i.isCompleted).length;
@@ -386,26 +399,28 @@ export default function Tasks() {
         ) : (
           <div className="space-y-3">
             {combinedItems.map(item => {
-              // All items are tasks now (habits generate tasks automatically)
-              const isHabitTask = !!item.habitId;
+              const isHabitExecution = item.type === 'habit' || item.isHabitExecution;
+              const isHabitTask = !!item.habitId && !isHabitExecution;
               
               return (
                 <OlimpoCard key={`${item.type}-${item.id}`}>
                   <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => completeTaskMutation.mutate(item)}
-                      className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                        item.isCompleted
-                          ? 'bg-[#00FF66] border-[#00FF66]' 
-                          : 'border-[#9AA0A6] hover:border-[#00FF66]'
-                      }`}
-                    >
-                      {item.isCompleted && <Check className="w-4 h-4 text-black" />}
-                    </button>
+                    {!isHabitExecution && (
+                      <button
+                        onClick={() => completeTaskMutation.mutate(item)}
+                        className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                          item.isCompleted
+                            ? 'bg-[#00FF66] border-[#00FF66]' 
+                            : 'border-[#9AA0A6] hover:border-[#00FF66]'
+                        }`}
+                      >
+                        {item.isCompleted && <Check className="w-4 h-4 text-black" />}
+                      </button>
+                    )}
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        {isHabitTask && (
+                        {(isHabitExecution || isHabitTask) && (
                           <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
                         )}
                         <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
@@ -426,7 +441,12 @@ export default function Tasks() {
                             ATRASADA
                           </span>
                         )}
-                        {item.priority && (
+                        {isHabitExecution && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
+                            Rotina Agendada
+                          </span>
+                        )}
+                        {!isHabitExecution && item.priority && (
                           <span className={`text-xs px-2 py-0.5 rounded ${
                             item.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
                             item.priority === 'medium' ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' :
@@ -456,7 +476,7 @@ export default function Tasks() {
                       </div>
                     </div>
 
-                    {!isHabitTask && (
+                    {!isHabitExecution && !isHabitTask && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
