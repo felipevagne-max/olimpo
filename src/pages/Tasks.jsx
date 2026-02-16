@@ -86,25 +86,32 @@ export default function Tasks() {
     staleTime: 600000
   });
 
-  // Generate habit tasks when page loads
-  React.useEffect(() => {
-    if (!user?.email) return;
-    
-    const generateTasks = async () => {
+  // Generate habit tasks on load
+  const { data: habitTasksGenerated } = useQuery({
+    queryKey: ['habitTasksGenerated', todayStr],
+    queryFn: async () => {
       try {
         const response = await base44.functions.invoke('generateHabitTasks', {});
         console.log('Habit tasks generated:', response.data);
-        // Wait a moment then force refresh
-        setTimeout(() => {
-          queryClient.invalidateQueries(['tasks']);
-        }, 500);
+        // Force immediate refresh of tasks
+        await new Promise(resolve => setTimeout(resolve, 300));
+        return response.data;
       } catch (error) {
         console.error('Error generating habit tasks:', error);
+        return null;
       }
-    };
-    
-    generateTasks();
-  }, [user?.email]);
+    },
+    enabled: !!user?.email,
+    staleTime: 0, // Always fresh
+    refetchOnMount: 'stale'
+  });
+
+  // Force refresh tasks when habitTasksGenerated changes
+  React.useEffect(() => {
+    if (habitTasksGenerated) {
+      queryClient.invalidateQueries(['tasks']);
+    }
+  }, [habitTasksGenerated, queryClient]);
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
