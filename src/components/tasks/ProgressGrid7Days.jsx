@@ -15,6 +15,8 @@ export default function ProgressGrid7Days() {
     queryFn: () => base44.auth.me()
   });
 
+  const isAdmin = user?.role === 'admin';
+
   const toggleHabitMutation = useMutation({
     mutationFn: async ({ habitId, date, completed }) => {
       if (!completed) {
@@ -226,7 +228,7 @@ export default function ProgressGrid7Days() {
                 {days7.map((day) => {
                    const completed = isItemCompleted(item, day.date);
                    const isPastDay = !day.isFuture && !day.isToday;
-                   const isClickable = !isPastDay;
+                   const isClickable = !isPastDay || isAdmin;
 
                    const handleToggle = () => {
                      if (!isClickable) return;
