@@ -13,17 +13,28 @@ import { toast } from 'sonner';
 export default function TopBar({ sidebarCollapsed, onToggleSidebar }) {
   const queryClient = useQueryClient();
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
-    queryFn: () => base44.entities.XPTransaction.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.XPTransaction.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const toggleNotificationsMutation = useMutation({
