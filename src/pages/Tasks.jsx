@@ -16,7 +16,7 @@ import ProgressGrid7Days from '@/components/tasks/ProgressGrid7Days';
 import ExpectancyNext7Days from '@/components/tasks/ExpectancyNext7Days';
 import ProjectsSheet from '@/components/projects/ProjectsSheet';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
-import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare, Folder } from 'lucide-react';
+import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare, Folder, Flame } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import {
@@ -468,79 +468,136 @@ export default function Tasks() {
           />
         ) : (
           <div className="space-y-3">
-            {combinedItems.map(item => (
-              <OlimpoCard key={`${item.type}-${item.id}`}>
-                <div className="flex items-start gap-3">
-                  <button
-                    onClick={() => item.type === 'task' 
-                      ? completeTaskMutation.mutate(item) 
-                      : completeHabitMutation.mutate(item)}
-                    className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                      item.isCompleted
-                        ? 'bg-[#00FF66] border-[#00FF66]' 
-                        : 'border-[#9AA0A6] hover:border-[#00FF66]'
-                    }`}
+            {combinedItems.map(item => {
+              if (item.type === 'habit') {
+                // Habit card - gamified view, no checkbox
+                const habitStreak = (() => {
+                  const logs = habitLogs
+                    .filter(l => l.habitId === item.id && l.completed)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                  if (logs.length === 0) return 0;
+                  let streak = 0;
+                  let currentDate = new Date();
+                  for (const log of logs) {
+                    const logDate = new Date(log.date);
+                    const diffDays = Math.floor((currentDate - logDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays <= 1) {
+                      streak++;
+                      currentDate = logDate;
+                    } else {
+                      break;
+                    }
+                  }
+                  return streak;
+                })();
+
+                return (
+                  <OlimpoCard 
+                    key={`${item.type}-${item.id}`}
+                    className="cursor-pointer hover:border-[#00FF66] transition-all"
+                    onClick={() => completeHabitMutation.mutate(item)}
                   >
-                    {item.isCompleted && <Check className="w-4 h-4 text-black" />}
-                  </button>
+                    <div className="flex items-center gap-3">
+                      {/* Progress indicator */}
+                      <div className={`w-1 h-16 rounded-full ${
+                        item.isCompleted 
+                          ? 'bg-gradient-to-b from-[#00FF66] to-[#00DD55]' 
+                          : 'bg-gradient-to-b from-[rgba(0,255,102,0.3)] to-[rgba(0,255,102,0.1)]'
+                      }`} />
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <CheckSquare className={`w-4 h-4 ${item.isCompleted ? 'text-[#00FF66]' : 'text-[#9AA0A6]'}`} />
+                          <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#00FF66]' : 'text-[#E8E8E8]'}`}>
+                            {item.name}
+                          </h3>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 mt-2">
+                          <div className="flex items-center gap-1">
+                            <Flame className="w-3 h-3 text-orange-500" />
+                            <span className="text-xs text-[#E8E8E8] font-mono">{habitStreak}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Zap className="w-3 h-3 text-[#00FF66]" />
+                            <span className="text-xs text-[#00FF66] font-mono">+{item.xpReward || 8}</span>
+                          </div>
+                          {item.goalText && (
+                            <span className="text-xs text-[#9AA0A6]">{item.goalText}</span>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      {item.type === 'habit' && (
-                        <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
+                      {item.isCompleted && (
+                        <div className="text-[#00FF66]">
+                          <Check className="w-6 h-6" />
+                        </div>
                       )}
-                      <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
-                        {item.type === 'task' ? item.title : item.name}
-                      </h3>
                     </div>
-                    {item.description && (
-                      <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{item.description}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {item.type === 'habit' && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
-                          Rotina
-                        </span>
+                  </OlimpoCard>
+                );
+              }
+
+              // Task card - regular with checkbox
+              return (
+                <OlimpoCard key={`${item.type}-${item.id}`}>
+                  <div className="flex items-start gap-3">
+                    <button
+                      onClick={() => completeTaskMutation.mutate(item)}
+                      className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                        item.isCompleted
+                          ? 'bg-[#00FF66] border-[#00FF66]' 
+                          : 'border-[#9AA0A6] hover:border-[#00FF66]'
+                      }`}
+                    >
+                      {item.isCompleted && <Check className="w-4 h-4 text-black" />}
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
+                          {item.title}
+                        </h3>
+                      </div>
+                      {item.description && (
+                        <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{item.description}</p>
                       )}
-                      {item.type === 'task' && item.isOverdue && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
-                          ATRASADA
-                        </span>
-                      )}
-                      {item.type === 'task' && item.priority && (
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          item.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
-                          item.priority === 'medium' ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' :
-                          'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
-                        }`}>
-                          {item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Média' : 'Baixa'}
-                        </span>
-                      )}
-                      {item.type === 'task' && item.dueDate && (() => {
-                        const hoursUntil = Math.floor((parseISO(item.dueDate + 'T23:59:59') - new Date()) / (1000 * 60 * 60));
-                        const isUrgent = hoursUntil <= 48 || item.priority === 'high';
-                        return (
-                          <span className={`text-xs font-mono ${isUrgent ? 'text-[#00FFC8] font-semibold' : 'text-[#9AA0A6]'}`}>
-                            Prazo: {format(parseISO(item.dueDate), 'dd/MM')}
-                            {isUrgent && ' ⚡'}
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        {item.isOverdue && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
+                            ATRASADA
                           </span>
-                        );
-                      })()}
-                      {item.sortTime !== '99:99' && (
-                        <span className="text-xs text-[#9AA0A6]">
-                          {item.sortTime}
+                        )}
+                        {item.priority && (
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            item.priority === 'high' ? 'bg-[rgba(255,59,59,0.2)] text-[#FF3B3B]' :
+                            item.priority === 'medium' ? 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]' :
+                            'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
+                          }`}>
+                            {item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Média' : 'Baixa'}
+                          </span>
+                        )}
+                        {item.dueDate && (() => {
+                          const hoursUntil = Math.floor((parseISO(item.dueDate + 'T23:59:59') - new Date()) / (1000 * 60 * 60));
+                          const isUrgent = hoursUntil <= 48 || item.priority === 'high';
+                          return (
+                            <span className={`text-xs font-mono ${isUrgent ? 'text-[#00FFC8] font-semibold' : 'text-[#9AA0A6]'}`}>
+                              Prazo: {format(parseISO(item.dueDate), 'dd/MM')}
+                              {isUrgent && ' ⚡'}
+                            </span>
+                          );
+                        })()}
+                        {item.sortTime !== '99:99' && (
+                          <span className="text-xs text-[#9AA0A6]">
+                            {item.sortTime}
+                          </span>
+                        )}
+                        <span className="text-xs font-mono text-[#00FF66]">
+                          +{item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10)} XP
                         </span>
-                      )}
-                      <span className="text-xs font-mono text-[#00FF66]">
-                        +{item.type === 'task' 
-                          ? (item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10))
-                          : (item.xpReward || 8)
-                        } XP
-                      </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {item.type === 'task' && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
@@ -568,10 +625,10 @@ export default function Tasks() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  )}
-                </div>
-              </OlimpoCard>
-            ))}
+                  </div>
+                </OlimpoCard>
+              );
+            })}
           </div>
         )}
 
