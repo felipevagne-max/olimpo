@@ -91,15 +91,19 @@ export default function Tasks() {
     queryKey: ['habitTasksGenerated', todayStr],
     queryFn: async () => {
       try {
-        await base44.functions.invoke('generateHabitTasks', {});
-        return true;
+        const response = await base44.functions.invoke('generateHabitTasks', {});
+        console.log('Habit tasks generated:', response.data);
+        queryClient.invalidateQueries(['tasks']); // Force refresh tasks
+        return response.data;
       } catch (error) {
         console.error('Error generating habit tasks:', error);
-        return false;
+        return null;
       }
     },
     enabled: !!user?.email,
-    staleTime: 3600000 // 1 hour - only generate once per hour
+    staleTime: 300000, // 5 minutes
+    refetchOnMount: true,
+    refetchOnWindowFocus: false
   });
 
   const { data: expenses = [] } = useQuery({
