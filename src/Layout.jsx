@@ -15,13 +15,16 @@ export default function Layout({ children, currentPageName }) {
   const queryClient = useQueryClient();
   const [isChecking, setIsChecking] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!currentUser?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: currentUser.email });
       return profiles[0] || null;
     },
+    enabled: !!currentUser?.email,
     staleTime: 300000
   });
 
@@ -60,6 +63,7 @@ export default function Layout({ children, currentPageName }) {
         
         if (isAuth) {
           const user = await base44.auth.me();
+          setCurrentUser(user);
           
           // Check if first login and redirect to FirstAccess page
           try {
