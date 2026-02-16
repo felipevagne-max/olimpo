@@ -1,12 +1,9 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, LogOut, Download, RefreshCw } from 'lucide-react';
-import InstallPrompt from './InstallPrompt';
+import { User, LogOut, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import OlimpoInput from './OlimpoInput';
 import OlimpoButton from './OlimpoButton';
 import { toast } from 'sonner';
@@ -28,16 +25,7 @@ export default function UserPopover() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingName, setPendingName] = useState('');
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-
-  // Detect if app is installed (running as PWA)
-  useState(() => {
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                  window.navigator.standalone === true;
-    setIsInstalled(isPWA);
-  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -245,12 +233,6 @@ export default function UserPopover() {
     ? Math.max(0, Math.ceil((new Date(userProfile.planExpiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  // Get initials from displayName or email
-  const getInitials = () => {
-    const name = userProfile?.displayName || user?.email || '';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
-  };
-
   return (
     <>
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -279,15 +261,6 @@ export default function UserPopover() {
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Avatar Section */}
-          <div className="flex flex-col items-center gap-3 pb-4 border-b border-[rgba(0,255,102,0.18)]">
-            <Avatar className="w-20 h-20 border-2 border-[rgba(0,255,102,0.3)]">
-              <AvatarImage src={userProfile?.avatar_url} alt={userProfile?.displayName || user?.email} />
-              <AvatarFallback className="bg-[#070A08] text-[#00FF66] text-xl font-semibold">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
-          </div>
           {/* Username - Editable */}
           <div>
             <Label className="text-[#9AA0A6] text-xs">Nome de usuário</Label>
@@ -308,17 +281,6 @@ export default function UserPopover() {
             </div>
           </div>
 
-          {/* Email - Read only */}
-          <div>
-            <Label className="text-[#9AA0A6] text-xs">E-mail</Label>
-            <p 
-              className="text-sm text-[#E8E8E8] mt-1 p-2 bg-[#070A08] rounded-lg"
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              {user?.email || '—'}
-            </p>
-          </div>
-
           {/* Plan - Read only */}
           <div>
             <Label className="text-[#9AA0A6] text-xs">Plano</Label>
@@ -329,33 +291,6 @@ export default function UserPopover() {
               {planDaysRemaining !== null ? `${planDaysRemaining} dias restantes` : '—'}
             </p>
           </div>
-
-          {/* Card Purchase Confirm Toggle */}
-          <div className="pt-3 border-t border-[rgba(0,255,102,0.18)]">
-            <div className="flex items-center justify-between">
-              <Label className="text-[#9AA0A6] text-xs">Confirmar valores do cartão</Label>
-              <Switch
-                checked={!userProfile?.skipCardPurchaseConfirm}
-                onCheckedChange={(checked) => updateProfileSettingMutation.mutate(!checked)}
-                className="data-[state=checked]:bg-[#00FF66]"
-              />
-            </div>
-          </div>
-
-          {/* Install App - only show if not already installed */}
-          {!isInstalled && (
-            <OlimpoButton
-              variant="secondary"
-              className="w-full"
-              onClick={() => {
-                setShowInstallPrompt(true);
-                setIsOpen(false);
-              }}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Adicionar à Tela Inicial
-            </OlimpoButton>
-          )}
 
           {/* Reset Journey */}
           <OlimpoButton
@@ -379,8 +314,6 @@ export default function UserPopover() {
         </div>
       </PopoverContent>
     </Popover>
-
-    <InstallPrompt open={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
 
     <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
       <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
