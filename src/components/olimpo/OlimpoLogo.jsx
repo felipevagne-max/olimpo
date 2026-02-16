@@ -13,7 +13,12 @@ export default function OlimpoLogo({ size = 40, glow = true, className = '' }) {
         alt="Olimpo"
         width={size}
         height={size}
-        style={{ width: size, height: size, objectFit: 'contain' }}
+        style={{ 
+          width: size, 
+          height: size, 
+          objectFit: 'contain',
+          mixBlendMode: 'screen'
+        }}
       />
     </div>
   );
