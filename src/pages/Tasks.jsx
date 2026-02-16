@@ -289,6 +289,11 @@ export default function Tasks() {
       isCompleted: habitLogs.some(l => l.habitId === h.id && l.date === selectedDateStr && l.completed)
     }))
   ].sort((a, b) => {
+    // First: Separate completed from pending
+    if (a.isCompleted !== b.isCompleted) {
+      return a.isCompleted ? 1 : -1; // pending first, completed last
+    }
+    // Then: Sort by time, priority, urgency
     if (a.sortTime !== '99:99' || b.sortTime !== '99:99') {
       if (a.sortTime !== b.sortTime) return a.sortTime.localeCompare(b.sortTime);
     }
