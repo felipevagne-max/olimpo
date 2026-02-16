@@ -530,7 +530,7 @@ export default function Tasks() {
 
                       {item.isCompleted && (
                         <div className="text-[#00FF66]">
-                          <Check className="w-6 h-6" />
+                          <Zap className="w-6 h-6 fill-current" />
                         </div>
                       )}
                     </div>

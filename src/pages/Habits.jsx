@@ -258,7 +258,7 @@ export default function Habits() {
 
                     {isCompleted && !habit.archived && (
                       <div className="text-[#00FF66]">
-                        <Check className="w-6 h-6" />
+                        <Zap className="w-6 h-6 fill-current" />
                       </div>
                     )}
 
