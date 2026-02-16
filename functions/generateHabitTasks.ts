@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
     let tasksCreated = 0;
 
     // Get user's active habits
@@ -18,43 +18,50 @@ Deno.serve(async (req) => {
       archived: false
     });
 
-    for (const habit of habits) {
-      // Check if habit should run today
-      const shouldRunToday = checkHabitSchedule(habit, today);
-      
-      if (!shouldRunToday) continue;
+    // Generate tasks for next 7 days
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const currentDate = new Date(today);
+      currentDate.setDate(currentDate.getDate() + dayOffset);
+      const dateStr = currentDate.toISOString().split('T')[0];
 
-      // Check if task already exists for this habit today
-      const existingTasks = await base44.entities.Task.filter({
-        habitId: habit.id,
-        date: today
-      });
+      for (const habit of habits) {
+        // Check if habit should run on this date
+        const shouldRunToday = checkHabitSchedule(habit, dateStr);
+        
+        if (!shouldRunToday) continue;
 
-      if (existingTasks.length > 0) continue; // Task already exists
+        // Check if task already exists for this habit on this date
+        const existingTasks = await base44.entities.Task.filter({
+          habitId: habit.id,
+          date: dateStr
+        });
 
-      // Determine time of day
-      let timeOfDay = '23:59'; // Default
-      if (habit.reminderTimes && habit.reminderTimes.length > 0) {
-        timeOfDay = habit.reminderTimes[0]; // Use first reminder time
-      } else if (habit.timeOfDay) {
-        timeOfDay = habit.timeOfDay;
+        if (existingTasks.length > 0) continue; // Task already exists
+
+        // Determine time of day
+        let timeOfDay = '23:59'; // Default
+        if (habit.reminderTimes && habit.reminderTimes.length > 0) {
+          timeOfDay = habit.reminderTimes[0]; // Use first reminder time
+        } else if (habit.timeOfDay) {
+          timeOfDay = habit.timeOfDay;
+        }
+
+        // Create task from habit
+        await base44.entities.Task.create({
+          title: habit.name,
+          description: habit.description || '',
+          date: dateStr,
+          timeOfDay: timeOfDay,
+          xpReward: habit.xpReward || 8,
+          difficulty: habit.difficulty || 'medium',
+          habitId: habit.id,
+          goalId: habit.goalId || null,
+          completed: false,
+          archived: false
+        });
+
+        tasksCreated++;
       }
-
-      // Create task from habit
-      await base44.entities.Task.create({
-        title: habit.name,
-        description: habit.description || '',
-        date: today,
-        timeOfDay: timeOfDay,
-        xpReward: habit.xpReward || 8,
-        difficulty: habit.difficulty || 'medium',
-        habitId: habit.id,
-        goalId: habit.goalId || null,
-        completed: false,
-        archived: false
-      });
-
-      tasksCreated++;
     }
 
     return Response.json({ 
