@@ -173,7 +173,8 @@ export default function Layout({ children, currentPageName }) {
       <div 
         className="min-h-screen bg-black relative overflow-hidden transition-all duration-200"
         style={{
-          paddingLeft: isDesktop ? (sidebarCollapsed ? '72px' : '256px') : '0'
+          paddingLeft: isDesktop ? (sidebarCollapsed ? '72px' : '256px') : '0',
+          paddingRight: isDesktop ? '0' : '0'
         }}
       >
         <style>{`

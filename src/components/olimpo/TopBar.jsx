@@ -42,7 +42,10 @@ export default function TopBar({ sidebarCollapsed, onToggleSidebar }) {
   const notificationsEnabled = userProfile?.notificationsEnabled ?? true;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-[rgba(0,255,102,0.18)]">
+    <div 
+      className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-[rgba(0,255,102,0.18)]"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto lg:max-w-none">
         {/* Desktop: Sidebar Toggle Button */}
         <button

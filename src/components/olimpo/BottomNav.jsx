@@ -30,9 +30,10 @@ export default function BottomNav({ collapsed = false }) {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50 lg:left-0 lg:top-0 lg:bottom-0 lg:border-r lg:border-t-0 lg:transition-all lg:duration-200"
+      className="fixed bottom-0 left-0 right-0 bg-[#070A08] border-t border-[rgba(0,255,102,0.18)] z-50 lg:left-0 lg:top-0 lg:bottom-0 lg:border-r lg:border-t-0 lg:transition-all lg:duration-200 safe-area-inset"
       style={{
-        width: window.innerWidth >= 1024 ? (collapsed ? '72px' : '256px') : '100%'
+        width: window.innerWidth >= 1024 ? (collapsed ? '72px' : '256px') : '100%',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
       }}
     >
       <div className={`flex justify-around items-center h-16 w-full px-1 lg:flex-col lg:h-auto lg:max-w-none lg:pt-20 lg:gap-1 ${collapsed ? 'lg:px-1' : 'lg:px-2'}`}>

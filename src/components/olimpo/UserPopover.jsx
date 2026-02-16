@@ -119,18 +119,6 @@ export default function UserPopover() {
     onSuccess: () => {
       queryClient.invalidateQueries(['userProfile']);
       queryClient.invalidateQueries(['user']);
-      setIsOpen(false);
-      
-      // Play lightning sound + vibration if enabled
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      const notificationsEnabled = userProfile?.notificationsEnabled ?? true;
-      if (sfxEnabled && notificationsEnabled) {
-        playLightningSound();
-        if ('vibrate' in navigator) {
-          navigator.vibrate(100);
-        }
-      }
-      
       setShowSuccess(true);
     },
     onError: (error) => {
@@ -487,7 +475,11 @@ export default function UserPopover() {
         </AlertDialogHeader>
         <AlertDialogFooter className="sm:justify-center">
           <AlertDialogAction 
-            onClick={() => setShowSuccess(false)}
+            onClick={() => {
+              setShowSuccess(false);
+              setIsOpen(false);
+              window.location.href = '/Dashboard';
+            }}
             className="font-semibold"
             style={{
               backgroundColor: '#3B82F6',
