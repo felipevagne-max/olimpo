@@ -47,6 +47,8 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import App from './pages/App';
+import Auth from './pages/Auth';
 import Community from './pages/Community';
 import CreateGoal from './pages/CreateGoal';
 import CreateHabit from './pages/CreateHabit';
@@ -56,19 +58,19 @@ import FirstAccess from './pages/FirstAccess';
 import GoalDetail from './pages/GoalDetail';
 import Goals from './pages/Goals';
 import Habits from './pages/Habits';
+import Home from './pages/Home';
 import Notes from './pages/Notes';
 import Oracle from './pages/Oracle';
 import Progress from './pages/Progress';
 import Tasks from './pages/Tasks';
 import Titles from './pages/Titles';
 import UnifiedTasks from './pages/UnifiedTasks';
-import Auth from './pages/Auth';
-import Home from './pages/Home';
-import App from './pages/App';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "App": App,
+    "Auth": Auth,
     "Community": Community,
     "CreateGoal": CreateGoal,
     "CreateHabit": CreateHabit,
@@ -78,19 +80,17 @@ export const PAGES = {
     "GoalDetail": GoalDetail,
     "Goals": Goals,
     "Habits": Habits,
+    "Home": Home,
     "Notes": Notes,
     "Oracle": Oracle,
     "Progress": Progress,
     "Tasks": Tasks,
     "Titles": Titles,
     "UnifiedTasks": UnifiedTasks,
-    "Auth": Auth,
-    "Home": Home,
-    "App": App,
 }
 
 export const pagesConfig = {
-    mainPage: "Auth",
+    mainPage: "Dashboard",
     Pages: PAGES,
     Layout: __Layout,
 };
