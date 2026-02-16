@@ -86,24 +86,20 @@ export default function Tasks() {
     staleTime: 600000
   });
 
-  const { data: habits = [] } = useQuery({
-    queryKey: ['habits'],
+  // Generate habit tasks when page loads
+  const { data: habitTasksGenerated } = useQuery({
+    queryKey: ['habitTasksGenerated', todayStr],
     queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
+      try {
+        await base44.functions.invoke('generateHabitTasks', {});
+        return true;
+      } catch (error) {
+        console.error('Error generating habit tasks:', error);
+        return false;
+      }
     },
     enabled: !!user?.email,
-    staleTime: 600000
-  });
-
-  const { data: habitLogs = [] } = useQuery({
-    queryKey: ['habitLogs'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.HabitLog.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email,
-    staleTime: 300000
+    staleTime: 3600000 // 1 hour - only generate once per hour
   });
 
   const { data: expenses = [] } = useQuery({
@@ -142,6 +138,16 @@ export default function Tasks() {
         sfxEnabled
       });
       
+      // If task was generated from habit, also create habit log
+      if (task.habitId) {
+        await base44.entities.HabitLog.create({
+          habitId: task.habitId,
+          date: task.date,
+          completed: true,
+          xpEarned: xpAmount
+        });
+      }
+      
       // Progress linked goal if exists
       if (task.goalId && user?.email) {
         const goals = await base44.entities.Goal.filter({ created_by: user.email });
@@ -158,55 +164,11 @@ export default function Tasks() {
       queryClient.invalidateQueries(['tasks']);
       queryClient.invalidateQueries(['xpTransactions']);
       queryClient.invalidateQueries(['goals']);
+      queryClient.invalidateQueries(['habitLogs']);
     }
   });
 
-  const completeHabitMutation = useMutation({
-    mutationFn: async (habit) => {
-      const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === selectedDateStr);
-      if (existingLog?.completed) {
-        toast.error('Conclusão confirmada. Não é possível desfazer.');
-        throw new Error('Already completed');
-      }
-      
-      const xpAmount = habit.xpReward || 8;
-      
-      await base44.entities.HabitLog.create({
-        habitId: habit.id,
-        date: selectedDateStr,
-        completed: true,
-        xpEarned: xpAmount
-      });
-      
-      const { awardXp } = await import('@/components/xpSystem');
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      
-      await awardXp({
-        amount: xpAmount,
-        sourceType: 'habit',
-        sourceId: habit.id,
-        note: `Hábito: ${habit.name}`,
-        sfxEnabled
-      });
-      
-      // Progress linked goal if exists (once per day)
-      if (habit.goalId && user?.email) {
-        const goals = await base44.entities.Goal.filter({ created_by: user.email });
-        const linkedGoal = goals.find(g => g.id === habit.goalId);
-        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
-          const newValue = (linkedGoal.currentValue || 0) + 1;
-          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
-        }
-      }
-      
-      return xpAmount;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['habitLogs']);
-      queryClient.invalidateQueries(['xpTransactions']);
-      queryClient.invalidateQueries(['goals']);
-    }
-  });
+
 
   const archiveMutation = useMutation({
     mutationFn: (id) => base44.entities.Task.update(id, { archived: true }),
@@ -247,55 +209,21 @@ export default function Tasks() {
     return completedDate >= sevenDaysAgo;
   });
 
-  const completedDayHabits = showOverdue ? [] : habits.filter(habit => {
-    const isCompletedToday = habitLogs.some(l => l.habitId === habit.id && l.date === selectedDateStr && l.completed);
-    return isCompletedToday;
-  });
-  
-  const dayHabits = showOverdue ? [] : habits.filter(habit => {
-    if (habit.frequencyType === 'daily') return true;
-    if (habit.frequencyType === 'weekdays') {
-      const weekdayMap = {
-        'Sun': 'dom',
-        'Mon': 'seg',
-        'Tue': 'ter',
-        'Wed': 'qua',
-        'Thu': 'qui',
-        'Fri': 'sex',
-        'Sat': 'sab'
-      };
-      const dayOfWeekEn = format(selectedDate, 'EEE');
-      const dayOfWeekPt = weekdayMap[dayOfWeekEn];
-      return habit.weekdays?.includes(dayOfWeekPt);
-    }
-    // For timesPerWeek, show in all days for now (stable approach)
-    return habit.frequencyType === 'timesPerWeek';
-  });
-
   const dayExpenses = showOverdue ? [] : expenses.filter(e => e.date === selectedDateStr);
 
+  // Combined items now only include tasks (habits generate tasks automatically)
   const combinedItems = showOverdue ? dayTasks.map(t => ({
     ...t,
     type: 'task',
     isCompleted: t.completed
-  })) : [
-    ...dayTasks.map(t => ({
-      ...t,
-      type: 'task',
-      sortTime: t.timeOfDay || '99:99',
-      sortPriority: t.priority === 'high' ? 1 : t.priority === 'medium' ? 2 : 3,
-      sortUrgency: t.dueDate ? (isBefore(parseISO(t.dueDate), new Date()) ? 0 : 1) : 2,
-      isCompleted: t.completed
-    })),
-    ...dayHabits.map(h => ({
-      ...h,
-      type: 'habit',
-      sortTime: h.timeOfDay || h.reminderTime || '99:99',
-      sortPriority: 2,
-      sortUrgency: 1,
-      isCompleted: habitLogs.some(l => l.habitId === h.id && l.date === selectedDateStr && l.completed)
-    }))
-  ].sort((a, b) => {
+  })) : dayTasks.map(t => ({
+    ...t,
+    type: 'task',
+    sortTime: t.timeOfDay || '99:99',
+    sortPriority: t.priority === 'high' ? 1 : t.priority === 'medium' ? 2 : 3,
+    sortUrgency: t.dueDate ? (isBefore(parseISO(t.dueDate), new Date()) ? 0 : 1) : 2,
+    isCompleted: t.completed
+  })).sort((a, b) => {
     // First: Separate completed from pending
     if (a.isCompleted !== b.isCompleted) {
       return a.isCompleted ? 1 : -1; // pending first, completed last
@@ -402,36 +330,14 @@ export default function Tasks() {
             const dayStr = format(day, 'yyyy-MM-dd');
             const isSelected = dayStr === selectedDateStr && !showOverdue;
             
-            // Calculate total items for this day (tasks + habits)
+            // Calculate total items for this day (only tasks now)
             const dayTasksList = tasks.filter(t => {
               const displayDate = t.dueDate || t.date;
               return displayDate === dayStr && !t.archived;
             });
-            const dayHabitsList = habits.filter(habit => {
-              if (habit.frequencyType === 'daily') return true;
-              if (habit.frequencyType === 'weekdays') {
-                const weekdayMap = {
-                  'Sun': 'dom',
-                  'Mon': 'seg',
-                  'Tue': 'ter',
-                  'Wed': 'qua',
-                  'Thu': 'qui',
-                  'Fri': 'sex',
-                  'Sat': 'sab'
-                };
-                const dayOfWeekEn = format(day, 'EEE');
-                const dayOfWeekPt = weekdayMap[dayOfWeekEn];
-                return habit.weekdays?.includes(dayOfWeekPt);
-              }
-              return habit.frequencyType === 'timesPerWeek';
-            });
             
-            const totalItems = dayTasksList.length + dayHabitsList.length;
-            const completedTasks = dayTasksList.filter(t => t.completed).length;
-            const completedHabits = dayHabitsList.filter(h => 
-              habitLogs.some(l => l.habitId === h.id && l.date === dayStr && l.completed)
-            ).length;
-            const completedItems = completedTasks + completedHabits;
+            const totalItems = dayTasksList.length;
+            const completedItems = dayTasksList.filter(t => t.completed).length;
 
             return (
               <button
@@ -469,99 +375,9 @@ export default function Tasks() {
         ) : (
           <div className="space-y-3">
             {combinedItems.map(item => {
-              if (item.type === 'habit') {
-                // Habit card - gamified view, clickable
-                const habitStreak = (() => {
-                  const logs = habitLogs
-                    .filter(l => l.habitId === item.id && l.completed)
-                    .sort((a, b) => new Date(b.date) - new Date(a.date));
-                  if (logs.length === 0) return 0;
-                  let streak = 0;
-                  let currentDate = new Date();
-                  for (const log of logs) {
-                    const logDate = new Date(log.date);
-                    const diffDays = Math.floor((currentDate - logDate) / (1000 * 60 * 60 * 24));
-                    if (diffDays <= 1) {
-                      streak++;
-                      currentDate = logDate;
-                    } else {
-                      break;
-                    }
-                  }
-                  return streak;
-                })();
-
-                const isFailed = !item.isCompleted && !isToday(selectedDate);
-
-                return (
-                  <OlimpoCard 
-                    key={`${item.type}-${item.id}`}
-                    className={`cursor-pointer transition-all ${
-                      isFailed 
-                        ? 'border-[rgba(255,59,59,0.3)] hover:border-[#FF3B3B]' 
-                        : 'hover:border-[#00FF66]'
-                    }`}
-                    onClick={() => !isFailed && completeHabitMutation.mutate(item)}
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* Progress indicator */}
-                      <div className={`w-1 h-16 rounded-full ${
-                        item.isCompleted 
-                          ? 'bg-gradient-to-b from-[#00FF66] to-[#00DD55]' 
-                          : isFailed
-                            ? 'bg-gradient-to-b from-[rgba(255,59,59,0.5)] to-[rgba(255,59,59,0.2)]'
-                            : 'bg-gradient-to-b from-[rgba(0,255,102,0.3)] to-[rgba(0,255,102,0.1)]'
-                      }`} />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <CheckSquare className={`w-4 h-4 ${
-                            item.isCompleted ? 'text-[#00FF66]' : 
-                            isFailed ? 'text-[#FF3B3B]' : 
-                            'text-[#9AA0A6]'
-                          }`} />
-                          <h3 className={`font-medium text-sm ${
-                            item.isCompleted ? 'text-[#00FF66]' : 
-                            isFailed ? 'text-[#FF3B3B] line-through' : 
-                            'text-[#E8E8E8]'
-                          }`}>
-                            {item.name}
-                          </h3>
-                        </div>
-                        
-                        <div className="flex items-center gap-3 mt-2">
-                          {isFailed && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
-                              FALHA
-                            </span>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <Flame className={`w-3 h-3 ${isFailed ? 'text-[#9AA0A6]' : 'text-orange-500'}`} />
-                            <span className={`text-xs font-mono ${isFailed ? 'text-[#9AA0A6]' : 'text-[#E8E8E8]'}`}>{habitStreak}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Zap className={`w-3 h-3 ${isFailed ? 'text-[#9AA0A6]' : 'text-[#00FF66]'}`} />
-                            <span className={`text-xs font-mono ${isFailed ? 'text-[#9AA0A6]' : 'text-[#00FF66]'}`}>
-                              +{item.xpReward || 8}
-                            </span>
-                          </div>
-                          {item.goalText && (
-                            <span className="text-xs text-[#9AA0A6]">{item.goalText}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {item.isCompleted && (
-                        <div className="text-[#00FF66]">
-                          <Zap className="w-6 h-6 fill-current" />
-                        </div>
-                      )}
-                    </div>
-                  </OlimpoCard>
-                );
-              }
-
-              // Task card - regular with checkbox
+              // All items are tasks now (habits generate tasks automatically)
+              const isHabitTask = !!item.habitId;
+              
               return (
                 <OlimpoCard key={`${item.type}-${item.id}`}>
                   <div className="flex items-start gap-3">
@@ -578,6 +394,9 @@ export default function Tasks() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
+                        {isHabitTask && (
+                          <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
+                        )}
                         <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
                           {item.title}
                         </h3>
@@ -586,6 +405,11 @@ export default function Tasks() {
                         <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{item.description}</p>
                       )}
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        {isHabitTask && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
+                            Rotina
+                          </span>
+                        )}
                         {item.isOverdue && (
                           <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
                             ATRASADA
@@ -621,33 +445,35 @@ export default function Tasks() {
                       </div>
                     </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-                        <DropdownMenuItem 
-                          onClick={() => { setEditTask(item); setShowModal(true); }}
-                          className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
-                        >
-                          <Pencil className="w-4 h-4 mr-2" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => archiveMutation.mutate(item.id)}
-                          className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
-                        >
-                          <Archive className="w-4 h-4 mr-2" /> Arquivar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setDeleteId(item.id)}
-                          className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {!isHabitTask && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
+                            <MoreVertical className="w-5 h-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+                          <DropdownMenuItem 
+                            onClick={() => { setEditTask(item); setShowModal(true); }}
+                            className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
+                          >
+                            <Pencil className="w-4 h-4 mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => archiveMutation.mutate(item.id)}
+                            className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
+                          >
+                            <Archive className="w-4 h-4 mr-2" /> Arquivar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setDeleteId(item.id)}
+                            className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </OlimpoCard>
               );
@@ -655,8 +481,8 @@ export default function Tasks() {
           </div>
         )}
 
-        {/* Completed Tasks & Habits Section - Moved here */}
-        {!showOverdue && (completedDayTasks.length > 0 || completedDayHabits.length > 0) && (
+        {/* Completed Tasks Section */}
+        {!showOverdue && completedDayTasks.length > 0 && (
           <div className="mt-6">
             <h3 
               className="text-sm font-semibold text-[#9AA0A6] mb-3"
@@ -672,11 +498,21 @@ export default function Tasks() {
                       <Check className="w-4 h-4 text-black" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm text-[#9AA0A6] line-through">
-                        {task.title}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        {task.habitId && (
+                          <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
+                        )}
+                        <h3 className="font-medium text-sm text-[#9AA0A6] line-through">
+                          {task.title}
+                        </h3>
+                      </div>
                       {task.description && (
                         <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{task.description}</p>
+                      )}
+                      {task.habitId && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6] inline-block mt-2">
+                          Rotina
+                        </span>
                       )}
                     </div>
                     <DropdownMenu>
@@ -694,29 +530,6 @@ export default function Tasks() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </div>
-                </OlimpoCard>
-              ))}
-              {completedDayHabits.map(habit => (
-                <OlimpoCard key={`completed-habit-${habit.id}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#00FF66] border-[#00FF66]">
-                      <Check className="w-4 h-4 text-black" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
-                        <h3 className="font-medium text-sm text-[#9AA0A6] line-through">
-                          {habit.name}
-                        </h3>
-                      </div>
-                      {habit.description && (
-                        <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{habit.description}</p>
-                      )}
-                      <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6] inline-block mt-2">
-                        Rotina
-                      </span>
-                    </div>
                   </div>
                 </OlimpoCard>
               ))}
