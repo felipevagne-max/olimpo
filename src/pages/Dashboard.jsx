@@ -85,44 +85,57 @@ export default function Dashboard() {
 
   const { data: xpTransactions = [], isLoading: loadingXP } = useQuery({
     queryKey: ['xpTransactions'],
-    queryFn: () => base44.entities.XPTransaction.list('-created_date', 500),
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.XPTransaction.filter({ created_by: user.email }, '-created_date', 500);
+    },
+    enabled: !!user?.email,
     staleTime: 120000
   });
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ['tasks', today],
     queryFn: async () => {
-      const allTasks = await base44.entities.Task.list('-date', 200);
+      if (!user?.email) return [];
+      const allTasks = await base44.entities.Task.filter({ created_by: user.email }, '-date', 200);
       return allTasks.filter(t => !t.archived && (t.date === today || (t.isOverdue && !t.completed)));
     },
+    enabled: !!user?.email,
     staleTime: 60000
   });
 
   const { data: habits = [], isLoading: loadingHabits } = useQuery({
     queryKey: ['habits'],
-    queryFn: () => base44.entities.Habit.filter({ archived: false }),
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
+    },
+    enabled: !!user?.email,
     staleTime: 300000
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs', currentMonth],
     queryFn: async () => {
-      const all = await base44.entities.HabitLog.list('-date', 300);
+      if (!user?.email) return [];
+      const all = await base44.entities.HabitLog.filter({ created_by: user.email }, '-date', 300);
       return all.filter(l => l.date && l.date >= format(monthStart, 'yyyy-MM-dd'));
     },
+    enabled: !!user?.email,
     staleTime: 60000
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       const profile = profiles[0];
       
       // Create default profile if doesn't exist
       if (!profile) {
         const newProfile = await base44.entities.UserProfile.create({
-          displayName: user?.full_name || user?.email?.split('@')[0] || 'Herói',
+          displayName: user?.full_name || user?.email?.split('@')[0] || 'USUARIO',
           xpTotal: 0,
           levelIndex: 1,
           levelName: 'Herói',
@@ -136,31 +149,39 @@ export default function Dashboard() {
       
       return profile;
     },
-    enabled: !!user,
+    enabled: !!user?.email,
     staleTime: 300000
   });
 
   const { data: goals = [] } = useQuery({
     queryKey: ['goals'],
-    queryFn: () => base44.entities.Goal.list('-created_date', 100),
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Goal.filter({ created_by: user.email }, '-created_date', 100);
+    },
+    enabled: !!user?.email,
     staleTime: 60000
   });
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', currentMonth],
     queryFn: async () => {
-      const all = await base44.entities.CheckIn.list('-date', 50);
+      if (!user?.email) return [];
+      const all = await base44.entities.CheckIn.filter({ created_by: user.email }, '-date', 50);
       return all.filter(c => c.date && c.date >= format(monthStart, 'yyyy-MM-dd'));
     },
+    enabled: !!user?.email,
     staleTime: 60000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', today],
     queryFn: async () => {
-      const all = await base44.entities.Expense.filter({ deleted_at: null }, '-date', 100);
+      if (!user?.email) return [];
+      const all = await base44.entities.Expense.filter({ deleted_at: null, created_by: user.email }, '-date', 100);
       return all.filter(e => e.date === today);
     },
+    enabled: !!user?.email,
     staleTime: 30000
   });
 
@@ -238,7 +259,7 @@ export default function Dashboard() {
       
       // Progress linked goal if exists
       if (task.goalId) {
-        const goals = await base44.entities.Goal.list();
+        const goals = await base44.entities.Goal.filter({ created_by: user.email });
         const linkedGoal = goals.find(g => g.id === task.goalId);
         if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
           const newValue = (linkedGoal.currentValue || 0) + 1;
@@ -281,7 +302,7 @@ export default function Dashboard() {
 
         // Regress linked goal if exists
         if (habit.goalId) {
-          const goals = await base44.entities.Goal.list();
+          const goals = await base44.entities.Goal.filter({ created_by: user.email });
           const linkedGoal = goals.find(g => g.id === habit.goalId);
           if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
             const newValue = Math.max(0, (linkedGoal.currentValue || 0) - 1);
@@ -316,7 +337,7 @@ export default function Dashboard() {
 
       // Progress linked goal if exists
       if (habit.goalId) {
-        const goals = await base44.entities.Goal.list();
+        const goals = await base44.entities.Goal.filter({ created_by: user.email });
         const linkedGoal = goals.find(g => g.id === habit.goalId);
         if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
           const newValue = (linkedGoal.currentValue || 0) + 1;
