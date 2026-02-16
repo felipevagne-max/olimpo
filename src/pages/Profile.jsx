@@ -53,28 +53,14 @@ export default function Profile() {
   const levelInfo = getLevelFromXP(xpTotal);
 
   const handleSaveClick = async () => {
+    console.log('handleSaveClick CHAMADO');
     const trimmed = username.trim();
+    console.log('Nome trimmed:', trimmed);
+    console.log('UserProfile:', userProfile);
     
     if (!trimmed) {
       toast.error('Nome não pode ser vazio');
       return;
-    }
-    
-    if (trimmed === (userProfile?.displayName || 'USUARIO').trim()) {
-      toast.info('Nome não foi alterado');
-      return;
-    }
-
-    // Check 24h lock
-    if (userProfile?.username_last_changed_at) {
-      const lastChanged = new Date(userProfile.username_last_changed_at);
-      const now = new Date();
-      const hoursSince = (now - lastChanged) / (1000 * 60 * 60);
-      if (hoursSince < 24) {
-        const hoursRemaining = Math.ceil(24 - hoursSince);
-        toast.error(`Não permito, tente em ${hoursRemaining} ${hoursRemaining === 1 ? 'hora' : 'horas'}.`);
-        return;
-      }
     }
 
     if (!userProfile?.id) {
@@ -84,16 +70,19 @@ export default function Profile() {
 
     try {
       setIsSaving(true);
+      console.log('Atualizando perfil...');
       
       await base44.entities.UserProfile.update(userProfile.id, {
         displayName: trimmed,
         username_last_changed_at: new Date().toISOString()
       });
 
+      console.log('Perfil atualizado com sucesso');
       await new Promise(resolve => setTimeout(resolve, 1000));
       navigate('/Dashboard');
       window.location.reload();
     } catch (error) {
+      console.error('Erro ao salvar:', error);
       setIsSaving(false);
       toast.error(error.message || 'Erro ao salvar nome');
     }
@@ -228,7 +217,7 @@ export default function Profile() {
                 </OlimpoButton>
                 <OlimpoButton
                   onClick={handleSaveClick}
-                  disabled={isSaving || !username.trim() || username.trim() === (userProfile?.displayName || 'USUARIO').trim()}
+                  disabled={isSaving || !username.trim()}
                   className="flex-1"
                 >
                   Confirmar
