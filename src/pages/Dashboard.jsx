@@ -125,8 +125,26 @@ export default function Dashboard() {
     queryKey: ['userProfile'],
     queryFn: async () => {
       const profiles = await base44.entities.UserProfile.list();
-      return profiles[0] || null;
+      const profile = profiles[0];
+      
+      // Create default profile if doesn't exist
+      if (!profile) {
+        const newProfile = await base44.entities.UserProfile.create({
+          displayName: user?.full_name || user?.email?.split('@')[0] || 'Herói',
+          xpTotal: 0,
+          levelIndex: 1,
+          levelName: 'Herói',
+          monthlyTargetXP: 2000,
+          notificationsEnabled: true,
+          sfxEnabled: true,
+          allowUndoSameDay: true
+        });
+        return newProfile;
+      }
+      
+      return profile;
     },
+    enabled: !!user,
     staleTime: 300000
   });
 
@@ -550,7 +568,7 @@ export default function Dashboard() {
             className="text-2xl font-bold text-[#00FF66] mb-4"
             style={{ fontFamily: 'Orbitron, sans-serif' }}
           >
-            {user?.full_name || 'Herói'}
+            {userProfile?.displayName || user?.full_name || 'Herói'}
           </h1>
           
           <OlimpoCard>
