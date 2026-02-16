@@ -84,41 +84,33 @@ export default function Dashboard() {
   }, []);
 
   const { data: xpTransactions = [], isLoading: loadingXP } = useQuery({
-    queryKey: ['xpTransactions', currentMonth],
+    queryKey: ['xpTransactions'],
     queryFn: () => base44.entities.XPTransaction.list('-created_date', 500),
-    staleTime: 30000
+    staleTime: 120000
   });
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
-    queryKey: ['tasks', today, sevenDaysAgo],
+    queryKey: ['tasks', today],
     queryFn: async () => {
       const allTasks = await base44.entities.Task.list('-date', 200);
-      // Filter only relevant tasks: today + last 7 days completed + overdue
-      return allTasks.filter(t => {
-        if (t.archived) return false;
-        if (t.date === today) return true;
-        if (t.completed && t.completedAt && t.completedAt >= sevenDaysAgo) return true;
-        if (t.isOverdue && !t.completed) return true;
-        return false;
-      });
+      return allTasks.filter(t => !t.archived && (t.date === today || (t.isOverdue && !t.completed)));
     },
-    staleTime: 30000
+    staleTime: 60000
   });
 
   const { data: habits = [], isLoading: loadingHabits } = useQuery({
     queryKey: ['habits'],
     queryFn: () => base44.entities.Habit.filter({ archived: false }),
-    staleTime: 60000
+    staleTime: 300000
   });
 
   const { data: habitLogs = [] } = useQuery({
-    queryKey: ['habitLogs', today, currentMonth],
+    queryKey: ['habitLogs', currentMonth],
     queryFn: async () => {
       const all = await base44.entities.HabitLog.list('-date', 300);
-      // Only keep current month logs
       return all.filter(l => l.date && l.date >= format(monthStart, 'yyyy-MM-dd'));
     },
-    staleTime: 30000
+    staleTime: 60000
   });
 
   const { data: userProfile } = useQuery({
@@ -575,18 +567,20 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#00FF66]" />
-                <span className="text-xs text-[#9AA0A6]">Progresso para {levelInfo.levelIndex < 6 ? getLevelFromXP(totalXP + levelInfo.xpToNextLevel).levelName : 'nível máximo'}</span>
+                <span className="text-xs text-[#9AA0A6]">
+                  {levelInfo.levelIndex < 6 ? `Progresso para ${getLevelFromXP(totalXP + levelInfo.xpToNextLevel).levelName}` : 'Nível máximo'}
+                </span>
               </div>
               <span className="text-xs font-mono text-[#00FF66]">{totalXP} XP</span>
             </div>
             <OlimpoProgress 
               value={levelInfo.xpCurrentLevel} 
-              max={levelInfo.xpCurrentLevel + levelInfo.xpToNextLevel} 
+              max={levelInfo.xpForThisLevel}
               showLabel={false}
             />
             {levelInfo.xpToNextLevel > 0 && (
               <p className="text-xs text-[#9AA0A6] mt-1 text-right">
-                Faltam {levelInfo.xpToNextLevel} XP
+                {levelInfo.xpCurrentLevel}/{levelInfo.xpForThisLevel} XP
               </p>
             )}
           </OlimpoCard>

@@ -21,7 +21,8 @@ export default function Layout({ children, currentPageName }) {
     queryFn: async () => {
       const profiles = await base44.entities.UserProfile.list();
       return profiles[0] || null;
-    }
+    },
+    staleTime: 300000
   });
 
   const toggleSidebarMutation = useMutation({
