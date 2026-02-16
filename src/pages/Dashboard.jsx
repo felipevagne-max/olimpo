@@ -573,7 +573,7 @@ export default function Dashboard() {
       <TopBar />
       <MatrixRain opacity={0.05} side="left" />
       
-      <div className="relative z-10 px-4 pt-20 olimpo-container lg:px-8">
+      <div className="relative z-10 px-4 pt-20 lg:pt-24 olimpo-container lg:px-8 lg:max-w-6xl lg:mx-auto">
         {/* Welcome & Level Progress */}
         <div className="mb-6">
           <p className="text-[#9AA0A6] text-sm">Bem-vindo,</p>
@@ -619,7 +619,7 @@ export default function Dashboard() {
             {monthName.charAt(0).toUpperCase() + monthName.slice(1)}, {year} (até hoje)
           </p>
 
-          <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-2">
             {/* A) Hábitos */}
             <OlimpoCard className="border-[rgba(191,255,74,0.2)]">
               <div className="flex items-center gap-2 mb-2">
@@ -687,7 +687,7 @@ export default function Dashboard() {
           </div>
 
           {/* BEM-ESTAR MÉDIO */}
-          <OlimpoCard className="lg:col-span-2 lg:mx-auto lg:max-w-2xl lg:w-full">
+          <OlimpoCard className="lg:col-span-2">
             <h3 
               className="text-sm font-semibold text-[#E8E8E8] mb-3"
               style={{ fontFamily: 'Orbitron, sans-serif' }}
@@ -754,7 +754,7 @@ export default function Dashboard() {
         </OlimpoCard>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-4 gap-2 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4 lg:gap-2">
           <OlimpoCard className="p-3 text-center">
             <CheckSquare className="w-5 h-5 text-[#00FF66] mx-auto mb-1" />
             <p className="text-lg font-bold text-[#E8E8E8]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
@@ -791,8 +791,10 @@ export default function Dashboard() {
         {/* Evolution Charts */}
         <DashboardCharts />
 
-        {/* Check-in */}
-        <OlimpoCard className="mb-4">
+        {/* 2-Column Layout for Desktop */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Check-in */}
+        <OlimpoCard className="mb-0 lg:mb-0">
           <div className="flex items-center justify-between mb-4">
             <h3 
               className="text-sm font-semibold text-[#E8E8E8]"
@@ -872,10 +874,10 @@ export default function Dashboard() {
               </OlimpoButton>
             </div>
           )}
-        </OlimpoCard>
+          </OlimpoCard>
 
-        {/* Today's Todo (Tasks + Habits) */}
-        <OlimpoCard>
+          {/* Today's Todo (Tasks + Habits) */}
+          <OlimpoCard className="mb-0">
           <div className="flex items-center justify-between mb-4">
             <h3 
               className="text-sm font-semibold text-[#E8E8E8]"
@@ -1019,10 +1021,11 @@ export default function Dashboard() {
               </div>
             );
           })()}
-        </OlimpoCard>
-      </div>
+          </OlimpoCard>
+          </div>
+          </div>
 
-      <XPGainManager />
+          <XPGainManager />
       <BottomNav />
     </div>
   );

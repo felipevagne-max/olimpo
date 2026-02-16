@@ -136,9 +136,9 @@ export default function Habits() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-20 lg:pb-0">
+    <div className="min-h-screen bg-black pb-20 lg:pb-0 lg:pl-64 relative">
       <TopBar />
-      <div className="px-4 pt-20 lg:pl-64 lg:max-w-7xl lg:mx-auto">
+      <div className="px-4 pt-20 lg:pt-24 lg:max-w-6xl lg:mx-auto lg:px-8">
         {/* Habits List - Mobile & Desktop */}
         <div className="max-w-3xl mx-auto">
         {/* Header */}
