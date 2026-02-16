@@ -388,14 +388,19 @@ export default function Tasks() {
           {weekDays.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
             const isSelected = dayStr === selectedDateStr && !showOverdue;
-            
-            // Calculate total items for this day (only tasks now)
+
+            // Calculate total items for this day (tasks + habits)
             const dayTasksList = tasks.filter(t => {
               const displayDate = t.dueDate || t.date;
               return displayDate === dayStr && !t.archived;
             });
-            
-            const totalItems = dayTasksList.length;
+
+            const dayHabitsList = habits.filter(habit => {
+              if (habit.archived) return false;
+              return checkHabitSchedule(habit, dayStr);
+            });
+
+            const totalItems = dayTasksList.length + dayHabitsList.length;
             const completedItems = dayTasksList.filter(t => t.completed).length;
 
             return (
