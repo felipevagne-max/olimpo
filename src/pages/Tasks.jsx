@@ -235,8 +235,12 @@ export default function Tasks() {
   const dayTasks = showOverdue
     ? tasks.filter(t => !t.archived && !t.completed && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate)))
     : tasks.filter(t => {
+        if (t.archived || t.completed) return false;
         const displayDate = t.dueDate || t.date;
-        return displayDate === selectedDateStr && !t.archived && !t.completed;
+        if (displayDate === selectedDateStr) return true;
+        // Quando vendo hoje, exibir também tarefas atrasadas
+        if (selectedDateStr === todayStr && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate))) return true;
+        return false;
       });
   
   const completedDayTasks = showOverdue ? [] : tasks.filter(t => {
