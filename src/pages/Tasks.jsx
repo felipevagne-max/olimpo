@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, addDays, subDays, isToday, isBefore, parseISO } from 'date-fns';
+import { format, addDays, isToday, isBefore, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BottomNav from '@/components/olimpo/BottomNav';
 import TopBar from '@/components/olimpo/TopBar';
@@ -12,11 +12,10 @@ import EmptyState from '@/components/olimpo/EmptyState';
 import TaskModal from '@/components/tasks/TaskModal';
 import QuickTaskSheet from '@/components/tasks/QuickTaskSheet';
 import TaskTypeSelector from '@/components/tasks/TaskTypeSelector';
-
 import ExpectancyNext7Days from '@/components/tasks/ExpectancyNext7Days';
 import ProjectsSheet from '@/components/projects/ProjectsSheet';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
-import { Plus, Check, Zap, Trophy, Medal, User, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare, Folder, Flame } from 'lucide-react';
+import { Plus, Check, Zap, Trophy, Medal, Calendar, AlertTriangle, MoreVertical, Pencil, Archive, Trash2, CheckSquare, Folder } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import {
@@ -36,39 +35,26 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const WEEKDAY_MAP = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6 };
+
 function checkHabitSchedule(habit, dateStr) {
   const date = new Date(dateStr + 'T00:00:00');
-  
-  if (habit.frequencyType === 'daily') {
-    return true;
+  if (habit.frequencyType === 'daily') return true;
+  if (habit.frequencyType === 'weekdays' && habit.weekdays?.length > 0) {
+    return habit.weekdays.some(day => WEEKDAY_MAP[day] === date.getDay());
   }
-  
-  if (habit.frequencyType === 'weekdays' && habit.weekdays && habit.weekdays.length > 0) {
-    const weekdayMap = {
-      'dom': 0,
-      'seg': 1,
-      'ter': 2,
-      'qua': 3,
-      'qui': 4,
-      'sex': 5,
-      'sab': 6
-    };
-    
-    const dayOfWeek = date.getDay();
-    return habit.weekdays.some(day => weekdayMap[day] === dayOfWeek);
-  }
-  
   if (habit.frequencyType === 'timesPerWeek') {
-    const dayOfWeek = date.getDay();
-    const timesPerWeek = habit.timesPerWeek || 3;
-    
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      return dayOfWeek <= timesPerWeek;
-    }
-    return false;
+    const dow = date.getDay();
+    return dow >= 1 && dow <= (habit.timesPerWeek || 3);
   }
-  
   return false;
+}
+
+// Dynamically compute if a task is overdue regardless of stored flag
+function computeIsOverdue(task, todayStr) {
+  if (task.completed) return false;
+  const effectiveDate = task.dueDate || task.date;
+  return effectiveDate < todayStr;
 }
 
 export default function Tasks() {
@@ -84,6 +70,7 @@ export default function Tasks() {
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  const isViewingToday = selectedDateStr === todayStr;
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -97,17 +84,19 @@ export default function Tasks() {
       return base44.entities.Task.filter({ created_by: user.email });
     },
     enabled: !!user?.email,
-    staleTime: 300000
+    staleTime: 120000,
+    gcTime: 300000
   });
 
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
     queryFn: async () => {
       if (!user?.email) return [];
-      return base44.entities.XPTransaction.filter({ created_by: user.email });
+      return base44.entities.XPTransaction.filter({ created_by: user.email }, '-created_date', 200);
     },
     enabled: !!user?.email,
-    staleTime: 600000
+    staleTime: 600000,
+    gcTime: 900000
   });
 
   const { data: userProfile } = useQuery({
@@ -118,7 +107,7 @@ export default function Tasks() {
       return profiles[0] || null;
     },
     enabled: !!user?.email,
-    staleTime: 600000
+    staleTime: 900000
   });
 
   const { data: habits = [], isLoading: habitsLoading } = useQuery({
@@ -138,7 +127,7 @@ export default function Tasks() {
       return base44.entities.HabitLog.filter({ created_by: user.email });
     },
     enabled: !!user?.email,
-    staleTime: 300000
+    staleTime: 120000
   });
 
   const { data: expenses = [] } = useQuery({
@@ -153,50 +142,31 @@ export default function Tasks() {
 
   const completeTaskMutation = useMutation({
     mutationFn: async (task) => {
-      if (task.completed) {
-        toast.error('Conclusão confirmada. Não é possível desfazer.');
-        throw new Error('Cannot uncomplete task');
-      }
-      
-      await base44.entities.Task.update(task.id, { 
+      await base44.entities.Task.update(task.id, {
         completed: true,
         completedAt: new Date().toISOString()
       });
-      
       const baseXP = task.xpReward || 10;
-      const xpAmount = task.isOverdue ? Math.round(baseXP * 0.5) : baseXP;
-      
+      const overdue = computeIsOverdue(task, todayStr);
+      const xpAmount = overdue ? Math.round(baseXP * 0.5) : baseXP;
       const { awardXp } = await import('@/components/xpSystem');
-      const sfxEnabled = userProfile?.sfxEnabled ?? true;
-      
       await awardXp({
         amount: xpAmount,
         sourceType: 'task',
         sourceId: task.id,
-        note: task.isOverdue ? `Tarefa atrasada: ${task.title} (x0.5)` : `Tarefa: ${task.title}`,
-        sfxEnabled
+        note: overdue ? `Tarefa atrasada: ${task.title} (x0.5)` : `Tarefa: ${task.title}`,
+        sfxEnabled: userProfile?.sfxEnabled ?? true
       });
-      
-      // If task was generated from habit, also create habit log
       if (task.habitId) {
-        await base44.entities.HabitLog.create({
-          habitId: task.habitId,
-          date: task.date,
-          completed: true,
-          xpEarned: xpAmount
-        });
+        await base44.entities.HabitLog.create({ habitId: task.habitId, date: task.date, completed: true, xpEarned: xpAmount });
       }
-      
-      // Progress linked goal if exists
       if (task.goalId && user?.email) {
         const goals = await base44.entities.Goal.filter({ created_by: user.email });
         const linkedGoal = goals.find(g => g.id === task.goalId);
-        if (linkedGoal && linkedGoal.goalType === 'accumulative' && !linkedGoal.deleted_at) {
-          const newValue = (linkedGoal.currentValue || 0) + 1;
-          await base44.entities.Goal.update(linkedGoal.id, { currentValue: newValue });
+        if (linkedGoal?.goalType === 'accumulative' && !linkedGoal.deleted_at) {
+          await base44.entities.Goal.update(linkedGoal.id, { currentValue: (linkedGoal.currentValue || 0) + 1 });
         }
       }
-      
       return xpAmount;
     },
     onSuccess: () => {
@@ -207,8 +177,6 @@ export default function Tasks() {
     }
   });
 
-
-
   const archiveMutation = useMutation({
     mutationFn: (id) => base44.entities.Task.update(id, { archived: true }),
     onSuccess: () => queryClient.invalidateQueries(['tasks'])
@@ -216,107 +184,142 @@ export default function Tasks() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Task.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
-      setDeleteId(null);
-    }
+    onSuccess: () => { queryClient.invalidateQueries(['tasks']); setDeleteId(null); }
   });
 
   // Generate week days
-  const weekDays = [];
-  for (let i = -2; i <= 4; i++) {
-    weekDays.push(addDays(new Date(), i));
-  }
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(new Date(), i - 2)), []);
 
-  // Filter tasks
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
-  const dayTasks = showOverdue
-    ? tasks.filter(t => !t.archived && !t.completed && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate)))
-    : tasks.filter(t => {
-        if (t.archived || t.completed) return false;
-        const displayDate = t.dueDate || t.date;
-        if (displayDate === selectedDateStr) return true;
-        // Quando vendo hoje, exibir também tarefas atrasadas
-        if (selectedDateStr === todayStr && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate))) return true;
-        return false;
+  const sevenDaysAgo = useMemo(() => { const d = new Date(); d.setDate(d.getDate() - 7); return d; }, []);
+
+  // Overdue tasks (for badge count)
+  const overdueTasks = useMemo(() =>
+    tasks.filter(t => !t.archived && !t.completed && computeIsOverdue(t, todayStr)),
+    [tasks, todayStr]
+  );
+
+  // Day tasks: include overdue tasks when viewing today, from ANY past date
+  const dayTasks = useMemo(() => {
+    if (showOverdue) {
+      return tasks.filter(t => !t.archived && !t.completed && computeIsOverdue(t, todayStr));
+    }
+    return tasks.filter(t => {
+      if (t.archived || t.completed) return false;
+      const effectiveDate = t.dueDate || t.date;
+      if (effectiveDate === selectedDateStr) return true;
+      // When viewing today, also include ALL overdue tasks (from any past date)
+      if (isViewingToday && effectiveDate < todayStr) return true;
+      return false;
+    });
+  }, [tasks, showOverdue, selectedDateStr, isViewingToday, todayStr]);
+
+  const completedDayTasks = useMemo(() => {
+    if (showOverdue) return [];
+    return tasks.filter(t => {
+      const effectiveDate = t.dueDate || t.date;
+      if (effectiveDate !== selectedDateStr || t.archived || !t.completed) return false;
+      if (!t.completedAt) return false;
+      return new Date(t.completedAt) >= sevenDaysAgo;
+    });
+  }, [tasks, showOverdue, selectedDateStr, sevenDaysAgo]);
+
+  const dayExpenses = useMemo(() =>
+    showOverdue ? [] : expenses.filter(e => e.date === selectedDateStr),
+    [expenses, showOverdue, selectedDateStr]
+  );
+
+  const habitItemsForDay = useMemo(() => {
+    if (showOverdue) return [];
+    return habits
+      .filter(h => checkHabitSchedule(h, selectedDateStr))
+      .map(habit => {
+        const habitLog = habitLogs.find(log => log.habitId === habit.id && log.date === selectedDateStr);
+        return {
+          ...habit,
+          type: 'habit',
+          id: `habit-${habit.id}`,
+          habitId: habit.id,
+          title: habit.name,
+          xpReward: habit.xpReward || 8,
+          isCompleted: !!habitLog?.completed,
+          isHabitExecution: true
+        };
       });
-  
-  const completedDayTasks = showOverdue ? [] : tasks.filter(t => {
-    const displayDate = t.dueDate || t.date;
-    if (displayDate !== selectedDateStr || t.archived || !t.completed) return false;
-    // Only show completed tasks from last 7 days
-    if (!t.completedAt) return false;
-    const completedDate = new Date(t.completedAt);
-    return completedDate >= sevenDaysAgo;
-  });
+  }, [habits, habitLogs, showOverdue, selectedDateStr]);
 
-  const dayExpenses = showOverdue ? [] : expenses.filter(e => e.date === selectedDateStr);
-
-  // Get habits that should appear today with their completion status
-  const habitItemsForDay = showOverdue ? [] : habits
-    .filter(h => checkHabitSchedule(h, selectedDateStr))
-    .map(habit => {
-      const habitLog = habitLogs.find(log => log.habitId === habit.id && log.date === selectedDateStr);
+  const combinedItems = useMemo(() => {
+    if (showOverdue) {
+      return dayTasks.map(t => ({ ...t, type: 'task', isCompleted: false, isOverdue: true }));
+    }
+    const taskItems = dayTasks.map(t => {
+      const overdue = computeIsOverdue(t, todayStr);
       return {
-        ...habit,
-        type: 'habit',
-        id: `habit-${habit.id}`,
-        habitId: habit.id,
-        title: habit.name,
-        description: habit.description,
-        xpReward: habit.xpReward || 8,
-        difficulty: habit.difficulty || 'medium',
-        isCompleted: !!habitLog?.completed,
-        isHabitExecution: true
+        ...t,
+        type: 'task',
+        isCompleted: t.completed,
+        isOverdue: overdue,
+        _sortTime: t.timeOfDay || '99:99',
+        _sortPri: t.priority === 'high' ? 1 : t.priority === 'medium' ? 2 : 3,
+        _sortUrg: overdue ? 0 : (t.dueDate ? 1 : 2),
       };
     });
+    const all = [...habitItemsForDay, ...taskItems];
+    return all.sort((a, b) => {
+      if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+      // Overdue tasks first
+      if ((a.isOverdue || false) !== (b.isOverdue || false)) return (a.isOverdue ? 0 : 1) - (b.isOverdue ? 0 : 1);
+      const tA = a._sortTime || '99:99', tB = b._sortTime || '99:99';
+      if (tA !== tB) return tA.localeCompare(tB);
+      const pA = a._sortPri ?? 3, pB = b._sortPri ?? 3;
+      if (pA !== pB) return pA - pB;
+      return new Date(a.created_date || 0) - new Date(b.created_date || 0);
+    });
+  }, [dayTasks, habitItemsForDay, showOverdue, todayStr]);
 
-  // Combined items now include both tasks and habit executions
-  const combinedItems = showOverdue ? dayTasks.map(t => ({
-    ...t,
-    type: 'task',
-    isCompleted: t.completed
-  })) : [
-    ...habitItemsForDay,
-    ...dayTasks.map(t => ({
-    ...t,
-    type: 'task',
-    sortTime: t.timeOfDay || '99:99',
-    sortPriority: t.priority === 'high' ? 1 : t.priority === 'medium' ? 2 : 3,
-    sortUrgency: t.dueDate ? (isBefore(parseISO(t.dueDate), new Date()) ? 0 : 1) : 2,
-    isCompleted: t.completed
-  }))
-  ].sort((a, b) => {
-  // First: Separate completed from pending
-  if (a.isCompleted !== b.isCompleted) {
-    return a.isCompleted ? 1 : -1;
-  }
-  // Then: Sort by time, priority, urgency
-  const timeA = a.sortTime || a.timeOfDay || '99:99';
-  const timeB = b.sortTime || b.timeOfDay || '99:99';
-  if (timeA !== '99:99' || timeB !== '99:99') {
-    if (timeA !== timeB) return timeA.localeCompare(timeB);
-  }
-  const priorA = a.sortPriority !== undefined ? a.sortPriority : 3;
-  const priorB = b.sortPriority !== undefined ? b.sortPriority : 3;
-  if (priorA !== priorB) return priorA - priorB;
-  const urgA = a.sortUrgency !== undefined ? a.sortUrgency : 2;
-  const urgB = b.sortUrgency !== undefined ? b.sortUrgency : 2;
-  if (urgA !== urgB) return urgA - urgB;
-  return new Date(a.created_date || 0) - new Date(b.created_date || 0);
-  });
+  const completedCount = useMemo(() => combinedItems.filter(i => i.isCompleted).length, [combinedItems]);
 
-  const completedCount = combinedItems.filter(i => i.isCompleted).length;
-  const overdueTasks = tasks.filter(t => !t.archived && !t.completed && t.dueDate && isBefore(parseISO(t.dueDate), new Date()) && !isToday(parseISO(t.dueDate)));
+  const { todayXP, totalXP } = useMemo(() => {
+    const todayXP = xpTransactions.filter(t => t.created_date?.startsWith(todayStr)).reduce((s, t) => s + (t.amount || 0), 0);
+    const totalXP = xpTransactions.reduce((s, t) => s + (t.amount || 0), 0);
+    return { todayXP, totalXP };
+  }, [xpTransactions, todayStr]);
 
-  // Stats from XP
-  const todayXP = xpTransactions
-    .filter(t => t.created_date?.startsWith(todayStr))
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-  const totalXP = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
   const level = Math.floor(totalXP / 500) + 1;
+
+  const handleToggleItem = useCallback(async (item) => {
+    const isHabitExecution = item.type === 'habit' || item.isHabitExecution;
+    if (isHabitExecution) {
+      if (item.isCompleted) {
+        const habitLog = habitLogs.find(log => log.habitId === item.habitId && log.date === selectedDateStr);
+        if (habitLog) {
+          await base44.entities.HabitLog.delete(habitLog.id);
+          const penalty = -(item.xpReward || 8) * 2;
+          await base44.entities.XPTransaction.create({ sourceType: 'habit', sourceId: item.habitId, amount: penalty, note: `Penalidade: ${item.title} desmarcado` });
+          toast.error(`-${(item.xpReward || 8) * 2} XP - Penalidade`, { style: { background: '#FF3B3B' } });
+          triggerXPGain(penalty);
+          queryClient.invalidateQueries(['habitLogs']);
+          queryClient.invalidateQueries(['xpTransactions']);
+        }
+      } else {
+        await base44.entities.HabitLog.create({ habitId: item.habitId, date: selectedDateStr, completed: true, xpEarned: item.xpReward || 8 });
+        triggerXPGain(item.xpReward || 8);
+        queryClient.invalidateQueries(['habitLogs']);
+        queryClient.invalidateQueries(['xpTransactions']);
+      }
+    } else {
+      if (item.isCompleted) {
+        const penalty = -(item.xpReward || 10) * 2;
+        await base44.entities.XPTransaction.create({ sourceType: 'task', sourceId: item.id, amount: penalty, note: `Penalidade: ${item.title} desmarcado` });
+        toast.error(`-${(item.xpReward || 10) * 2} XP - Penalidade`, { style: { background: '#FF3B3B' } });
+        triggerXPGain(penalty);
+        await base44.entities.Task.update(item.id, { completed: false });
+        queryClient.invalidateQueries(['tasks']);
+        queryClient.invalidateQueries(['xpTransactions']);
+      } else {
+        completeTaskMutation.mutate(item);
+      }
+    }
+  }, [habitLogs, selectedDateStr, queryClient, completeTaskMutation]);
 
   if (isLoading || habitsLoading) {
     return (
@@ -330,6 +333,7 @@ export default function Tasks() {
     <div className="min-h-screen bg-black pb-20 lg:pb-0 lg:pl-64 relative z-10">
       <TopBar />
       <div className="px-4 pt-20 lg:pt-24 relative z-10 lg:max-w-6xl lg:mx-auto lg:px-8">
+
         {/* HUD Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="flex items-center gap-1.5 bg-[#0B0F0C] px-3 py-1.5 rounded-full border border-[rgba(0,255,102,0.18)]">
@@ -353,36 +357,26 @@ export default function Tasks() {
               <Calendar className="w-8 h-8 text-[#00FF66]" />
             </div>
             <div className="flex-1">
-              <h1 
-                className="text-2xl font-bold text-[#00FF66] mb-1"
-                style={{ fontFamily: 'Orbitron, sans-serif' }}
-              >
+              <h1 className="text-2xl font-bold text-[#00FF66] mb-1" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                 EXECUÇÃO ON
               </h1>
-                <p className="text-sm text-[#9AA0A6]">
+              <p className="text-sm text-[#9AA0A6]">
                 <span className="text-[#00FF66] font-mono">{completedCount}/{combinedItems.length}</span> concluídas
-                </p>
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-4">
-            <OlimpoButton 
-              onClick={() => setShowTypeSelector(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Tarefa
+            <OlimpoButton onClick={() => setShowTypeSelector(true)}>
+              <Plus className="w-4 h-4 mr-2" />Nova Tarefa
             </OlimpoButton>
-            <OlimpoButton 
-              variant="secondary"
-              onClick={() => setShowProjects(true)}
-            >
-              <Folder className="w-4 h-4 mr-2" />
-              Projetos
+            <OlimpoButton variant="secondary" onClick={() => setShowProjects(true)}>
+              <Folder className="w-4 h-4 mr-2" />Projetos
             </OlimpoButton>
           </div>
         </OlimpoCard>
 
         {/* Day Selector */}
-        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
           <button
             onClick={() => setShowOverdue(!showOverdue)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all shrink-0 ${
@@ -400,34 +394,19 @@ export default function Tasks() {
           {weekDays.map(day => {
             const dayStr = format(day, 'yyyy-MM-dd');
             const isSelected = dayStr === selectedDateStr && !showOverdue;
-
-            // Calculate total items for this day (tasks + habits)
-            const dayTasksList = tasks.filter(t => {
-              const displayDate = t.dueDate || t.date;
-              return displayDate === dayStr && !t.archived;
-            });
-
-            const dayHabitsList = habits.filter(habit => {
-              if (habit.archived) return false;
-              return checkHabitSchedule(habit, dayStr);
-            });
-
+            const dayTasksList = tasks.filter(t => { const d = t.dueDate || t.date; return d === dayStr && !t.archived; });
+            const dayHabitsList = habits.filter(h => !h.archived && checkHabitSchedule(h, dayStr));
             const totalItems = dayTasksList.length + dayHabitsList.length;
             const completedItems = dayTasksList.filter(t => t.completed).length;
-
             return (
               <button
                 key={dayStr}
                 onClick={() => { setSelectedDate(day); setShowOverdue(false); }}
                 className={`flex flex-col items-center px-3 py-2 rounded-lg min-w-[50px] transition-all ${
-                  isSelected
-                    ? 'bg-[#00FF66] text-black'
-                    : 'bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] text-[#9AA0A6] hover:border-[#00FF66]'
+                  isSelected ? 'bg-[#00FF66] text-black' : 'bg-[#0B0F0C] border border-[rgba(0,255,102,0.18)] text-[#9AA0A6] hover:border-[#00FF66]'
                 }`}
               >
-                <span className="text-[10px] uppercase">
-                  {format(day, 'EEE', { locale: ptBR })}
-                </span>
+                <span className="text-[10px] uppercase">{format(day, 'EEE', { locale: ptBR })}</span>
                 <span className="text-lg font-bold">{format(day, 'd')}</span>
                 {totalItems > 0 && (
                   <span className={`text-[9px] ${isSelected ? 'text-black/70' : 'text-[#00FF66]'}`}>
@@ -453,100 +432,50 @@ export default function Tasks() {
             {combinedItems.map(item => {
               const isHabitExecution = item.type === 'habit' || item.isHabitExecution;
               const isHabitTask = !!item.habitId && !isHabitExecution;
-              
+              const overdue = item.isOverdue;
+              const xpDisplay = overdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || (isHabitExecution ? 8 : 10));
+
               return (
-                <OlimpoCard key={`${item.type}-${item.id}`}>
+                <OlimpoCard
+                  key={`${item.type}-${item.id}`}
+                  className={overdue ? 'border-[rgba(255,59,59,0.4)] bg-[rgba(255,59,59,0.04)]' : ''}
+                >
                   <div className="flex items-start gap-3">
                     <button
-                       onClick={async () => {
-                         if (isHabitExecution) {
-                           if (item.isCompleted) {
-                             // Unmark habit execution - apply penalty
-                             const habitLog = habitLogs.find(log => log.habitId === item.habitId && log.date === selectedDateStr);
-                             if (habitLog) {
-                               await base44.entities.HabitLog.delete(habitLog.id);
-                               const penaltyXP = -(item.xpReward || 8) * 2;
-                               await base44.entities.XPTransaction.create({
-                                 sourceType: 'habit',
-                                 sourceId: item.habitId,
-                                 amount: penaltyXP,
-                                 note: `Penalidade: ${item.title} desmarcado`
-                               });
-                               toast.error(`-${(item.xpReward || 8) * 2} XP - Penalidade por desmarcar`, { style: { background: '#FF3B3B' } });
-                               triggerXPGain(penaltyXP);
-                               queryClient.invalidateQueries(['tasks']);
-                               queryClient.invalidateQueries(['habitLogs']);
-                               queryClient.invalidateQueries(['xpTransactions']);
-                             }
-                           } else {
-                             // Mark habit execution as complete
-                             await base44.entities.HabitLog.create({
-                               habitId: item.habitId,
-                               date: selectedDateStr,
-                               completed: true,
-                               xpEarned: item.xpReward || 8
-                             });
-                             triggerXPGain(item.xpReward || 8);
-                             queryClient.invalidateQueries(['tasks']);
-                             queryClient.invalidateQueries(['habitLogs']);
-                             queryClient.invalidateQueries(['xpTransactions']);
-                           }
-                         } else {
-                           if (item.isCompleted) {
-                             // Unmark task - apply penalty
-                             const penaltyXP = -(item.xpReward || 10) * 2;
-                             await base44.entities.XPTransaction.create({
-                               sourceType: 'task',
-                               sourceId: item.id,
-                               amount: penaltyXP,
-                               note: `Penalidade: ${item.title} desmarcado`
-                             });
-                             toast.error(`-${(item.xpReward || 10) * 2} XP - Penalidade por desmarcar`, { style: { background: '#FF3B3B' } });
-                             triggerXPGain(penaltyXP);
-                             await base44.entities.Task.update(item.id, { completed: false });
-                             queryClient.invalidateQueries({ queryKey: ['tasks'] });
-                             queryClient.invalidateQueries({ queryKey: ['xpTransactions'] });
-                           } else {
-                             completeTaskMutation.mutate(item);
-                           }
-                         }
-                       }}
-                       className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                         item.isCompleted
-                           ? 'bg-[#00FF66] border-[#00FF66] hover:bg-[#00DD55] cursor-pointer' 
-                           : 'border-[#9AA0A6] hover:border-[#00FF66] cursor-pointer'
-                       }`}
-                     >
-                       {item.isCompleted && <Check className="w-4 h-4 text-black" />}
-                     </button>
+                      onClick={() => handleToggleItem(item)}
+                      className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                        item.isCompleted
+                          ? 'bg-[#00FF66] border-[#00FF66] hover:bg-[#00DD55]'
+                          : overdue
+                            ? 'border-[#FF3B3B] hover:border-[#FF6B6B]'
+                            : 'border-[#9AA0A6] hover:border-[#00FF66]'
+                      }`}
+                    >
+                      {item.isCompleted && <Check className="w-4 h-4 text-black" />}
+                    </button>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        {(isHabitExecution || isHabitTask) && (
-                          <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
-                        )}
-                        <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>
+                        {(isHabitExecution || isHabitTask) && <CheckSquare className="w-3 h-3 text-[#9AA0A6] flex-shrink-0" />}
+                        <h3 className={`font-medium text-sm ${item.isCompleted ? 'text-[#9AA0A6] line-through' : overdue ? 'text-[#FF8080]' : 'text-[#E8E8E8]'}`}>
                           {item.title}
                         </h3>
                       </div>
                       {item.description && (
-                        <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{item.description}</p>
+                        <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-1">{item.description}</p>
                       )}
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        {isHabitTask && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
-                            Rotina
-                          </span>
-                        )}
-                        {item.isOverdue && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.2)] text-[#FF3B3B] font-semibold">
-                            ATRASADA
+                        {/* Overdue badge REPLACES the due date display */}
+                        {overdue && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(255,59,59,0.25)] text-[#FF3B3B] font-bold border border-[rgba(255,59,59,0.3)]">
+                            ⚠ ATRASADO
                           </span>
                         )}
                         {isHabitExecution && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">
-                            Rotina Agendada
-                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">Rotina</span>
+                        )}
+                        {isHabitTask && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6]">Rotina</span>
                         )}
                         {!isHabitExecution && item.priority && (
                           <span className={`text-xs px-2 py-0.5 rounded ${
@@ -557,23 +486,21 @@ export default function Tasks() {
                             {item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Média' : 'Baixa'}
                           </span>
                         )}
-                        {item.dueDate && (() => {
+                        {/* Show due date only if NOT overdue */}
+                        {!overdue && item.dueDate && (() => {
                           const hoursUntil = Math.floor((parseISO(item.dueDate + 'T23:59:59') - new Date()) / (1000 * 60 * 60));
                           const isUrgent = hoursUntil <= 48 || item.priority === 'high';
                           return (
                             <span className={`text-xs font-mono ${isUrgent ? 'text-[#00FFC8] font-semibold' : 'text-[#9AA0A6]'}`}>
-                              Prazo: {format(parseISO(item.dueDate), 'dd/MM')}
-                              {isUrgent && ' ⚡'}
+                              Prazo: {format(parseISO(item.dueDate), 'dd/MM')}{isUrgent && ' ⚡'}
                             </span>
                           );
                         })()}
-                        {item.sortTime !== '99:99' && (
-                          <span className="text-xs text-[#9AA0A6]">
-                            {item.sortTime}
-                          </span>
+                        {item._sortTime && item._sortTime !== '99:99' && (
+                          <span className="text-xs text-[#9AA0A6]">{item._sortTime}</span>
                         )}
-                        <span className="text-xs font-mono text-[#00FF66]">
-                          +{item.isOverdue ? Math.round((item.xpReward || 10) * 0.5) : (item.xpReward || 10)} XP
+                        <span className={`text-xs font-mono ${overdue ? 'text-[#FFA0A0]' : 'text-[#00FF66]'}`}>
+                          +{xpDisplay} XP{overdue ? ' (x0.5)' : ''}
                         </span>
                       </div>
                     </div>
@@ -581,27 +508,18 @@ export default function Tasks() {
                     {!isHabitExecution && !isHabitTask && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
+                          <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66] flex-shrink-0">
                             <MoreVertical className="w-5 h-5" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-                          <DropdownMenuItem 
-                            onClick={() => { setEditTask(item); setShowModal(true); }}
-                            className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
-                          >
+                          <DropdownMenuItem onClick={() => { setEditTask(item); setShowModal(true); }} className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]">
                             <Pencil className="w-4 h-4 mr-2" /> Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => archiveMutation.mutate(item.id)}
-                            className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]"
-                          >
+                          <DropdownMenuItem onClick={() => archiveMutation.mutate(item.id)} className="text-[#E8E8E8] focus:bg-[rgba(0,255,102,0.1)]">
                             <Archive className="w-4 h-4 mr-2" /> Arquivar
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => setDeleteId(item.id)}
-                            className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]"
-                          >
+                          <DropdownMenuItem onClick={() => setDeleteId(item.id)} className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]">
                             <Trash2 className="w-4 h-4 mr-2" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -617,48 +535,27 @@ export default function Tasks() {
         {/* Completed Tasks Section */}
         {!showOverdue && completedDayTasks.length > 0 && (
           <div className="mt-6">
-            <h3 
-              className="text-sm font-semibold text-[#9AA0A6] mb-3"
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
+            <h3 className="text-sm font-semibold text-[#9AA0A6] mb-3" style={{ fontFamily: 'Orbitron, sans-serif' }}>
               CONCLUÍDAS
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {completedDayTasks.map(task => (
-                <OlimpoCard key={`completed-task-${task.id}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#00FF66] border-[#00FF66]">
+                <OlimpoCard key={`completed-${task.id}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#00FF66] border-[#00FF66] flex-shrink-0">
                       <Check className="w-4 h-4 text-black" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {task.habitId && (
-                          <CheckSquare className="w-3 h-3 text-[#9AA0A6]" />
-                        )}
-                        <h3 className="font-medium text-sm text-[#9AA0A6] line-through">
-                          {task.title}
-                        </h3>
-                      </div>
-                      {task.description && (
-                        <p className="text-xs text-[#9AA0A6] mt-1 line-clamp-2">{task.description}</p>
-                      )}
-                      {task.habitId && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-[rgba(0,255,102,0.15)] text-[#9AA0A6] inline-block mt-2">
-                          Rotina
-                        </span>
-                      )}
+                      <h3 className="font-medium text-sm text-[#9AA0A6] line-through truncate">{task.title}</h3>
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1 text-[#9AA0A6] hover:text-[#00FF66]">
-                          <MoreVertical className="w-5 h-5" />
+                          <MoreVertical className="w-4 h-4" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
-                        <DropdownMenuItem 
-                          onClick={() => setDeleteId(task.id)}
-                          className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]"
-                        >
+                        <DropdownMenuItem onClick={() => setDeleteId(task.id)} className="text-[#FF3B3B] focus:bg-[rgba(255,59,59,0.1)]">
                           <Trash2 className="w-4 h-4 mr-2" /> Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -670,57 +567,28 @@ export default function Tasks() {
           </div>
         )}
 
-        {/* Financial Transactions Section */}
+        {/* Financial Transactions */}
         {!showOverdue && dayExpenses.length > 0 && (
           <div className="mt-6">
-            <h3 
-              className="text-sm font-semibold text-[#9AA0A6] mb-3"
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
+            <h3 className="text-sm font-semibold text-[#9AA0A6] mb-3" style={{ fontFamily: 'Orbitron, sans-serif' }}>
               PROGRAMAÇÕES FINANCEIRAS
             </h3>
             <div className="space-y-3">
               {dayExpenses.map(expense => (
                 <OlimpoCard key={expense.id}>
                   <div className="flex items-start gap-3">
-                    <div className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center ${
-                      expense.status === 'pago' 
-                        ? 'bg-[#00FF66] border-[#00FF66]' 
-                        : 'border-[#FFC107]'
-                    }`}>
+                    <div className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${expense.status === 'pago' ? 'bg-[#00FF66] border-[#00FF66]' : 'border-[#FFC107]'}`}>
                       {expense.status === 'pago' && <Check className="w-4 h-4 text-black" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className={`font-medium text-sm ${
-                        expense.status === 'pago' ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'
-                      }`}>
-                        {expense.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          expense.status === 'pago'
-                            ? 'bg-[rgba(0,255,102,0.2)] text-[#00FF66]'
-                            : 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]'
-                        }`}>
-                          {expense.type === 'receita' ? 'Receita' : 'Despesa'} • {
-                            expense.status === 'pago' ? 'Pago' : 
-                            expense.status === 'pendente' ? 'Pendente' : 'Programado'
-                          }
+                      <h3 className={`font-medium text-sm ${expense.status === 'pago' ? 'text-[#9AA0A6] line-through' : 'text-[#E8E8E8]'}`}>{expense.title}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs px-2 py-0.5 rounded ${expense.status === 'pago' ? 'bg-[rgba(0,255,102,0.2)] text-[#00FF66]' : 'bg-[rgba(255,193,7,0.2)] text-[#FFC107]'}`}>
+                          {expense.type === 'receita' ? 'Receita' : 'Despesa'} • {expense.status === 'pago' ? 'Pago' : expense.status === 'pendente' ? 'Pendente' : 'Programado'}
                         </span>
-                        {expense.paymentMethod && (
-                          <span className="text-xs text-[#9AA0A6]">
-                            {expense.paymentMethod === 'debito' ? 'Débito' :
-                             expense.paymentMethod === 'pix' ? 'PIX' :
-                             expense.paymentMethod === 'cartao' ? 'Cartão' :
-                             expense.paymentMethod === 'dinheiro' ? 'Dinheiro' :
-                             expense.paymentMethod === 'debit_pix' ? 'Déb/PIX' : expense.paymentMethod}
-                          </span>
-                        )}
                       </div>
                     </div>
-                    <span className={`text-sm font-mono font-semibold ${
-                      expense.type === 'receita' ? 'text-[#00FF66]' : 'text-[#FF3B3B]'
-                    }`}>
+                    <span className={`text-sm font-mono font-semibold flex-shrink-0 ${expense.type === 'receita' ? 'text-[#00FF66]' : 'text-[#FF3B3B]'}`}>
                       {expense.type === 'receita' ? '+' : '-'}R$ {expense.amount?.toFixed(2)}
                     </span>
                   </div>
@@ -730,22 +598,12 @@ export default function Tasks() {
           </div>
         )}
 
-        {/* Expectancy Next 7 Days */}
-        <div className="mt-6">
-          <ExpectancyNext7Days />
-        </div>
-
-
+        <div className="mt-6"><ExpectancyNext7Days /></div>
 
         {/* Calendar */}
         <div className="mt-6 mb-6">
           <OlimpoCard>
-            <h3 
-              className="text-sm font-semibold text-[#9AA0A6] mb-4"
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
-              CALENDÁRIO
-            </h3>
+            <h3 className="text-sm font-semibold text-[#9AA0A6] mb-4" style={{ fontFamily: 'Orbitron, sans-serif' }}>CALENDÁRIO</h3>
             <CalendarComponent
               mode="single"
               selected={selectedDate}
@@ -777,53 +635,24 @@ export default function Tasks() {
         </div>
       </div>
 
-      <TaskTypeSelector
-        open={showTypeSelector}
-        onClose={() => setShowTypeSelector(false)}
-        onSelectQuick={() => setShowQuickTask(true)}
-        onSelectFull={() => { setEditTask(null); setShowModal(true); }}
-      />
-
-      <QuickTaskSheet
-        open={showQuickTask}
-        onClose={() => setShowQuickTask(false)}
-        defaultDate={selectedDateStr}
-      />
-
-      <TaskModal
-        open={showModal}
-        onClose={() => { setShowModal(false); setEditTask(null); }}
-        task={editTask}
-        defaultDate={selectedDateStr}
-      />
+      <TaskTypeSelector open={showTypeSelector} onClose={() => setShowTypeSelector(false)} onSelectQuick={() => setShowQuickTask(true)} onSelectFull={() => { setEditTask(null); setShowModal(true); }} />
+      <QuickTaskSheet open={showQuickTask} onClose={() => setShowQuickTask(false)} defaultDate={selectedDateStr} />
+      <TaskModal open={showModal} onClose={() => { setShowModal(false); setEditTask(null); }} task={editTask} defaultDate={selectedDateStr} />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-[#E8E8E8]">Excluir tarefa?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#9AA0A6]">
-              Essa ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription className="text-[#9AA0A6]">Essa ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => deleteMutation.mutate(deleteId)}
-              className="bg-[#FF3B3B] text-white hover:bg-[#DD2B2B]"
-            >
-              Excluir
-            </AlertDialogAction>
+            <AlertDialogCancel className="bg-transparent border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteMutation.mutate(deleteId)} className="bg-[#FF3B3B] text-white hover:bg-[#DD2B2B]">Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <ProjectsSheet
-        open={showProjects}
-        onClose={() => setShowProjects(false)}
-      />
-
+      <ProjectsSheet open={showProjects} onClose={() => setShowProjects(false)} />
       <XPGainManager />
       <BottomNav />
     </div>
