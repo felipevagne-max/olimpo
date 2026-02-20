@@ -293,6 +293,7 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
