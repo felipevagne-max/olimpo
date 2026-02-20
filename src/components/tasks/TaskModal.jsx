@@ -259,6 +259,25 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
 
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <Label className="text-[#9AA0A6] text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> Horário (opcional)</Label>
+              <OlimpoInput
+                type="time"
+                value={formData.timeOfDay}
+                onChange={(e) => setFormData(prev => ({ ...prev, timeOfDay: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label className="text-[#9AA0A6] text-xs">Prazo</Label>
+              <OlimpoInput
+                type="date"
+                value={formData.dueDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <Label className="text-[#9AA0A6] text-xs">Prioridade</Label>
               <Select
                 value={formData.priority}
