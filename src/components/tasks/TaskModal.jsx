@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
-import { X, Repeat } from 'lucide-react';
+import { Repeat, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
