@@ -142,6 +142,16 @@ Deno.serve(async (req) => {
         }
 
         console.log('[STEP 20] Subscription created successfully in Supabase');
+
+        // Create user in Base44 via register (password: Olimpo12345)
+        console.log('[STEP 21] Creating user in Base44...');
+        try {
+          const base44 = createClientFromRequest(req);
+          await base44.auth.register({ email, password: 'Olimpo12345' });
+          console.log('[STEP 22] User registered in Base44 successfully');
+        } catch (base44Error) {
+          console.error('[ERROR] Error registering user in Base44:', base44Error.message);
+        }
       }
       }
 
