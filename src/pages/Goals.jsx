@@ -400,8 +400,6 @@ export default function Goals() {
       </AlertDialog>
 
       <GoalLightningEffect show={showLightning} onComplete={() => setShowLightning(false)} />
-
-      <BottomNav />
     </div>
   );
 }

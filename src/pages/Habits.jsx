@@ -327,7 +327,6 @@ export default function Habits() {
       />
 
       <XPGainManager />
-      <BottomNav />
     </div>
   );
 }
