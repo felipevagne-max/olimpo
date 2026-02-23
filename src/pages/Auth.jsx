@@ -133,13 +133,8 @@ export default function Auth() {
         return;
       }
 
-      // 2. Register/login in Base44 with new password
-      try {
-        await base44.auth.loginViaEmailPassword(pendingEmail, 'Olimpo12345');
-      } catch (_) {
-        await base44.auth.register({ email: pendingEmail, password: 'Olimpo12345' });
-        await base44.auth.loginViaEmailPassword(pendingEmail, 'Olimpo12345');
-      }
+      // 2. Login in Base44 (user was already registered on first login step)
+      await base44.auth.loginViaEmailPassword(pendingEmail, 'Olimpo12345');
 
       toast.success('Senha criada! Bem-vindo ao Olimpo!');
       setTimeout(() => { window.location.href = '/App'; }, 1000);
