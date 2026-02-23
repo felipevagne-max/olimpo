@@ -358,7 +358,6 @@ export default function Finance() {
       <QuickIncomeSheet open={activeSheet === 'receita'} onClose={() => setActiveSheet(null)} />
       <QuickInvestmentSheet open={activeSheet === 'investimento'} onOpenChange={(open) => !open && setActiveSheet(null)} />
 
-      <BottomNav />
     </div>
   );
 }
