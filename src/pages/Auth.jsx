@@ -150,6 +150,69 @@ export default function Auth() {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotPasswordEmail) {
+      toast.error('Digite seu email');
+      return;
+    }
+
+    setSendingReset(true);
+    try {
+      const { data } = await base44.functions.invoke('sendPasswordReset', {
+        email: forgotPasswordEmail
+      });
+
+      if (data.success) {
+        toast.success('Email de reset enviado! Verifique sua caixa de entrada');
+        setForgotPasswordEmail('');
+        setStep('login');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Erro ao enviar email');
+    } finally {
+      setSendingReset(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { data } = await base44.functions.invoke('resetPassword', {
+        token: resetToken,
+        newPassword
+      });
+
+      if (!data.success) {
+        toast.error('Erro ao redefinir senha');
+        setSavingPassword(false);
+        return;
+      }
+
+      toast.success('Senha redefinida com sucesso! Você será redirecionado para o login');
+      setTimeout(() => {
+        setNewPassword('');
+        setConfirmPassword('');
+        setResetToken('');
+        setStep('login');
+        window.history.replaceState({}, document.title, '/Auth');
+      }, 1000);
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Erro ao redefinir senha');
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050508] relative overflow-hidden flex items-center justify-center p-4">
       <canvas
