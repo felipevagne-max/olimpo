@@ -82,16 +82,15 @@ export default function Layout({ children, currentPageName }) {
                 // Not authenticated - redirect to custom Auth page
                 const currentPath = window.location.pathname;
                 if (currentPath !== '/Auth' && currentPath !== '/auth') {
-                  navigate('/Auth');
+                  base44.auth.redirectToLogin(window.location.href);
                   return;
                 }
               }
             } catch (error) {
               console.error('Auth check error:', error);
-              // On error, redirect to Auth page
               const currentPath = window.location.pathname;
               if (currentPath !== '/Auth' && currentPath !== '/auth') {
-                navigate('/Auth');
+                base44.auth.redirectToLogin(window.location.href);
                 return;
               }
             }
