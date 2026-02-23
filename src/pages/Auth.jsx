@@ -81,13 +81,17 @@ export default function Auth() {
         }
       }
 
-      // 3. Redirect based on first login status or if using temp password
+      // 3. Check if first access - show password change form inline
       const isUsingTempPassword = password === 'Olimpo12345';
       if (data.is_first_login || isUsingTempPassword) {
-        window.location.href = '/FirstAccess';
-      } else {
-        window.location.href = '/App';
+        setPendingEmail(email);
+        setPendingUserId(data.user_id);
+        setStep('change_password');
+        setLoading(false);
+        return;
       }
+
+      window.location.href = '/App';
 
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Erro ao fazer login';
