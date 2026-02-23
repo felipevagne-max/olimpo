@@ -100,6 +100,47 @@ export default function Auth() {
     }
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      // 1. Update password in Supabase and mark is_first_login = false
+      const { data } = await base44.functions.invoke('changePassword', {
+        userId: pendingUserId,
+        newPassword
+      });
+
+      if (!data.success) {
+        toast.error('Erro ao salvar senha');
+        setSavingPassword(false);
+        return;
+      }
+
+      // 2. Register/login in Base44 with new password
+      try {
+        await base44.auth.loginViaEmailPassword(pendingEmail, 'Olimpo12345');
+      } catch (_) {
+        await base44.auth.register({ email: pendingEmail, password: 'Olimpo12345' });
+        await base44.auth.loginViaEmailPassword(pendingEmail, 'Olimpo12345');
+      }
+
+      toast.success('Senha criada! Bem-vindo ao Olimpo!');
+      setTimeout(() => { window.location.href = '/App'; }, 1000);
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Erro ao salvar senha');
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050508] relative overflow-hidden flex items-center justify-center p-4">
       <canvas
