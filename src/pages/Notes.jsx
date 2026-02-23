@@ -51,13 +51,13 @@ export default function Notes() {
 
   const togglePinMutation = useMutation({
     mutationFn: ({ id, pinned }) => base44.entities.Note.update(id, { pinned: !pinned }),
-    onSuccess: () => queryClient.invalidateQueries(['notes'])
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notes', user?.email] })
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Note.update(id, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['notes']);
+      queryClient.invalidateQueries({ queryKey: ['notes', user?.email] });
       toast.success('Pronto.');
     }
   });
