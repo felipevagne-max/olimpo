@@ -72,10 +72,7 @@ export default function Tasks() {
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const isViewingToday = selectedDateStr === todayStr;
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
