@@ -78,11 +78,11 @@ export default function Layout({ children, currentPageName }) {
                 } catch (err) {
                   console.log('First login check skipped:', err.message);
                 }
-              } else {
-                // Not authenticated - redirect to custom Auth page
+                      } else {
+                // Not authenticated - stay on Auth page, don't redirect
                 const currentPath = window.location.pathname;
                 if (currentPath !== '/Auth' && currentPath !== '/auth') {
-                  base44.auth.redirectToLogin(window.location.href);
+                  navigate('/Auth');
                   return;
                 }
               }
@@ -90,7 +90,7 @@ export default function Layout({ children, currentPageName }) {
               console.error('Auth check error:', error);
               const currentPath = window.location.pathname;
               if (currentPath !== '/Auth' && currentPath !== '/auth') {
-                base44.auth.redirectToLogin(window.location.href);
+                navigate('/Auth');
                 return;
               }
             }
