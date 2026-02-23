@@ -318,6 +318,7 @@ export default function Auth() {
         .animate-fadeSlideUp { animation: fadeSlideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
         input:focus-visible { outline: none; }
       `}</style>
+      </>
     </div>
   );
 }
