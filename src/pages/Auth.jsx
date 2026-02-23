@@ -378,8 +378,9 @@ export default function Auth() {
             <button
               type="button"
               onClick={() => {
-                const email = prompt('Digite seu email para redefinir a senha:');
-                if (email) toast.info('Funcionalidade em desenvolvimento. Entre em contato com suporte.');
+                setEmail('');
+                setPassword('');
+                setStep('forgot_password');
               }}
               className="w-full mt-3 text-[#00FF66] hover:text-[#00DD55] text-xs transition-colors"
             >
