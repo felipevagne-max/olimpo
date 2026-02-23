@@ -648,7 +648,6 @@ export default function Tasks() {
 
       <ProjectsSheet open={showProjects} onClose={() => setShowProjects(false)} />
       <XPGainManager />
-      <BottomNav />
     </div>
   );
 }
