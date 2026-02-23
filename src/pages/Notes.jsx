@@ -30,7 +30,7 @@ export default function Notes() {
   const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: notes = [], isLoading } = useQuery({
-    queryKey: ['notes'],
+    queryKey: ['notes', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
       const allNotes = await base44.entities.Note.filter({ created_by: user.email });
@@ -40,7 +40,7 @@ export default function Notes() {
   });
 
   const { data: userProfile } = useQuery({
-    queryKey: ['userProfile'],
+    queryKey: ['userProfile', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
       const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
