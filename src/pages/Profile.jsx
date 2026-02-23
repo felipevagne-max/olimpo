@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+const SESSION_KEY = 'olimpo_session';
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
+}
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
 import { ArrowLeft, LogOut, RefreshCw } from 'lucide-react';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
