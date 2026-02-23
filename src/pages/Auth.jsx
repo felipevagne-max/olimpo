@@ -66,26 +66,25 @@ export default function Auth() {
         return;
       }
 
-      // 2. Try to login with Base44 directly
+      // 2. Login or register in Base44 via magic link (no email verification required)
+      // First try direct login
+      let base44LoginOk = false;
       try {
         await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-      } catch (loginErr) {
-        // If login fails, try to register first (user doesn't exist in Base44 yet)
+        base44LoginOk = true;
+      } catch (_) {}
+
+      if (!base44LoginOk) {
+        // User doesn't exist in Base44 yet - send magic link to authenticate
         try {
-          await base44.auth.register({ email, password: 'Olimpo12345', skip_email_verification: true });
-          await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-        } catch (registerErr) {
-          // User might already exist but email not verified - try magic link or force login
-          try {
-            await base44.auth.sendMagicLink(email);
-            toast.info('Verifique seu email para confirmar o acesso e tente novamente.');
-            setLoading(false);
-            return;
-          } catch (_) {
-            toast.error('Erro ao autenticar. Tente novamente.');
-            setLoading(false);
-            return;
-          }
+          await base44.auth.sendMagicLink(email);
+          toast.success('Acesso liberado! Verifique seu email e clique no link para entrar.');
+          setLoading(false);
+          return;
+        } catch (mlErr) {
+          toast.error('Erro ao enviar link de acesso. Tente novamente.');
+          setLoading(false);
+          return;
         }
       }
 
