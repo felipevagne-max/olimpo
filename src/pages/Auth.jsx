@@ -3,6 +3,18 @@ import { Mail, Lock, ArrowRight, Code2, Eye, EyeOff, Loader2 } from 'lucide-reac
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
+// Session helpers - no Base44 auth dependency
+export const SESSION_KEY = 'olimpo_session';
+export function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
+}
+export function setSession(data) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+}
+export function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
 export default function Auth() {
   const canvasRef = useRef(null);
   const [email, setEmail] = useState('');
