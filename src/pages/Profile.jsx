@@ -235,22 +235,22 @@ export default function Profile() {
           <div className="space-y-4 py-4">
             <div>
               <label className="block text-[#E8E8E8] text-sm mb-2">Nova Senha</label>
-              <OlimpoInput
+              <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full"
+                className="w-full bg-[#070A08] border border-[rgba(0,255,102,0.18)] rounded-lg px-3 py-2 text-[#E8E8E8] focus:outline-none focus:border-[#00FF66] transition-colors"
               />
             </div>
             <div>
               <label className="block text-[#E8E8E8] text-sm mb-2">Confirmar Senha</label>
-              <OlimpoInput
+              <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repita a senha"
-                className="w-full"
+                className="w-full bg-[#070A08] border border-[rgba(0,255,102,0.18)] rounded-lg px-3 py-2 text-[#E8E8E8] focus:outline-none focus:border-[#00FF66] transition-colors"
               />
             </div>
           </div>
