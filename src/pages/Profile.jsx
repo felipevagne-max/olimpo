@@ -81,22 +81,23 @@ export default function Profile() {
       return;
     }
 
+    setIsSaving(true);
+    
     try {
-      setIsSaving(true);
-      
       await base44.entities.UserProfile.update(userProfile.id, {
         displayName: trimmed,
         username_last_changed_at: new Date().toISOString()
       });
 
       toast.success('Nome atualizado com sucesso!');
-      queryClient.invalidateQueries(['userProfile']);
+      setUsername(trimmed);
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       setShowNameEdit(false);
-      setIsSaving(false);
     } catch (error) {
       console.error('Erro ao salvar:', error);
-      setIsSaving(false);
       toast.error(error.message || 'Erro ao salvar nome');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -196,9 +197,7 @@ export default function Profile() {
     }
   };
 
-  if (isSaving) {
-    return <SplashScreen />;
-  }
+
 
   return (
     <div className="min-h-screen bg-black pt-20 pb-24 px-4">
