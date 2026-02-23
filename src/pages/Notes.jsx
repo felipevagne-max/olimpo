@@ -27,20 +27,26 @@ export default function Notes() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
 
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes'],
     queryFn: async () => {
-      const allNotes = await base44.entities.Note.list();
+      if (!user?.email) return [];
+      const allNotes = await base44.entities.Note.filter({ created_by: user.email });
       return allNotes.filter(n => !n.deleted_at);
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const togglePinMutation = useMutation({

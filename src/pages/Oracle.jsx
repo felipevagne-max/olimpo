@@ -15,45 +15,73 @@ export default function Oracle() {
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
 
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+
   const { data: messages = [] } = useQuery({
     queryKey: ['oracleMessages'],
-    queryFn: () => base44.entities.OracleMessage.list('-created_date')
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.OracleMessage.filter({ created_by: user.email }, '-created_date');
+    },
+    enabled: !!user?.email
   });
 
   const { data: insights = [] } = useQuery({
     queryKey: ['oracleInsights'],
-    queryFn: () => base44.entities.OracleInsight.list('-created_date')
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.OracleInsight.filter({ created_by: user.email }, '-created_date');
+    },
+    enabled: !!user?.email
   });
 
   const { data: config } = useQuery({
     queryKey: ['oracleConfig'],
     queryFn: async () => {
-      const configs = await base44.entities.OracleConfig.list();
+      if (!user?.email) return null;
+      const configs = await base44.entities.OracleConfig.filter({ created_by: user.email });
       if (configs.length === 0) {
         return await base44.entities.OracleConfig.create({ tone: 'direct' });
       }
       return configs[0];
-    }
+    },
+    enabled: !!user?.email
   });
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
-    queryFn: () => base44.entities.CheckIn.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CheckIn.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Task.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habits = [] } = useQuery({
     queryKey: ['habits'],
-    queryFn: () => base44.entities.Habit.filter({ archived: false })
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
 

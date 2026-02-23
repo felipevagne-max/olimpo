@@ -70,10 +70,7 @@ export default function Dashboard() {
     moodScore: 5
   });
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   // Calculate date ranges once
   const monthStart = useMemo(() => startOfMonth(new Date()), []);

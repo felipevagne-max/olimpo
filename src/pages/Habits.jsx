@@ -40,10 +40,7 @@ export default function Habits() {
   const [deleteId, setDeleteId] = useState(null);
   const [selectedHabitId, setSelectedHabitId] = useState(null);
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: habits = [], isLoading } = useQuery({
     queryKey: ['habits'],

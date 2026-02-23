@@ -59,22 +59,25 @@ function TitleSymbols() {
 }
 
 export default function Community() {
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+
   const { data: xpTransactions = [], isLoading } = useQuery({
     queryKey: ['xpTransactions'],
-    queryFn: () => base44.entities.XPTransaction.list()
-  });
-
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.XPTransaction.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   if (isLoading) {

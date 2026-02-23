@@ -38,10 +38,7 @@ export default function Goals() {
   const [deleteId, setDeleteId] = useState(null);
   const [showLightning, setShowLightning] = useState(false);
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['goals'],

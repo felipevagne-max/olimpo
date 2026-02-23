@@ -10,24 +10,42 @@ import { CheckSquare, Calendar, TrendingUp, TrendingDown, Minus } from 'lucide-r
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function Progress() {
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Task.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habits = [] } = useQuery({
     queryKey: ['habits'],
-    queryFn: () => base44.entities.Habit.filter({ archived: false })
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
-    queryFn: () => base44.entities.CheckIn.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CheckIn.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   // Generate last 7 days
