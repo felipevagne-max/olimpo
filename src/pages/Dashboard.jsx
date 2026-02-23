@@ -12,8 +12,9 @@ import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import DashboardCharts from '@/components/olimpo/DashboardCharts';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
-import { Zap, Target, CheckSquare, Calendar, TrendingUp, Moon, Brain, Smile, Plus, Check, Lock, CheckCircle } from 'lucide-react';
+import { Zap, Target, CheckSquare, Calendar, TrendingUp, Moon, Brain, Smile, Plus, Check, Lock, CheckCircle, Lightbulb } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 
 function CheckInCompleted() {
