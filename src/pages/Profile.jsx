@@ -10,7 +10,7 @@ function getSession() {
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
-import { ArrowLeft, LogOut, RefreshCw } from 'lucide-react';
+import { ArrowLeft, LogOut, RefreshCw, Lock } from 'lucide-react';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import SplashScreen from '@/components/olimpo/SplashScreen';
