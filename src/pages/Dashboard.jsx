@@ -9,7 +9,6 @@ import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoProgress from '@/components/olimpo/OlimpoProgress';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
-import MatrixRain from '@/components/olimpo/MatrixRain';
 import DashboardCharts from '@/components/olimpo/DashboardCharts';
 import { XPGainManager, triggerXPGain } from '@/components/olimpo/XPGainEffect';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
