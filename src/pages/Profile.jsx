@@ -283,6 +283,15 @@ export default function Profile() {
           <div className="space-y-3">
             <OlimpoButton
               variant="secondary"
+              className="w-full"
+              onClick={() => setShowChangePassword(true)}
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Trocar Senha
+            </OlimpoButton>
+
+            <OlimpoButton
+              variant="secondary"
               className="w-full text-[#FF3B3B] border-[rgba(255,59,59,0.3)] hover:bg-[rgba(255,59,59,0.1)]"
               onClick={() => setShowResetConfirm(true)}
             >
