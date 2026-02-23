@@ -33,6 +33,16 @@ export default function Auth() {
   const [resetToken, setResetToken] = useState('');
   const [sendingReset, setSendingReset] = useState(false);
 
+  // Check for reset token in URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('reset');
+    if (token) {
+      setResetToken(token);
+      setStep('reset_password');
+    }
+  }, []);
+
   // Matrix rain effect
   useEffect(() => {
     const canvas = canvasRef.current;
