@@ -154,6 +154,7 @@ export default function Auth() {
         style={{ background: 'linear-gradient(to top, rgba(0, 255, 102, 0.04), transparent)', filter: 'blur(40px)' }}
       />
 
+      <>
       {step === 'change_password' && (
         <div className="relative z-10 w-full max-w-md animate-fadeSlideUp">
           <div className="flex flex-col items-center mb-10">
