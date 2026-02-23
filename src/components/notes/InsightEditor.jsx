@@ -46,7 +46,7 @@ export default function InsightEditor({ open, onClose, note }) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['notes']);
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
       toast.success('Pronto.');
       onClose();
     },
