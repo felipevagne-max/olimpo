@@ -11,14 +11,14 @@ Deno.serve(async (req) => {
 
     const base44 = createClientFromRequest(req);
 
-    // Use service role to invite user - this creates the account without needing
-    // the user to verify their email for our custom login flow
+    // Try to register user directly (service role bypasses email verification)
     try {
-      await base44.asServiceRole.users.inviteUser(email, 'user');
+      await base44.asServiceRole.auth.register({ email, password: 'Olimpo12345' });
       return Response.json({ success: true, action: 'registered' });
     } catch (err) {
-      // If user already exists, that's fine
-      if (err.message?.includes('already') || err.message?.includes('exist') || err.status === 409) {
+      const msg = err.message || '';
+      // User already exists - fine
+      if (msg.includes('already') || msg.includes('exist') || msg.includes('taken') || msg.includes('registered')) {
         return Response.json({ success: true, action: 'already_exists' });
       }
       throw err;
