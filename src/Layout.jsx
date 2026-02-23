@@ -63,43 +63,18 @@ export default function Layout({ children, currentPageName }) {
       const startTime = Date.now();
       const MIN_SPLASH_DURATION = 1000;
       
-      try {
-              // Check if user is authenticated
-              const isAuth = await base44.auth.isAuthenticated();
+      // Check session from localStorage (no Base44 auth dependency)
+      const session = getSession();
+      const currentPath = window.location.pathname;
 
-              if (isAuth) {
-                const user = await base44.auth.me();
-                setCurrentUser(user);
-
-                // Check if first login and redirect to FirstAccess page
-                try {
-                  const { data } = await base44.functions.invoke('checkFirstLogin', {
-                    email: user.email
-                  });
-
-                  if (data.is_first_login && data.subscription_status === 'active') {
-                    navigate('/FirstAccess');
-                    return;
-                  }
-                } catch (err) {
-                  console.log('First login check skipped:', err.message);
-                }
-                      } else {
-                // Not authenticated - stay on Auth page, don't redirect
-                const currentPath = window.location.pathname;
-                if (currentPath !== '/Auth' && currentPath !== '/auth') {
-                  navigate('/Auth');
-                  return;
-                }
-              }
-            } catch (error) {
-              console.error('Auth check error:', error);
-              const currentPath = window.location.pathname;
-              if (currentPath !== '/Auth' && currentPath !== '/auth') {
-                navigate('/Auth');
-                return;
-              }
-            }
+      if (!session || !session.user_id) {
+        if (currentPath !== '/Auth' && currentPath !== '/auth') {
+          navigate('/Auth');
+          return;
+        }
+      } else {
+        setCurrentUser({ email: session.email, full_name: session.full_name, id: session.user_id });
+      }
       
       // Ensure minimum splash duration
       const elapsed = Date.now() - startTime;
