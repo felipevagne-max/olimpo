@@ -73,8 +73,13 @@ export default function Auth() {
         }
       }
 
-      // 3. Redirect based on first login status
-      window.location.href = data.is_first_login ? '/FirstAccess' : '/App';
+      // 3. Redirect based on first login status or if using temp password
+      const isUsingTempPassword = password === 'Olimpo12345';
+      if (data.is_first_login || isUsingTempPassword) {
+        window.location.href = '/FirstAccess';
+      } else {
+        window.location.href = '/App';
+      }
 
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Erro ao fazer login';
