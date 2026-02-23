@@ -59,7 +59,6 @@ import GoalDetail from './pages/GoalDetail';
 import Goals from './pages/Goals';
 import Habits from './pages/Habits';
 import Home from './pages/Home';
-import Notes from './pages/Notes';
 import Profile from './pages/Profile';
 import Progress from './pages/Progress';
 import Tasks from './pages/Tasks';
@@ -81,7 +80,6 @@ export const PAGES = {
     "Goals": Goals,
     "Habits": Habits,
     "Home": Home,
-    "Notes": Notes,
     "Profile": Profile,
     "Progress": Progress,
     "Tasks": Tasks,
