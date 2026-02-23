@@ -325,8 +325,7 @@ export default function Tasks() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-20 lg:pb-0 lg:pl-64 relative z-10">
-      <TopBar />
+    <div className="min-h-screen bg-black pb-20 relative z-10">
       <div className="px-4 pt-20 lg:pt-24 relative z-10 lg:max-w-6xl lg:mx-auto lg:px-8">
 
         {/* HUD Header */}
