@@ -12,9 +12,15 @@ export default function NotificationsPopover() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+
   const { data: notifications = [] } = useQuery({
     queryKey: ['userNotifications'],
-    queryFn: () => base44.entities.UserNotification.list('-created_date')
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.UserNotification.filter({ created_by: user.email }, '-created_date');
+    },
+    enabled: !!user?.email
   });
 
   const markReadMutation = useMutation({
