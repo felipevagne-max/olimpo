@@ -64,15 +64,14 @@ export default function Layout({ children, currentPageName }) {
     if (!session || !session.user_id) {
       if (currentPath !== '/Auth' && currentPath !== '/auth') {
         navigate('/Auth');
-        return;
       }
+      setIsChecking(false);
     } else {
       setCurrentUser({ email: session.email, full_name: session.full_name, id: session.user_id });
+      // Short splash just for visual polish (300ms max) when there IS a session
+      const t = setTimeout(() => setIsChecking(false), 300);
+      return () => clearTimeout(t);
     }
-
-    // Short splash just for visual polish (300ms max)
-    const t = setTimeout(() => setIsChecking(false), 300);
-    return () => clearTimeout(t);
   }, []);
 
   if (isChecking) {
