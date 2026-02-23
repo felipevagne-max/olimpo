@@ -35,10 +35,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    if (!user.is_first_login) {
-      return Response.json({ error: 'Operação não permitida' }, { status: 403 });
-    }
-
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
