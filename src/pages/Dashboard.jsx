@@ -809,6 +809,57 @@ export default function Dashboard() {
           </OlimpoCard>
         </div>
 
+        {/* Quick Note FAB */}
+        <div className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40">
+          <button
+            onClick={() => setShowQuickNote(true)}
+            className="w-14 h-14 rounded-full bg-[#00FF66] text-black shadow-lg hover:shadow-[0_0_20px_rgba(0,255,102,0.4)] transition-all hover:scale-110 flex items-center justify-center"
+          >
+            <Lightbulb className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Quick Note Sheet */}
+        <Sheet open={showQuickNote} onOpenChange={setShowQuickNote}>
+          <SheetContent 
+            side="bottom" 
+            className="bg-[#0B0F0C] border-t-[rgba(0,255,102,0.18)]"
+          >
+            <SheetHeader>
+              <SheetTitle className="text-[#00FF66]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                Anote uma Ideia Rápida
+              </SheetTitle>
+            </SheetHeader>
+            <div className="space-y-4 mt-6 pb-4">
+              <textarea
+                value={quickNoteContent}
+                onChange={(e) => setQuickNoteContent(e.target.value)}
+                placeholder="Digite sua ideia aqui..."
+                className="w-full bg-[#070A08] border border-[rgba(0,255,102,0.18)] rounded-lg px-4 py-3 text-[#E8E8E8] placeholder-[#9AA0A6] focus:outline-none focus:border-[#00FF66] resize-none"
+                rows={4}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setQuickNoteContent('');
+                    setShowQuickNote(false);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-[rgba(0,255,102,0.18)] text-[#00FF66] hover:bg-[rgba(0,255,102,0.1)] transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => saveQuickNoteMutation.mutate(quickNoteContent)}
+                  disabled={saveQuickNoteMutation.isPending}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-[#00FF66] text-black hover:bg-[#00DD55] transition-all disabled:opacity-60 font-semibold"
+                >
+                  {saveQuickNoteMutation.isPending ? 'Salvando...' : 'Salvar Nota'}
+                </button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
         {/* Evolution Charts */}
         <DashboardCharts />
 
