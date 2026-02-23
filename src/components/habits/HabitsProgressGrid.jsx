@@ -11,10 +11,7 @@ import { triggerXPGain } from '@/components/olimpo/XPGainEffect';
 export default function HabitsProgressGrid() {
   const queryClient = useQueryClient();
   
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: habits = [] } = useQuery({
     queryKey: ['habits'],

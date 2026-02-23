@@ -13,28 +13,35 @@ export default function HabitDetailModal({ open, onClose, habitId }) {
   const queryClient = useQueryClient();
   const today = format(new Date(), 'yyyy-MM-dd');
 
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+
   const { data: habit } = useQuery({
     queryKey: ['habit', habitId],
     queryFn: async () => {
-      if (!habitId) return null;
-      const habits = await base44.entities.Habit.list();
+      if (!habitId || !user?.email) return null;
+      const habits = await base44.entities.Habit.filter({ created_by: user.email });
       return habits.find(h => h.id === habitId);
     },
-    enabled: !!habitId && open
+    enabled: !!habitId && open && !!user?.email
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: () => base44.entities.HabitLog.list(),
-    enabled: open
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.HabitLog.filter({ created_by: user.email });
+    },
+    enabled: open && !!user?.email
   });
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const profiles = await base44.entities.UserProfile.list();
+      if (!user?.email) return null;
+      const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       return profiles[0] || null;
-    }
+    },
+    enabled: !!user?.email
   });
 
   const archiveMutation = useMutation({

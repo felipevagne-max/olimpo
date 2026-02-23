@@ -5,18 +5,27 @@ import OlimpoCard from '../olimpo/OlimpoCard';
 import { TrendingDown } from 'lucide-react';
 
 export default function InsightsPrincipais({ currentMonth }) {
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
   const monthKey = format(currentMonth, 'yyyy-MM');
   const monthStart = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1), 'yyyy-MM-dd');
   const monthEnd = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0), 'yyyy-MM-dd');
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Expense.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const { data: installments = [] } = useQuery({
     queryKey: ['cardInstallments'],
-    queryFn: () => base44.entities.CardInstallment.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.CardInstallment.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const activeExpenses = expenses.filter(e => !e.deleted_at);

@@ -33,10 +33,8 @@ const getPositionColor = (position) => {
 };
 
 export default function RankingList() {
-  const { data: currentUser } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => base44.auth.me()
-  });
+  const session = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+  const currentUser = session ? { email: session.email } : null;
 
   const { data: allUserProfiles = [] } = useQuery({
     queryKey: ['allUserProfiles'],
