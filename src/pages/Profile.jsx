@@ -13,6 +13,7 @@ function clearSession() {
 }
 import { ArrowLeft, LogOut, RefreshCw, Lock } from 'lucide-react';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
+import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import { toast } from 'sonner';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
 import {
