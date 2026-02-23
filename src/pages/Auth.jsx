@@ -10,6 +10,14 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // First access flow
+  const [step, setStep] = useState('login'); // 'login' | 'change_password'
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [pendingUserId, setPendingUserId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+
   // Matrix rain effect
   useEffect(() => {
     const canvas = canvasRef.current;
