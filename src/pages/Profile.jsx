@@ -49,7 +49,7 @@ export default function Profile() {
       const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
       const profile = profiles[0] || null;
       if (profile) {
-        setUsername(profile.displayName || 'USUARIO');
+        setUsername(profile.displayName || 'usuario');
       }
       return profile;
     },
@@ -69,10 +69,7 @@ export default function Profile() {
   const levelInfo = getLevelFromXP(xpTotal);
 
   const handleSaveClick = async () => {
-    console.log('handleSaveClick CHAMADO');
     const trimmed = username.trim();
-    console.log('Nome trimmed:', trimmed);
-    console.log('UserProfile:', userProfile);
     
     if (!trimmed) {
       toast.error('Nome não pode ser vazio');
@@ -86,17 +83,16 @@ export default function Profile() {
 
     try {
       setIsSaving(true);
-      console.log('Atualizando perfil...');
       
       await base44.entities.UserProfile.update(userProfile.id, {
         displayName: trimmed,
         username_last_changed_at: new Date().toISOString()
       });
 
-      console.log('Perfil atualizado com sucesso');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      navigate('/Dashboard');
-      window.location.reload();
+      toast.success('Nome atualizado com sucesso!');
+      queryClient.invalidateQueries(['userProfile']);
+      setShowNameEdit(false);
+      setIsSaving(false);
     } catch (error) {
       console.error('Erro ao salvar:', error);
       setIsSaving(false);
@@ -224,7 +220,7 @@ export default function Profile() {
               className="text-3xl font-bold text-[#E8E8E8]"
               style={{ fontFamily: 'Orbitron, sans-serif' }}
             >
-              {userProfile?.displayName || 'USUARIO'}
+              {userProfile?.displayName || 'usuario'}
             </h1>
             <p 
               className="text-sm text-[#9AA0A6]"
