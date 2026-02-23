@@ -23,9 +23,14 @@ Deno.serve(async (req) => {
       .from('users')
       .select('id, email, password, full_name, is_first_login')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
-    if (userError || !supabaseUser) {
+    if (userError) {
+      console.error('Supabase user query error:', userError);
+      return Response.json({ error: 'Erro ao buscar usuário' }, { status: 500 });
+    }
+
+    if (!supabaseUser) {
       return Response.json({ error: 'Email não encontrado. Verifique se você completou a compra.' }, { status: 404 });
     }
 
@@ -36,11 +41,16 @@ Deno.serve(async (req) => {
     }
 
     // Check subscription
-    const { data: subscription } = await supabase
+    const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
       .select('status, plan_type, expires_at')
       .eq('user_id', supabaseUser.id)
-      .single();
+      .maybeSingle();
+
+    if (subError) {
+      console.error('Supabase subscription query error:', subError);
+      return Response.json({ error: 'Erro ao verificar assinatura' }, { status: 500 });
+    }
 
     if (!subscription || subscription.status !== 'active') {
       return Response.json({ error: 'Assinatura inativa ou expirada' }, { status: 403 });
