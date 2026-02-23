@@ -141,22 +141,7 @@ Deno.serve(async (req) => {
         }
 
         console.log('[STEP 20] Subscription created successfully in Supabase');
-
-        // Create user in Base44 (for login) via REST API
-        console.log('[STEP 21] Creating user in Base44...');
-        try {
-          const appId = Deno.env.get('BASE44_APP_ID');
-          const base44Res = await fetch(`https://api.base44.com/api/apps/${appId}/auth/invite_user`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, role: 'user', skip_email: true })
-          });
-          const base44Data = await base44Res.json();
-          console.log('[STEP 22] Base44 response:', JSON.stringify(base44Data));
-        } catch (base44Error) {
-          console.error('[ERROR] Error creating user in Base44:', base44Error.message);
-          console.log('[WARNING] User created in Supabase but not in Base44');
-        }
+      }
       }
 
       console.log('[SUCCESS] Process completed successfully');
