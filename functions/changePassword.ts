@@ -57,9 +57,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Erro ao atualizar senha' }, { status: 500 });
     }
 
-    // Create UserProfile with default name "USUARIO"
+    // Update password in Base44 and create UserProfile
     try {
       const base44 = createClientFromRequest(req);
+
+      // Update Base44 password (change from temp Olimpo12345 to real password)
+      await base44.auth.updatePassword('Olimpo12345', newPassword);
+
       const existingProfiles = await base44.asServiceRole.entities.UserProfile.list();
       
       if (existingProfiles.length === 0) {
@@ -72,7 +76,7 @@ Deno.serve(async (req) => {
         });
       }
     } catch (profileError) {
-      console.error('Error creating user profile:', profileError);
+      console.error('Error updating Base44 password or creating profile:', profileError);
     }
 
     return Response.json({ 
