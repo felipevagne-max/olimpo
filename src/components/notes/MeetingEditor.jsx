@@ -90,7 +90,7 @@ ${nextSteps.length > 0 ? `\nPróximos passos:\n${nextSteps.map(s => `${s.done ? 
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['notes']);
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
       toast.success('Pronto.');
       onClose();
     },
