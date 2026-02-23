@@ -227,6 +227,105 @@ export default function Auth() {
       />
 
       <>
+      {step === 'forgot_password' && (
+        <div className="relative z-10 w-full max-w-md animate-fadeSlideUp">
+          <div className="flex flex-col items-center mb-10">
+            <h1 className="text-4xl font-bold text-[#00FF66] tracking-tight" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 30px rgba(0, 255, 102, 0.3)' }}>
+              OLIMPO
+            </h1>
+          </div>
+          <div className="bg-[#0B0B10] rounded-2xl p-8 border border-[rgba(0,255,102,0.18)]" style={{ boxShadow: '0 0 40px rgba(0, 255, 102, 0.08)' }}>
+            <h2 className="text-2xl font-semibold text-white mb-2">Recuperar Senha</h2>
+            <p className="text-white/60 text-sm mb-6">Digite seu email e enviaremos um link para redefinir sua senha.</p>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-white/90 text-sm mb-2">Email</label>
+                <input
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                  className="w-full bg-[#050508] text-white px-4 py-3.5 rounded-lg border border-[rgba(0,255,102,0.18)] outline-none placeholder:text-white/30"
+                  onFocus={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,255,102,0.1)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.18)'; e.target.style.boxShadow = 'none'; }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={sendingReset}
+                className="w-full bg-[#00FF66] hover:bg-[#00E676] text-black font-semibold py-3.5 px-6 rounded-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ boxShadow: '0 0 20px rgba(0, 255, 102, 0.25)' }}
+              >
+                {sendingReset ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enviar Link de Reset'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('login')}
+                className="w-full text-[#00FF66] hover:text-[#00DD55] text-sm transition-colors py-2"
+              >
+                Voltar ao Login
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {step === 'reset_password' && (
+        <div className="relative z-10 w-full max-w-md animate-fadeSlideUp">
+          <div className="flex flex-col items-center mb-10">
+            <h1 className="text-4xl font-bold text-[#00FF66] tracking-tight" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 30px rgba(0, 255, 102, 0.3)' }}>
+              OLIMPO
+            </h1>
+          </div>
+          <div className="bg-[#0B0B10] rounded-2xl p-8 border border-[rgba(0,255,102,0.18)]" style={{ boxShadow: '0 0 40px rgba(0, 255, 102, 0.08)' }}>
+            <h2 className="text-2xl font-semibold text-white mb-2">Nova Senha</h2>
+            <p className="text-white/60 text-sm mb-6">Defina uma nova senha para sua conta.</p>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-white/90 text-sm mb-2">Nova Senha</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                    className="w-full bg-[#050508] text-white px-4 py-3.5 rounded-lg border border-[rgba(0,255,102,0.18)] outline-none placeholder:text-white/30"
+                    onFocus={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,255,102,0.1)'; }}
+                    onBlur={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.18)'; e.target.style.boxShadow = 'none'; }}
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#00FF66]/50 hover:text-[#00FF66]">
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-white/90 text-sm mb-2">Confirmar Senha</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a senha"
+                  required
+                  className="w-full bg-[#050508] text-white px-4 py-3.5 rounded-lg border border-[rgba(0,255,102,0.18)] outline-none placeholder:text-white/30"
+                  onFocus={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,255,102,0.1)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.18)'; e.target.style.boxShadow = 'none'; }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={savingPassword}
+                className="w-full bg-[#00FF66] hover:bg-[#00E676] text-black font-semibold py-3.5 px-6 rounded-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ boxShadow: '0 0 20px rgba(0, 255, 102, 0.25)' }}
+              >
+                {savingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirmar Nova Senha'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {step === 'change_password' && (
         <div className="relative z-10 w-full max-w-md animate-fadeSlideUp">
           <div className="flex flex-col items-center mb-10">
