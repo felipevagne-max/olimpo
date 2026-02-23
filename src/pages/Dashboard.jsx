@@ -1017,7 +1017,6 @@ export default function Dashboard() {
           </div>
 
           <XPGainManager />
-      <BottomNav />
     </div>
   );
 }
