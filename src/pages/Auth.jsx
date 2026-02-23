@@ -69,7 +69,7 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      // 1. Validate against Supabase (check subscription + password)
+      // Validate against Supabase (check subscription + password)
       const { data } = await base44.functions.invoke('loginWithSupabase', { email, password });
 
       if (!data.success) {
@@ -78,43 +78,19 @@ export default function Auth() {
         return;
       }
 
-      // 2. Check if first access FIRST - before any Base44 login attempt
-      if (data.is_first_login) {
-        // Ensure user exists in Base44 (register silently, ignore if already exists)
-        try {
-          await base44.auth.register({ email, password: 'Olimpo12345', skip_email_verification: true });
-        } catch (_) {}
-        try {
-          await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-        } catch (_) {}
+      // Store session locally - no Base44 auth needed
+      setSession({
+        user_id: data.user_id,
+        email: data.email,
+        full_name: data.full_name,
+        session_token: data.session_token,
+        logged_in_at: Date.now()
+      });
 
+      if (data.is_first_login) {
         setPendingEmail(email);
         setPendingUserId(data.user_id);
         setStep('change_password');
-        setLoading(false);
-        return;
-      }
-
-      // 3. Normal login - always use internal Base44 password
-      // Try login first, if fails register then login
-      let loggedIn = false;
-      try {
-        await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-        loggedIn = true;
-      } catch (_) {}
-
-      if (!loggedIn) {
-        try {
-          await base44.auth.register({ email, password: 'Olimpo12345', skip_email_verification: true });
-        } catch (_) {}
-        try {
-          await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-          loggedIn = true;
-        } catch (_) {}
-      }
-
-      if (!loggedIn) {
-        toast.error('Erro ao acessar o sistema. Contate o suporte.');
         setLoading(false);
         return;
       }
