@@ -146,8 +146,8 @@ Deno.serve(async (req) => {
         // Create user in Base44 (for login)
         console.log('[STEP 21] Creating user in Base44...');
         try {
-          const base44Service = createClientAsServiceRole(Deno.env.get('BASE44_APP_ID'));
-          await base44Service.users.inviteUser(email, 'user');
+          const base44Service = createClientFromRequest(req);
+          await base44Service.asServiceRole.users.inviteUser(email, 'user');
           console.log('[STEP 22] User created in Base44 successfully (no email sent)');
         } catch (base44Error) {
           console.error('[ERROR] Error creating user in Base44:', base44Error.message);
