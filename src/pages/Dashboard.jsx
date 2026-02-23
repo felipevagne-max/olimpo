@@ -274,6 +274,31 @@ export default function Dashboard() {
     }
   });
 
+  const saveQuickNoteMutation = useMutation({
+    mutationFn: async (content) => {
+      if (!content.trim()) {
+        toast.error('A nota não pode estar vazia');
+        throw new Error('Empty note');
+      }
+      
+      return base44.entities.Note.create({
+        title: '',
+        content: content.trim(),
+        type: 'INSIGHT',
+        pinned: false
+      });
+    },
+    onSuccess: () => {
+      setQuickNoteContent('');
+      setShowQuickNote(false);
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      toast.success('Nota salva! Confira na aba Caderno');
+    },
+    onError: () => {
+      toast.error('Erro ao salvar nota');
+    }
+  });
+
   const completeHabitMutation = useMutation({
     mutationFn: async (habit) => {
       const existingLog = habitLogs.find(l => l.habitId === habit.id && l.date === today && l.completed);
