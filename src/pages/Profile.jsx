@@ -311,6 +311,52 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Change Password Dialog */}
+      <AlertDialog open={showChangePassword} onOpenChange={setShowChangePassword}>
+        <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(0,255,102,0.18)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#E8E8E8]">Trocar Senha</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#9AA0A6]">
+              Digite sua nova senha (mínimo 6 caracteres)
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-[#E8E8E8] text-sm mb-2">Nova Senha</label>
+              <OlimpoInput
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-[#E8E8E8] text-sm mb-2">Confirmar Senha</label>
+              <OlimpoInput
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repita a senha"
+                className="w-full"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-[rgba(0,255,102,0.18)] text-[#E8E8E8]">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleChangePassword}
+              disabled={isChangingPassword}
+              className="bg-[#00FF66] text-black hover:bg-[#00DD55]"
+            >
+              {isChangingPassword ? 'Alterando...' : 'Confirmar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Reset Confirmation Dialog */}
       <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
         <AlertDialogContent className="bg-[#0B0F0C] border-[rgba(255,59,59,0.4)]">
