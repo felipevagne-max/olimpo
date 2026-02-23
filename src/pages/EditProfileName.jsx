@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
@@ -38,7 +39,9 @@ export default function EditProfileName() {
     }
   }, [userProfile]);
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    
     const trimmed = username.trim();
 
     if (!trimmed) {
@@ -60,11 +63,10 @@ export default function EditProfileName() {
       });
 
       toast.success('Nome atualizado com sucesso!');
-      navigate('/Dashboard');
+      setTimeout(() => window.location.href = createPageUrl('Dashboard'), 500);
     } catch (error) {
       console.error('Erro ao salvar:', error);
       toast.error(error.message || 'Erro ao salvar nome');
-    } finally {
       setIsSaving(false);
     }
   };
@@ -116,7 +118,10 @@ export default function EditProfileName() {
             </OlimpoButton>
             <OlimpoButton
               type="button"
-              onClick={handleSave}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSave();
+              }}
               disabled={isSaving || !username.trim()}
               className="flex-1"
             >
