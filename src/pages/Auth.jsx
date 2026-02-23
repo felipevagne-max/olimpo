@@ -58,10 +58,23 @@ export default function Auth() {
         return;
       }
 
-      // 2. Authenticate with Base44 (actual session)
-      await base44.auth.redirectToLogin(
-        data.is_first_login ? '/FirstAccess' : '/App'
-      );
+      // 2. Try to login with Base44 directly
+      try {
+        await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
+      } catch (loginErr) {
+        // If login fails, try to register first (user doesn't exist in Base44 yet)
+        try {
+          await base44.auth.register({ email, password: 'Olimpo12345' });
+          await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
+        } catch (registerErr) {
+          toast.error('Erro ao autenticar. Tente novamente.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 3. Redirect based on first login status
+      window.location.href = data.is_first_login ? '/FirstAccess' : '/App';
 
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Erro ao fazer login';
