@@ -146,19 +146,11 @@ Deno.serve(async (req) => {
         // Create user in Base44 (for login)
         console.log('[STEP 21] Creating user in Base44...');
         try {
-          // Import Base44 SDK
-          const { createClient } = await import('npm:@base44/sdk@0.8.6');
-          const base44 = createClient({
-            appId: Deno.env.get('BASE44_APP_ID'),
-            serviceRoleKey: Deno.env.get('BASE44_SERVICE_ROLE_KEY')
-          });
-
-          // Invite user to Base44 (creates user with email/password)
-          await base44.users.inviteUser(email, 'user');
-          console.log('[STEP 22] User invited to Base44 successfully');
+          const base44Service = createClientAsServiceRole(Deno.env.get('BASE44_APP_ID'));
+          await base44Service.users.inviteUser(email, 'user');
+          console.log('[STEP 22] User created in Base44 successfully (no email sent)');
         } catch (base44Error) {
-          console.error('[ERROR] Error creating user in Base44:', base44Error);
-          // Don't fail the webhook, user is created in Supabase
+          console.error('[ERROR] Error creating user in Base44:', base44Error.message);
           console.log('[WARNING] User created in Supabase but not in Base44');
         }
       }
