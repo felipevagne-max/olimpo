@@ -295,9 +295,20 @@ export default function Auth() {
               </button>
             </form>
 
-            <p className="text-white/50 text-xs text-center mt-6" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+            <p className="text-white/50 text-xs text-center mt-4" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
               Apenas usuários com assinatura ativa podem acessar
             </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                const email = prompt('Digite seu email para redefinir a senha:');
+                if (email) toast.info('Funcionalidade em desenvolvimento. Entre em contato com suporte.');
+              }}
+              className="w-full mt-3 text-[#00FF66] hover:text-[#00DD55] text-xs transition-colors"
+            >
+              Esqueceu a senha?
+            </button>
           </div>
         </div>
 
