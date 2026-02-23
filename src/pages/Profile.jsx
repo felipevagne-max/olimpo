@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -12,8 +13,6 @@ function clearSession() {
 }
 import { ArrowLeft, LogOut, RefreshCw, Lock } from 'lucide-react';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
-import OlimpoInput from '@/components/olimpo/OlimpoInput';
-import SplashScreen from '@/components/olimpo/SplashScreen';
 import { toast } from 'sonner';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
 import {
@@ -30,11 +29,8 @@ import {
 export default function Profile() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [showNameEdit, setShowNameEdit] = useState(false);
-  const [username, setUsername] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -47,11 +43,7 @@ export default function Profile() {
     queryFn: async () => {
       if (!user?.email) return null;
       const profiles = await base44.entities.UserProfile.filter({ created_by: user.email });
-      const profile = profiles[0] || null;
-      if (profile) {
-        setUsername(profile.displayName || 'usuario');
-      }
-      return profile;
+      return profiles[0] || null;
     },
     enabled: !!user?.email
   });
@@ -67,39 +59,6 @@ export default function Profile() {
 
   const xpTotal = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
   const levelInfo = getLevelFromXP(xpTotal);
-
-  const handleSaveClick = async () => {
-    const trimmed = username.trim();
-    
-    if (!trimmed) {
-      toast.error('Nome não pode ser vazio');
-      return;
-    }
-
-    if (!userProfile?.id) {
-      toast.error('Perfil não encontrado');
-      return;
-    }
-
-    setIsSaving(true);
-    
-    try {
-      await base44.entities.UserProfile.update(userProfile.id, {
-        displayName: trimmed,
-        username_last_changed_at: new Date().toISOString()
-      });
-
-      toast.success('Nome atualizado com sucesso!');
-      setUsername(trimmed);
-      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
-      setShowNameEdit(false);
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      toast.error(error.message || 'Erro ao salvar nome');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const resetJourneyMutation = useMutation({
     mutationFn: async () => {
@@ -230,51 +189,12 @@ export default function Profile() {
           </div>
 
           {/* Alter Name Button */}
-          {!showNameEdit && (
-            <OlimpoButton
-              onClick={() => setShowNameEdit(true)}
-              className="w-full"
-            >
-              Alterar Nome
-            </OlimpoButton>
-          )}
-
-          {/* Name Edit Box */}
-          {showNameEdit && (
-            <div className="space-y-4 p-6 bg-[#070A08] rounded-xl border border-[rgba(0,255,102,0.18)]">
-              <OlimpoInput
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Digite seu novo nome"
-                className="w-full text-center"
-                autoFocus
-              />
-              <div className="flex gap-3">
-                <OlimpoButton
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setShowNameEdit(false);
-                    setUsername(userProfile?.displayName || 'usuario');
-                  }}
-                  className="flex-1"
-                >
-                  Cancelar
-                </OlimpoButton>
-                <OlimpoButton
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSaveClick();
-                  }}
-                  disabled={isSaving || !username.trim()}
-                  className="flex-1"
-                >
-                  {isSaving ? 'Salvando...' : 'Confirmar'}
-                </OlimpoButton>
-              </div>
-            </div>
-          )}
+          <OlimpoButton
+            onClick={() => navigate(createPageUrl('EditProfileName'))}
+            className="w-full"
+          >
+            Alterar Nome
+          </OlimpoButton>
 
           {/* Divider */}
           <div className="border-t border-[rgba(0,255,102,0.18)]" />
