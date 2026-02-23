@@ -149,13 +149,9 @@ export default function Profile() {
     }
   });
 
-  const handleLogout = async () => {
-    try {
-      await base44.auth.logout();
-      window.location.reload();
-    } catch (error) {
-      toast.error('Erro ao sair');
-    }
+  const handleLogout = () => {
+    clearSession();
+    window.location.href = '/Auth';
   };
 
   if (isSaving) {
