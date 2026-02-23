@@ -33,7 +33,11 @@ export default function Profile() {
   const [showNameEdit, setShowNameEdit] = useState(false);
   const [username, setUsername] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const session = getSession();
   const user = session ? { email: session.email, full_name: session.full_name, id: session.user_id } : null;
