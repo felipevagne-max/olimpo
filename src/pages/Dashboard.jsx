@@ -372,7 +372,8 @@ export default function Dashboard() {
       // Rollback on error
       queryClient.setQueryData(['habitLogs'], context.previousLogs);
     },
-    onSettled: ({ uncompleted, penaltyXP, xpAmount }) => {
+    onSettled: (result) => {
+      const { uncompleted, penaltyXP, xpAmount } = result || {};
       queryClient.invalidateQueries(['habitLogs']);
       queryClient.invalidateQueries(['xpTransactions']);
       queryClient.invalidateQueries(['goals']);

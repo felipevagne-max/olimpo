@@ -3,8 +3,6 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, addDays, isToday, isBefore, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import BottomNav from '@/components/olimpo/BottomNav';
-import TopBar from '@/components/olimpo/TopBar';
 import OlimpoCard from '@/components/olimpo/OlimpoCard';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
