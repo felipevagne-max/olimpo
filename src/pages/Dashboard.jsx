@@ -132,7 +132,7 @@ export default function Dashboard() {
       // Create default profile if doesn't exist
       if (!profile) {
         const newProfile = await base44.entities.UserProfile.create({
-          displayName: user?.full_name || user?.email?.split('@')[0] || 'USUARIO',
+          displayName: '',
           xpTotal: 0,
           levelIndex: 1,
           levelName: 'Herói',
