@@ -21,9 +21,16 @@ export default function BottomNav({ collapsed = false }) {
   const navigate = useNavigate();
   const currentPath = location.pathname;
 
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
+
   const { data: insights = [] } = useQuery({
-    queryKey: ['oracleInsights'],
-    queryFn: () => base44.entities.OracleInsight.list()
+    queryKey: ['oracleInsights', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.OracleInsight.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email,
+    staleTime: 300000
   });
 
   const unreadCount = insights.filter(i => !i.read).length;
