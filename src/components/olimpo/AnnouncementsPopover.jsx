@@ -11,10 +11,7 @@ export default function AnnouncementsPopover() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements'],
@@ -23,7 +20,11 @@ export default function AnnouncementsPopover() {
 
   const { data: reads = [] } = useQuery({
     queryKey: ['announcementReads'],
-    queryFn: () => base44.entities.AnnouncementRead.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.AnnouncementRead.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const unreadCount = announcements.filter(a => 
