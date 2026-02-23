@@ -112,7 +112,6 @@ export default function Notes() {
 
   return (
     <div className="min-h-screen bg-black pb-20">
-      <TopBar />
       <div className="px-4 pt-20">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
