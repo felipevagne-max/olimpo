@@ -331,7 +331,6 @@ export default function Notes() {
         note={editingNote}
       />
 
-      <BottomNav />
     </div>
   );
 }
