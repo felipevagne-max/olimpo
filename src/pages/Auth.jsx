@@ -72,12 +72,20 @@ export default function Auth() {
       } catch (loginErr) {
         // If login fails, try to register first (user doesn't exist in Base44 yet)
         try {
-          await base44.auth.register({ email, password: 'Olimpo12345' });
+          await base44.auth.register({ email, password: 'Olimpo12345', skip_email_verification: true });
           await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
         } catch (registerErr) {
-          toast.error('Erro ao autenticar. Tente novamente.');
-          setLoading(false);
-          return;
+          // User might already exist but email not verified - try magic link or force login
+          try {
+            await base44.auth.sendMagicLink(email);
+            toast.info('Verifique seu email para confirmar o acesso e tente novamente.');
+            setLoading(false);
+            return;
+          } catch (_) {
+            toast.error('Erro ao autenticar. Tente novamente.');
+            setLoading(false);
+            return;
+          }
         }
       }
 
