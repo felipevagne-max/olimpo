@@ -309,7 +309,7 @@ export default function Auth() {
             Sistema protegido • Acesso via Cakto
           </p>
         </div>
-      </div>
+      </div>}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
