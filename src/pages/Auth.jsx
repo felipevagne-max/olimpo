@@ -83,20 +83,28 @@ export default function Auth() {
         return;
       }
 
-      // 3. Normal login - user already has a real password in Supabase
-      // Login to Base44 with fixed internal password
+      // 3. Normal login - always use internal Base44 password
+      // Try login first, if fails register then login
+      let loggedIn = false;
       try {
         await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-      } catch (_) {
-        // User might not exist in Base44 yet, try to register
+        loggedIn = true;
+      } catch (_) {}
+
+      if (!loggedIn) {
         try {
           await base44.auth.register({ email, password: 'Olimpo12345', skip_email_verification: true });
+        } catch (_) {}
+        try {
           await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-        } catch (regErr) {
-          toast.error('Erro ao acessar o sistema. Tente novamente.');
-          setLoading(false);
-          return;
-        }
+          loggedIn = true;
+        } catch (_) {}
+      }
+
+      if (!loggedIn) {
+        toast.error('Erro ao acessar o sistema. Contate o suporte.');
+        setLoading(false);
+        return;
       }
 
       window.location.href = '/App';
