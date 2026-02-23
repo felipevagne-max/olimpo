@@ -66,36 +66,37 @@ export default function Auth() {
         return;
       }
 
-      // 2. Login or register in Base44 via magic link (no email verification required)
-      // First try direct login
-      let base44LoginOk = false;
-      try {
-        await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
-        base44LoginOk = true;
-      } catch (_) {}
-
-      if (!base44LoginOk) {
-        // User doesn't exist in Base44 yet - send magic link to authenticate
+      // 2. Check if first access FIRST - before any Base44 login attempt
+      if (data.is_first_login) {
+        // Ensure user exists in Base44 (register silently, ignore if already exists)
         try {
-          await base44.auth.sendMagicLink(email);
-          toast.success('Acesso liberado! Verifique seu email e clique no link para entrar.');
-          setLoading(false);
-          return;
-        } catch (mlErr) {
-          toast.error('Erro ao enviar link de acesso. Tente novamente.');
-          setLoading(false);
-          return;
-        }
-      }
+          await base44.auth.register({ email, password: 'Olimpo12345', skip_email_verification: true });
+        } catch (_) {}
+        try {
+          await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
+        } catch (_) {}
 
-      // 3. Check if first access - show password change form inline
-      const isUsingTempPassword = password === 'Olimpo12345';
-      if (data.is_first_login || isUsingTempPassword) {
         setPendingEmail(email);
         setPendingUserId(data.user_id);
         setStep('change_password');
         setLoading(false);
         return;
+      }
+
+      // 3. Normal login - user already has a real password in Supabase
+      // Login to Base44 with fixed internal password
+      try {
+        await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
+      } catch (_) {
+        // User might not exist in Base44 yet, try to register
+        try {
+          await base44.auth.register({ email, password: 'Olimpo12345', skip_email_verification: true });
+          await base44.auth.loginViaEmailPassword(email, 'Olimpo12345');
+        } catch (regErr) {
+          toast.error('Erro ao acessar o sistema. Tente novamente.');
+          setLoading(false);
+          return;
+        }
       }
 
       window.location.href = '/App';
