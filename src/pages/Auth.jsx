@@ -154,7 +154,62 @@ export default function Auth() {
         style={{ background: 'linear-gradient(to top, rgba(0, 255, 102, 0.04), transparent)', filter: 'blur(40px)' }}
       />
 
-      <div className="relative z-10 w-full max-w-md animate-fadeSlideUp">
+      {step === 'change_password' && (
+        <div className="relative z-10 w-full max-w-md animate-fadeSlideUp">
+          <div className="flex flex-col items-center mb-10">
+            <h1 className="text-4xl font-bold text-[#00FF66] tracking-tight" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 30px rgba(0, 255, 102, 0.3)' }}>
+              OLIMPO
+            </h1>
+          </div>
+          <div className="bg-[#0B0B10] rounded-2xl p-8 border border-[rgba(0,255,102,0.18)]" style={{ boxShadow: '0 0 40px rgba(0, 255, 102, 0.08)' }}>
+            <h2 className="text-2xl font-semibold text-white mb-2">Crie sua senha</h2>
+            <p className="text-white/60 text-sm mb-6">Primeiro acesso detectado. Defina sua senha definitiva.</p>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-white/90 text-sm mb-2">Nova Senha</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                    className="w-full bg-[#050508] text-white px-4 py-3.5 rounded-lg border border-[rgba(0,255,102,0.18)] outline-none placeholder:text-white/30"
+                    onFocus={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,255,102,0.1)'; }}
+                    onBlur={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.18)'; e.target.style.boxShadow = 'none'; }}
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#00FF66]/50 hover:text-[#00FF66]">
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-white/90 text-sm mb-2">Confirmar Senha</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a senha"
+                  required
+                  className="w-full bg-[#050508] text-white px-4 py-3.5 rounded-lg border border-[rgba(0,255,102,0.18)] outline-none placeholder:text-white/30"
+                  onFocus={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,255,102,0.1)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = 'rgba(0,255,102,0.18)'; e.target.style.boxShadow = 'none'; }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={savingPassword}
+                className="w-full bg-[#00FF66] hover:bg-[#00E676] text-black font-semibold py-3.5 px-6 rounded-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ boxShadow: '0 0 20px rgba(0, 255, 102, 0.25)' }}
+              >
+                {savingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar e Entrar'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {step === 'login' && <div className="relative z-10 w-full max-w-md animate-fadeSlideUp">
         {/* Brand */}
         <div className="flex flex-col items-center mb-12">
           <div
