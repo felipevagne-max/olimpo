@@ -252,21 +252,23 @@ export default function Profile() {
               />
               <div className="flex gap-3">
                 <OlimpoButton
+                  type="button"
                   variant="secondary"
                   onClick={() => {
                     setShowNameEdit(false);
-                    setUsername(userProfile?.displayName || '');
+                    setUsername(userProfile?.displayName || 'usuario');
                   }}
                   className="flex-1"
                 >
                   Cancelar
                 </OlimpoButton>
                 <OlimpoButton
+                  type="button"
                   onClick={handleSaveClick}
                   disabled={isSaving || !username.trim()}
                   className="flex-1"
                 >
-                  Confirmar
+                  {isSaving ? 'Salvando...' : 'Confirmar'}
                 </OlimpoButton>
               </div>
             </div>
