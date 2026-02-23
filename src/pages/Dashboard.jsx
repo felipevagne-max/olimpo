@@ -573,7 +573,7 @@ export default function Dashboard() {
             className="text-2xl font-bold text-[#00FF66] mb-4"
             style={{ fontFamily: 'Orbitron, sans-serif' }}
           >
-            {userProfile?.displayName || 'Herói'}
+            {userProfile?.displayName || 'usuario'}
           </h1>
           
           <OlimpoCard>
