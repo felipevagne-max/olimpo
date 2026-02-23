@@ -263,7 +263,10 @@ export default function Profile() {
                 </OlimpoButton>
                 <OlimpoButton
                   type="button"
-                  onClick={handleSaveClick}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveClick();
+                  }}
                   disabled={isSaving || !username.trim()}
                   className="flex-1"
                 >
