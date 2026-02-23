@@ -150,7 +150,6 @@ export default function Finance() {
 
   return (
     <div className="min-h-screen bg-black pb-20">
-      <TopBar />
       <div className="px-4 pt-20">
         {/* Month Selector */}
         <div className="flex items-center justify-center gap-4 mb-6">
