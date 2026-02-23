@@ -58,30 +58,43 @@ export default function Layout({ children, currentPageName }) {
       const MIN_SPLASH_DURATION = 1000;
       
       try {
-        // Check if user is authenticated
-        const isAuth = await base44.auth.isAuthenticated();
-        
-        if (isAuth) {
-          const user = await base44.auth.me();
-          setCurrentUser(user);
-          
-          // Check if first login and redirect to FirstAccess page
-          try {
-            const { data } = await base44.functions.invoke('checkFirstLogin', {
-              email: user.email
-            });
+              // Check if user is authenticated
+              const isAuth = await base44.auth.isAuthenticated();
 
-            if (data.is_first_login && data.subscription_status === 'active') {
-              navigate('/FirstAccess');
-              return;
+              if (isAuth) {
+                const user = await base44.auth.me();
+                setCurrentUser(user);
+
+                // Check if first login and redirect to FirstAccess page
+                try {
+                  const { data } = await base44.functions.invoke('checkFirstLogin', {
+                    email: user.email
+                  });
+
+                  if (data.is_first_login && data.subscription_status === 'active') {
+                    navigate('/FirstAccess');
+                    return;
+                  }
+                } catch (err) {
+                  console.log('First login check skipped:', err.message);
+                }
+              } else {
+                // Not authenticated - redirect to custom Auth page
+                const currentPath = window.location.pathname;
+                if (currentPath !== '/Auth' && currentPath !== '/auth') {
+                  navigate('/Auth');
+                  return;
+                }
+              }
+            } catch (error) {
+              console.error('Auth check error:', error);
+              // On error, redirect to Auth page
+              const currentPath = window.location.pathname;
+              if (currentPath !== '/Auth' && currentPath !== '/auth') {
+                navigate('/Auth');
+                return;
+              }
             }
-          } catch (err) {
-            console.log('First login check skipped:', err.message);
-          }
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-      }
       
       // Ensure minimum splash duration
       const elapsed = Date.now() - startTime;
