@@ -23,12 +23,15 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
 
   // First access flow
-  const [step, setStep] = useState('login'); // 'login' | 'change_password'
+  const [step, setStep] = useState('login'); // 'login' | 'change_password' | 'forgot_password' | 'reset_password'
   const [pendingEmail, setPendingEmail] = useState('');
   const [pendingUserId, setPendingUserId] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [sendingReset, setSendingReset] = useState(false);
 
   // Matrix rain effect
   useEffect(() => {
