@@ -35,10 +35,8 @@ export default function Profile() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const session = getSession();
+  const user = session ? { email: session.email, full_name: session.full_name, id: session.user_id } : null;
 
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile'],
