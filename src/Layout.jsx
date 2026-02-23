@@ -58,33 +58,21 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    // Initialize with minimum 1s splash duration
-    const init = async () => {
-      const startTime = Date.now();
-      const MIN_SPLASH_DURATION = 1000;
-      
-      // Check session from localStorage (no Base44 auth dependency)
-      const session = getSession();
-      const currentPath = window.location.pathname;
+    const session = getSession();
+    const currentPath = window.location.pathname;
 
-      if (!session || !session.user_id) {
-        if (currentPath !== '/Auth' && currentPath !== '/auth') {
-          navigate('/Auth');
-          return;
-        }
-      } else {
-        setCurrentUser({ email: session.email, full_name: session.full_name, id: session.user_id });
+    if (!session || !session.user_id) {
+      if (currentPath !== '/Auth' && currentPath !== '/auth') {
+        navigate('/Auth');
+        return;
       }
-      
-      // Ensure minimum splash duration
-      const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, MIN_SPLASH_DURATION - elapsed);
-      
-      await new Promise(resolve => setTimeout(resolve, remainingTime));
-      setIsChecking(false);
-    };
+    } else {
+      setCurrentUser({ email: session.email, full_name: session.full_name, id: session.user_id });
+    }
 
-    init();
+    // Short splash just for visual polish (300ms max)
+    const t = setTimeout(() => setIsChecking(false), 300);
+    return () => clearTimeout(t);
   }, []);
 
   if (isChecking) {
