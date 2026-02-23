@@ -1,6 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 import bcrypt from 'npm:bcryptjs@2.4.3';
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -47,10 +46,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Assinatura inativa ou expirada' }, { status: 403 });
     }
 
+    // Generate a simple session token (base64 encoded payload + timestamp)
+    const sessionPayload = {
+      user_id: supabaseUser.id,
+      email: supabaseUser.email,
+      full_name: supabaseUser.full_name,
+      is_first_login: supabaseUser.is_first_login,
+      created_at: Date.now()
+    };
+    const sessionToken = btoa(JSON.stringify(sessionPayload));
+
     return Response.json({
       success: true,
       is_first_login: supabaseUser.is_first_login,
       user_id: supabaseUser.id,
+      full_name: supabaseUser.full_name,
+      email: supabaseUser.email,
+      session_token: sessionToken,
       subscription_status: subscription.status
     }, { status: 200 });
 
