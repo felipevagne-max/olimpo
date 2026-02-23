@@ -13,7 +13,6 @@ function clearSession() {
 }
 import { ArrowLeft, LogOut, RefreshCw, Lock } from 'lucide-react';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
-import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import { toast } from 'sonner';
 import { getLevelFromXP } from '@/components/olimpo/levelSystem';
 import {
@@ -176,26 +175,18 @@ export default function Profile() {
           {/* User Info Centered */}
           <div className="text-center space-y-2">
             <h1 
-              className="text-3xl font-bold text-[#E8E8E8]"
+              className="text-3xl font-bold text-[#00FF66]"
               style={{ fontFamily: 'Orbitron, sans-serif' }}
             >
-              {userProfile?.displayName || 'usuario'}
+              {levelInfo.rankName}
             </h1>
             <p 
               className="text-sm text-[#9AA0A6]"
               style={{ fontFamily: 'JetBrains Mono, monospace' }}
             >
-              {levelInfo.rankName} • Lv {levelInfo.nivelNum}
+              Nível {levelInfo.nivelNum}
             </p>
           </div>
-
-          {/* Alter Name Button */}
-          <OlimpoButton
-            onClick={() => navigate(createPageUrl('EditProfileName'))}
-            className="w-full"
-          >
-            Alterar Nome
-          </OlimpoButton>
 
           {/* Divider */}
           <div className="border-t border-[rgba(0,255,102,0.18)]" />
