@@ -117,7 +117,7 @@ export default function Auth() {
 
     setSavingPassword(true);
     try {
-      // 1. Update password in Supabase and mark is_first_login = false
+      // Update password in Supabase and mark is_first_login = false
       const { data } = await base44.functions.invoke('changePassword', {
         userId: pendingUserId,
         newPassword
@@ -128,9 +128,6 @@ export default function Auth() {
         setSavingPassword(false);
         return;
       }
-
-      // 2. Login in Base44 (user was already registered on first login step)
-      await base44.auth.loginViaEmailPassword(pendingEmail, 'Olimpo12345');
 
       toast.success('Senha criada! Bem-vindo ao Olimpo!');
       setTimeout(() => { window.location.href = '/App'; }, 1000);
