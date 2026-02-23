@@ -7,10 +7,7 @@ import OlimpoCard from './OlimpoCard';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function DashboardCharts() {
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],

@@ -11,10 +11,7 @@ export default function ReportCard({ currentMonth }) {
 
   const monthKey = format(currentMonth, 'yyyy-MM');
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
+  const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   const { data: cards = [] } = useQuery({
     queryKey: ['creditCards'],
