@@ -68,6 +68,9 @@ export default function Dashboard() {
     moodScore: 5
   });
 
+  const [showQuickNote, setShowQuickNote] = useState(false);
+  const [quickNoteContent, setQuickNoteContent] = useState('');
+
   const user = (() => { try { return JSON.parse(localStorage.getItem('olimpo_session') || 'null'); } catch { return null; } })();
 
   // Calculate date ranges once
