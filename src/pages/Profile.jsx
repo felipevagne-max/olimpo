@@ -54,7 +54,11 @@ export default function Profile() {
 
   const { data: xpTransactions = [] } = useQuery({
     queryKey: ['xpTransactions'],
-    queryFn: () => base44.entities.XPTransaction.list()
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.XPTransaction.filter({ created_by: user.email });
+    },
+    enabled: !!user?.email
   });
 
   const xpTotal = xpTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
