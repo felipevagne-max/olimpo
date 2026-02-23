@@ -162,6 +162,44 @@ export default function Profile() {
     window.location.href = '/Auth';
   };
 
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { data } = await base44.functions.invoke('changePassword', {
+        userId: user?.id,
+        newPassword
+      });
+
+      if (!data.success) {
+        toast.error('Erro ao alterar senha');
+        setIsChangingPassword(false);
+        return;
+      }
+
+      toast.success('Senha alterada com sucesso!');
+      setShowChangePassword(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Erro ao alterar senha');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   if (isSaving) {
     return <SplashScreen />;
   }
