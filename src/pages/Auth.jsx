@@ -91,6 +91,9 @@ export default function Auth() {
         return;
       }
 
+      // Clear all previous session data first
+      localStorage.clear();
+      
       // Store session locally - no Base44 auth needed
       setSession({
         user_id: data.user_id,
