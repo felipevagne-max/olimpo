@@ -112,7 +112,7 @@ export default function Goals() {
         return { completed: true, xpGained: goal.xpOnComplete || 200 };
       }
       
-      await base44.entities.Goal.update(goal.id, {
+      await entities.Goal.update(goal.id, {
         currentValue: newValue
       });
 
