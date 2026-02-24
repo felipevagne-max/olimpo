@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { entities } from '@/components/olimpo/entityClient';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
