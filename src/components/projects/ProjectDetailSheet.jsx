@@ -22,23 +22,15 @@ export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
   const [notes, setNotes] = useState('');
   const [isEditingNotes, setIsEditingNotes] = useState(false);
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
-
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Task.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email && open && !!project
+    queryFn: () => entities.Task.list(),
+    enabled: open && !!project
   });
 
   const updateNotesMutation = useMutation({
     mutationFn: async (newNotes) => {
-      return base44.entities.Project.update(project.id, { notes: newNotes });
+      return entities.Project.update(project.id, { notes: newNotes });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
