@@ -42,6 +42,7 @@ function createEntityProxy(entityName) {
     create: (data) => proxyCall('create', entityName, { data }),
     update: (id, data) => proxyCall('update', entityName, { id, data }),
     delete: (id) => proxyCall('delete', entityName, { id }),
+    get: (id) => proxyCall('filter', entityName, { filter: { id } }).then(arr => arr?.[0] || null),
   };
 }
 
