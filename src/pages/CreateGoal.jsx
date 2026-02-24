@@ -8,6 +8,7 @@ import OlimpoButton from '@/components/olimpo/OlimpoButton';
 import OlimpoInput from '@/components/olimpo/OlimpoInput';
 import LoadingSpinner from '@/components/olimpo/LoadingSpinner';
 import { ArrowLeft, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
