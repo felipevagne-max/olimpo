@@ -75,11 +75,7 @@ export default function Tasks() {
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Task.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email,
+    queryFn: () => entities.Task.list(),
     staleTime: 120000,
     gcTime: 300000
   });
@@ -108,11 +104,7 @@ export default function Tasks() {
 
   const { data: habits = [], isLoading: habitsLoading } = useQuery({
     queryKey: ['habits'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Habit.filter({ archived: false, created_by: user.email });
-    },
-    enabled: !!user?.email,
+    queryFn: () => entities.Habit.filter({ archived: false }),
     staleTime: 300000
   });
 
