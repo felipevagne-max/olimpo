@@ -52,7 +52,7 @@ export default function HabitDetailModal({ open, onClose, habitId }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Habit.delete(id),
+    mutationFn: (id) => entities.Habit.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['habits']);
       toast.success('Hábito excluído');
