@@ -107,7 +107,7 @@ export default function Goals() {
         }
 
         // Delete/archive goal
-        await base44.entities.Goal.update(goal.id, { deleted_at: new Date().toISOString() });
+        await entities.Goal.update(goal.id, { deleted_at: new Date().toISOString() });
 
         return { completed: true, xpGained: goal.xpOnComplete || 200 };
       }
