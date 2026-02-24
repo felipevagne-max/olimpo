@@ -48,7 +48,10 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.AgendaItem.list('-created_date', 10000),
       base44.asServiceRole.entities.OracleInsight.list('-created_date', 10000),
       base44.asServiceRole.entities.UserTitles.list('-created_date', 10000),
-      base44.asServiceRole.entities.CommunityPost.list('-created_date', 10000)
+      base44.asServiceRole.entities.CommunityPost.list('-created_date', 10000),
+      base44.asServiceRole.entities.OracleMessage.list('-created_date', 10000),
+      base44.asServiceRole.entities.OracleConfig.list('-created_date', 10000),
+      base44.asServiceRole.entities.AnnouncementRead.list('-created_date', 10000)
     ]);
 
     // Delete all records in batches to avoid rate limits
