@@ -72,9 +72,9 @@ export default function HabitDetailModal({ open, onClose, habitId }) {
       const xpAmount = habit.xpReward || 8;
       
       if (todayLog) {
-        await base44.entities.HabitLog.update(todayLog.id, { completed: true, xpEarned: xpAmount });
+        await entities.HabitLog.update(todayLog.id, { completed: true, xpEarned: xpAmount });
       } else {
-        await base44.entities.HabitLog.create({
+        await entities.HabitLog.create({
           habitId: habit.id,
           date: today,
           completed: true,
