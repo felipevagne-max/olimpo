@@ -80,17 +80,8 @@ Deno.serve(async (req) => {
     await deleteInBatches(userTitles, (id) => base44.asServiceRole.entities.UserTitles.delete(id));
     await deleteInBatches(communityPosts, (id) => base44.asServiceRole.entities.CommunityPost.delete(id));
 
-    // Reset all user profiles
-    for (const profile of userProfiles) {
-      await base44.asServiceRole.entities.UserProfile.update(profile.id, {
-        displayName: 'USUARIO',
-        xpTotal: 0,
-        levelIndex: 1,
-        levelName: 'Herói',
-        monthlyTargetXP: 2000,
-        avatar_url: null
-      });
-    }
+    // Delete all user profiles so they are forced to set their name again
+    await deleteInBatches(userProfiles, (id) => base44.asServiceRole.entities.UserProfile.delete(id));
 
     return Response.json({ 
       success: true,
