@@ -41,41 +41,24 @@ export default function Goals() {
 
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['goals'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Goal.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email,
+    queryFn: () => entities.Goal.list(),
     staleTime: 300000
   });
 
   const { data: milestones = [] } = useQuery({
     queryKey: ['milestones'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.GoalMilestone.filter({ created_by: user.email });
-    },
+    queryFn: () => base44.entities.GoalMilestone.filter({ created_by: user?.email }),
     enabled: !!user?.email,
     staleTime: 300000
   });
 
-  const { data: xpTransactions = [] } = useQuery({
-    queryKey: ['xpTransactions'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.XPTransaction.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email,
-    staleTime: 600000
-  });
-
   const archiveMutation = useMutation({
-    mutationFn: (id) => base44.entities.Goal.update(id, { status: 'archived' }),
+    mutationFn: (id) => entities.Goal.update(id, { status: 'archived' }),
     onSuccess: () => queryClient.invalidateQueries(['goals'])
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Goal.delete(id),
+    mutationFn: (id) => entities.Goal.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['goals']);
       setDeleteId(null);
