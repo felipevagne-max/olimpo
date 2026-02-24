@@ -281,6 +281,7 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
       {children}
+      <Toaster position="top-center" richColors />
       </div>
       </>
       );
