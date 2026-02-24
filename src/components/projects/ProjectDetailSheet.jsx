@@ -52,7 +52,7 @@ export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
 
   const deleteProjectMutation = useMutation({
     mutationFn: async () => {
-      return base44.entities.Project.delete(project.id);
+      return entities.Project.delete(project.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
