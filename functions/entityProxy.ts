@@ -44,18 +44,17 @@ Deno.serve(async (req) => {
     switch (operation) {
       case 'list': {
         const all = await entityRef.list(sort || '-created_date', limit || 1000);
-        // Filter by owner_email: include records that belong to the user OR have no owner_email set (legacy data)
-        result = all.filter(r => !r.owner_email || r.owner_email === userEmail);
+        // Strict filter: only return records owned by this user
+        result = all.filter(r => r.owner_email === userEmail);
         break;
       }
 
       case 'filter': {
-        // Remove created_by from filter (not reliable with service role)
         const cleanFilter = { ...filter };
         delete cleanFilter.created_by;
         const all = await entityRef.filter(cleanFilter, sort || '-created_date', limit || 1000);
-        // Filter by owner_email: include records that belong to the user OR have no owner_email set (legacy data)
-        result = all.filter(r => !r.owner_email || r.owner_email === userEmail);
+        // Strict filter: only return records owned by this user
+        result = all.filter(r => r.owner_email === userEmail);
         break;
       }
 
