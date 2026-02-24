@@ -20,7 +20,7 @@ export default function QuickTaskSheet({ open, onClose, defaultDate }) {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      return base44.entities.Task.create({
+      return entities.Task.create({
         title: title.trim(),
         description: description.trim(),
         date: defaultDate,
