@@ -218,6 +218,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-[#050508] relative overflow-hidden flex items-center justify-center p-4">
+      <Toaster position="top-center" richColors />
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
