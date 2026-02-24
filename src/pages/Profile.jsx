@@ -186,6 +186,9 @@ export default function Profile() {
             >
               Nível {levelInfo.nivelNum}
             </p>
+            {user?.email && (
+              <p className="text-xs text-[#9AA0A6] mt-1">{user.email}</p>
+            )}
           </div>
 
           {/* Divider */}
