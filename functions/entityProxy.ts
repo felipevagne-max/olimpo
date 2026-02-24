@@ -54,7 +54,13 @@ Deno.serve(async (req) => {
         break;
 
       case 'create':
-        result = await entityRef.create({ ...data, created_by: userEmail });
+        // Note: created_by is set by the platform based on the authenticated user.
+        // We store the user email in a custom field and also set it via the data.
+        result = await entityRef.create(data);
+        // If created_by was set to service account, update it with the real user email
+        if (result && result.created_by !== userEmail) {
+          result = await entityRef.update(result.id, { created_by: userEmail });
+        }
         break;
 
       case 'update':
