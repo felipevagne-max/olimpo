@@ -113,9 +113,9 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (task) {
-        return base44.entities.Task.update(task.id, data);
+        return entities.Task.update(task.id, data);
       }
-      return base44.entities.Task.create({ ...data, completed: false, archived: false });
+      return entities.Task.create({ ...data, completed: false, archived: false });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
