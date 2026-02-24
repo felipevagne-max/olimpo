@@ -84,9 +84,9 @@ export default function CreateGoal() {
     mutationFn: async (data) => {
       let goal;
       if (editId) {
-        goal = await base44.entities.Goal.update(editId, data);
+        goal = await entities.Goal.update(editId, data);
       } else {
-        goal = await base44.entities.Goal.create({ ...data, status: 'active' });
+        goal = await entities.Goal.create({ ...data, status: 'active' });
       }
 
       // Handle milestones for checklist type
