@@ -40,28 +40,23 @@ export default function CreateGoal() {
   const [milestones, setMilestones] = useState([]);
   const [newMilestone, setNewMilestone] = useState('');
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
-  });
-
   const { data: editGoal, isLoading: loadingEdit } = useQuery({
     queryKey: ['goal', editId],
     queryFn: async () => {
-      if (!editId || !user?.email) return null;
-      const goals = await base44.entities.Goal.filter({ created_by: user.email });
-      return goals.find(g => g.id === editId);
+      if (!editId) return null;
+      const goals = await entities.Goal.list();
+      return goals.find(g => g.id === editId) || null;
     },
-    enabled: !!editId && !!user?.email
+    enabled: !!editId
   });
 
   const { data: existingMilestones = [] } = useQuery({
     queryKey: ['milestones', editId],
     queryFn: async () => {
-      if (!editId || !user?.email) return [];
-      return base44.entities.GoalMilestone.filter({ goalId: editId, created_by: user.email });
+      if (!editId) return [];
+      return base44.entities.GoalMilestone.filter({ goalId: editId });
     },
-    enabled: !!editId && !!user?.email
+    enabled: !!editId
   });
 
   useEffect(() => {
