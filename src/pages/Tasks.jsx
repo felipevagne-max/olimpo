@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
+import { entities } from '@/components/olimpo/entityClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, addDays, isToday, isBefore, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
