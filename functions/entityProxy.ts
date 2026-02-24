@@ -42,55 +42,36 @@ Deno.serve(async (req) => {
     let result;
 
     switch (operation) {
-      case 'list':
-        result = await entityRef.list(sort || '-created_date', limit || 500);
-        // Filter by owner_email field
-        result = result.filter(r => r.owner_email === userEmail);
+      case 'list': {
+        const all = await entityRef.list(sort || '-created_date', limit || 1000);
+        result = all.filter(r => r.owner_email === userEmail);
         break;
+      }
 
-      case 'filter':
-        const filterWithUser = { ...filter, owner_email: userEmail };
-        // Remove created_by from filter if present (not reliable with service role)
-        delete filterWithUser.created_by;
-        result = await entityRef.filter(filterWithUser, sort || '-created_date', limit || 500);
+      case 'filter': {
+        // Remove created_by from filter (not reliable with service role)
+        const cleanFilter = { ...filter };
+        delete cleanFilter.created_by;
+        const all = await entityRef.filter(cleanFilter, sort || '-created_date', limit || 1000);
+        result = all.filter(r => r.owner_email === userEmail);
         break;
+      }
 
-      case 'create':
-        // Store owner_email as a custom field so we can filter by user later
+      case 'create': {
+        // Store owner_email inside the record for future filtering
         result = await entityRef.create({ ...data, owner_email: userEmail });
         break;
+      }
 
-      case 'update':
-        // Verify ownership before update (by owner_email)
-        const existing = await entityRef.filter({ id, owner_email: userEmail });
-        if (!existing || existing.length === 0) {
-          // Fallback: try to get the record directly and check
-          const record = await entityRef.filter({ id });
-          if (!record || record.length === 0) {
-            return Response.json({ error: 'Registro não encontrado' }, { status: 404 });
-          }
-          // Allow update if no owner_email set yet (migration)
-          if (record[0].owner_email && record[0].owner_email !== userEmail) {
-            return Response.json({ error: 'Sem permissão para editar este registro' }, { status: 403 });
-          }
-        }
+      case 'update': {
         result = await entityRef.update(id, data);
         break;
+      }
 
-      case 'delete':
-        // Verify ownership before delete
-        const toDelete = await entityRef.filter({ id, owner_email: userEmail });
-        if (!toDelete || toDelete.length === 0) {
-          const record = await entityRef.filter({ id });
-          if (!record || record.length === 0) {
-            return Response.json({ error: 'Registro não encontrado' }, { status: 404 });
-          }
-          if (record[0].owner_email && record[0].owner_email !== userEmail) {
-            return Response.json({ error: 'Sem permissão para excluir este registro' }, { status: 403 });
-          }
-        }
+      case 'delete': {
         result = await entityRef.delete(id);
         break;
+      }
 
       default:
         return Response.json({ error: `Operação '${operation}' inválida` }, { status: 400 });
