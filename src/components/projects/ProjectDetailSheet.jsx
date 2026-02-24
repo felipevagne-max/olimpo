@@ -41,7 +41,7 @@ export default function ProjectDetailSheet({ open, onClose, project, onEdit }) {
 
   const markAsClosedMutation = useMutation({
     mutationFn: async () => {
-      return base44.entities.Project.update(project.id, { status: 'closed' });
+      return entities.Project.update(project.id, { status: 'closed' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
