@@ -44,7 +44,8 @@ Deno.serve(async (req) => {
     switch (operation) {
       case 'list': {
         const all = await entityRef.list(sort || '-created_date', limit || 1000);
-        result = all.filter(r => r.owner_email === userEmail);
+        // Only filter by owner_email if the entity supports it
+        result = all.filter(r => !r.hasOwnProperty('owner_email') || r.owner_email === userEmail);
         break;
       }
 
