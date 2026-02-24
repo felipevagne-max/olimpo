@@ -53,7 +53,8 @@ Deno.serve(async (req) => {
         const cleanFilter = { ...filter };
         delete cleanFilter.created_by;
         const all = await entityRef.filter(cleanFilter, sort || '-created_date', limit || 1000);
-        result = all.filter(r => r.owner_email === userEmail);
+        // Only filter by owner_email if the entity has that field (some don't)
+        result = all.filter(r => !r.hasOwnProperty('owner_email') || r.owner_email === userEmail);
         break;
       }
 
