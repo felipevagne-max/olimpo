@@ -44,21 +44,18 @@ export default function TaskModal({ open, onClose, task, defaultDate, goalId }) 
   const { data: activeGoals = [] } = useQuery({
     queryKey: ['activeGoals'],
     queryFn: async () => {
-      if (!user?.email) return [];
-      const goals = await base44.entities.Goal.filter({ created_by: user.email });
-      return goals.filter(g => g.status === 'active' && !g.deleted_at);
+      const goals = await entities.Goal.filter({ status: 'active' });
+      return goals.filter(g => !g.deleted_at);
     },
-    enabled: open && !!user?.email
+    enabled: open
   });
 
   const { data: activeProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      if (!user?.email) return [];
-      const projects = await base44.entities.Project.filter({ created_by: user.email });
-      return projects.filter(p => p.status === 'active');
+      return entities.Project.filter({ status: 'active' });
     },
-    enabled: open && !!user?.email
+    enabled: open
   });
 
   const [formData, setFormData] = useState({
