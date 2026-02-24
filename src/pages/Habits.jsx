@@ -43,11 +43,7 @@ export default function Habits() {
 
   const { data: habits = [], isLoading } = useQuery({
     queryKey: ['habits'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Habit.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email,
+    queryFn: () => entities.Habit.list(),
     staleTime: 600000
   });
 
@@ -75,12 +71,12 @@ export default function Habits() {
 
 
   const archiveMutation = useMutation({
-    mutationFn: (id) => base44.entities.Habit.update(id, { archived: true }),
+    mutationFn: (id) => entities.Habit.update(id, { archived: true }),
     onSuccess: () => queryClient.invalidateQueries(['habits'])
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Habit.delete(id),
+    mutationFn: (id) => entities.Habit.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['habits']);
       setDeleteId(null);

@@ -28,20 +28,14 @@ export default function ProjectsSheet({ open, onClose }) {
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Project.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email && open
+    queryFn: () => entities.Project.list(),
+    enabled: open
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.Task.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email && open
+    queryFn: () => entities.Task.list(),
+    enabled: open
   });
 
   const activeProjects = projects.filter(p => p.status === 'active');
