@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
     switch (operation) {
       case 'list': {
         const all = await entityRef.list(sort || '-created_date', limit || 1000);
-        // Only filter by owner_email if the entity supports it
-        result = all.filter(r => !r.hasOwnProperty('owner_email') || r.owner_email === userEmail);
+        // Filter by owner_email: include records that belong to the user OR have no owner_email set (legacy data)
+        result = all.filter(r => !r.owner_email || r.owner_email === userEmail);
         break;
       }
 
@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
         const cleanFilter = { ...filter };
         delete cleanFilter.created_by;
         const all = await entityRef.filter(cleanFilter, sort || '-created_date', limit || 1000);
-        // Only filter by owner_email if the entity has that field (some don't)
-        result = all.filter(r => !r.hasOwnProperty('owner_email') || r.owner_email === userEmail);
+        // Filter by owner_email: include records that belong to the user OR have no owner_email set (legacy data)
+        result = all.filter(r => !r.owner_email || r.owner_email === userEmail);
         break;
       }
 
