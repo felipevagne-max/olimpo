@@ -118,9 +118,9 @@ export default function CreateHabit() {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (editId) {
-        return base44.entities.Habit.update(editId, data);
+        return entities.Habit.update(editId, data);
       }
-      return base44.entities.Habit.create(data);
+      return entities.Habit.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['habits']);
