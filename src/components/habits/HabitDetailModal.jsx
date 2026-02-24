@@ -19,20 +19,17 @@ export default function HabitDetailModal({ open, onClose, habitId }) {
   const { data: habit } = useQuery({
     queryKey: ['habit', habitId],
     queryFn: async () => {
-      if (!habitId || !user?.email) return null;
-      const habits = await base44.entities.Habit.filter({ created_by: user.email });
+      if (!habitId) return null;
+      const habits = await entities.Habit.list();
       return habits.find(h => h.id === habitId);
     },
-    enabled: !!habitId && open && !!user?.email
+    enabled: !!habitId && open
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.HabitLog.filter({ created_by: user.email });
-    },
-    enabled: open && !!user?.email
+    queryFn: () => entities.HabitLog.list(),
+    enabled: open
   });
 
   const { data: userProfile } = useQuery({
@@ -46,7 +43,7 @@ export default function HabitDetailModal({ open, onClose, habitId }) {
   });
 
   const archiveMutation = useMutation({
-    mutationFn: (id) => base44.entities.Habit.update(id, { archived: true }),
+    mutationFn: (id) => entities.Habit.update(id, { archived: true }),
     onSuccess: () => {
       queryClient.invalidateQueries(['habits']);
       toast.success('Hábito arquivado');
