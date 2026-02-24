@@ -24,9 +24,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Email não encontrado no token' }, { status: 401 });
     }
 
-    // Check token expiration (7 days)
+    // Check token expiration (30 days)
     const tokenAge = Date.now() - (sessionData.created_at || 0);
-    if (tokenAge > 7 * 24 * 60 * 60 * 1000) {
+    if (tokenAge > 30 * 24 * 60 * 60 * 1000) {
       return Response.json({ error: 'Sessão expirada' }, { status: 401 });
     }
 
