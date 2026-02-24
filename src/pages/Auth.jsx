@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mail, Lock, ArrowRight, Code2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 // Session helpers - no Base44 auth dependency
 export const SESSION_KEY = 'olimpo_session';
