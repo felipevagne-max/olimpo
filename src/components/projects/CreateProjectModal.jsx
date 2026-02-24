@@ -52,9 +52,9 @@ export default function CreateProjectModal({ open, onClose, project }) {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (project) {
-        return base44.entities.Project.update(project.id, data);
+        return entities.Project.update(project.id, data);
       }
-      return base44.entities.Project.create(data);
+      return entities.Project.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
