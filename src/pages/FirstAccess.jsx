@@ -137,59 +137,98 @@ export default function FirstAccess() {
           </p>
         </div>
 
-        <div className="bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.18)] rounded-lg p-4 mb-6">
-          <p className="text-[#00FF66] text-sm text-center">
-            Para continuar, por favor crie sua senha de acesso à plataforma.
-          </p>
-        </div>
-
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
-            <label className="text-[#E8E8E8] text-sm mb-2 block">Nova Senha</label>
-            <div className="relative">
-              <OlimpoInput
-                type={showPassword ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Digite sua nova senha"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AA0A6] hover:text-[#00FF66]"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+        {step === 'name' ? (
+          <>
+            <div className="bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.18)] rounded-lg p-4 mb-6">
+              <p className="text-[#00FF66] text-sm text-center">
+                Como devemos te chamar?
+              </p>
             </div>
-          </div>
 
-          <div>
-            <label className="text-[#E8E8E8] text-sm mb-2 block">Confirmar Senha</label>
-            <OlimpoInput
-              type={showPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Digite novamente sua senha"
-              required
-            />
-          </div>
+            <form onSubmit={handleNameSubmit} className="space-y-4">
+              <div>
+                <label className="text-[#E8E8E8] text-sm mb-2 block">Seu Nome</label>
+                <OlimpoInput
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Ex: João Silva"
+                  autoFocus
+                  required
+                />
+              </div>
 
-          <OlimpoButton
-            type="submit"
-            className="w-full"
-            disabled={saving}
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              'Criar Senha e Continuar'
-            )}
-          </OlimpoButton>
-        </form>
+              <OlimpoButton type="submit" className="w-full">
+                Continuar
+              </OlimpoButton>
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="bg-[rgba(0,255,102,0.1)] border border-[rgba(0,255,102,0.18)] rounded-lg p-4 mb-6">
+              <p className="text-[#00FF66] text-sm text-center">
+                Olá, <strong>{displayName}</strong>! Agora crie sua senha de acesso.
+              </p>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="text-[#E8E8E8] text-sm mb-2 block">Nova Senha</label>
+                <div className="relative">
+                  <OlimpoInput
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Digite sua nova senha"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AA0A6] hover:text-[#00FF66]"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[#E8E8E8] text-sm mb-2 block">Confirmar Senha</label>
+                <OlimpoInput
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Digite novamente sua senha"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <OlimpoButton
+                  type="button"
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => setStep('name')}
+                >
+                  Voltar
+                </OlimpoButton>
+                <OlimpoButton
+                  type="submit"
+                  className="flex-1"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </OlimpoButton>
+              </div>
+            </form>
+          </>
+        )}
       </OlimpoCard>
     </div>
   );
