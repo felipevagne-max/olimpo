@@ -58,6 +58,15 @@ export default function FirstAccess() {
     }
   };
 
+  const handleNameSubmit = (e) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      toast.error('Por favor, informe seu nome');
+      return;
+    }
+    setStep('password');
+  };
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
 
@@ -80,7 +89,18 @@ export default function FirstAccess() {
       });
 
       if (data.success) {
-        toast.success('Senha criada com sucesso!');
+        // Save display name to UserProfile
+        try {
+          await base44.entities.UserProfile.create({
+            displayName: displayName.trim(),
+            xpTotal: 0,
+            levelIndex: 1,
+            levelName: 'Herói',
+            monthlyTargetXP: 2000
+          });
+        } catch (_) {}
+
+        toast.success('Bem-vindo ao Olimpo!');
         setTimeout(() => {
           navigate('/App');
         }, 1000);
