@@ -72,21 +72,19 @@ export default function CreateHabit() {
   const { data: editHabit, isLoading: loadingEdit } = useQuery({
     queryKey: ['habit', editId],
     queryFn: async () => {
-      if (!editId || !user?.email) return null;
-      const habits = await base44.entities.Habit.filter({ created_by: user.email });
-      return habits.find(h => h.id === editId);
+      if (!editId) return null;
+      const habits = await entities.Habit.list();
+      return habits.find(h => h.id === editId) || null;
     },
-    enabled: !!editId && !!user?.email
+    enabled: !!editId
   });
 
   const { data: activeGoals = [] } = useQuery({
     queryKey: ['activeGoals'],
     queryFn: async () => {
-      if (!user?.email) return [];
-      const goals = await base44.entities.Goal.filter({ created_by: user.email });
-      return goals.filter(g => g.status === 'active' && !g.deleted_at);
-    },
-    enabled: !!user?.email
+      const goals = await entities.Goal.filter({ status: 'active' });
+      return goals.filter(g => !g.deleted_at);
+    }
   });
 
   useEffect(() => {
