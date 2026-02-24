@@ -110,11 +110,7 @@ export default function Tasks() {
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.HabitLog.filter({ created_by: user.email });
-    },
-    enabled: !!user?.email,
+    queryFn: () => entities.HabitLog.list(),
     staleTime: 120000
   });
 
