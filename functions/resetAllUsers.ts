@@ -85,8 +85,11 @@ Deno.serve(async (req) => {
     await deleteInBatches(oracleInsights, (id) => base44.asServiceRole.entities.OracleInsight.delete(id));
     await deleteInBatches(userTitles, (id) => base44.asServiceRole.entities.UserTitles.delete(id));
     await deleteInBatches(communityPosts, (id) => base44.asServiceRole.entities.CommunityPost.delete(id));
+    await deleteInBatches(oracleMessages, (id) => base44.asServiceRole.entities.OracleMessage.delete(id));
+    await deleteInBatches(oracleConfigs, (id) => base44.asServiceRole.entities.OracleConfig.delete(id));
+    await deleteInBatches(announcementReads, (id) => base44.asServiceRole.entities.AnnouncementRead.delete(id));
 
-    // Delete all user profiles so they are forced to set their name again
+    // Delete all user profiles so they are forced to set their name again on next login
     await deleteInBatches(userProfiles, (id) => base44.asServiceRole.entities.UserProfile.delete(id));
 
     return Response.json({ 
