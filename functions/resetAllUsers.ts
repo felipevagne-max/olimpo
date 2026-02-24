@@ -29,7 +29,10 @@ Deno.serve(async (req) => {
       agendaItems,
       oracleInsights,
       userTitles,
-      communityPosts
+      communityPosts,
+      oracleMessages,
+      oracleConfigs,
+      announcementReads
     ] = await Promise.all([
       base44.asServiceRole.entities.Task.list('-created_date', 10000),
       base44.asServiceRole.entities.Habit.list('-created_date', 10000),
