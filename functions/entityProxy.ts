@@ -1,7 +1,9 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClient } from 'npm:@base44/sdk@0.8.6';
 
-// Proxy function that performs entity operations as service role
-// using the user email from the olympo session token
+// Service role client - usa APP_ID para operações administrativas
+// Não depende de auth do usuário Base44 (que não é usado neste app)
+const base44 = createClient({ appId: Deno.env.get('BASE44_APP_ID') });
+
 Deno.serve(async (req) => {
   try {
     const body = await req.json();
@@ -9,34 +11,33 @@ Deno.serve(async (req) => {
 
     // Validate session token
     if (!session_token) {
-      return Response.json({ error: 'Token de sessão inválido' }, { status: 401 });
+      return Response.json({ success: false, error: 'Token de sessão inválido' }, { status: 401 });
     }
 
     let sessionData;
     try {
       sessionData = JSON.parse(atob(session_token));
     } catch {
-      return Response.json({ error: 'Token inválido' }, { status: 401 });
+      return Response.json({ success: false, error: 'Token inválido' }, { status: 401 });
     }
 
     const userEmail = sessionData.email;
     if (!userEmail) {
-      return Response.json({ error: 'Email não encontrado no token' }, { status: 401 });
+      return Response.json({ success: false, error: 'Email não encontrado no token' }, { status: 401 });
     }
 
-    // Check token expiration (30 days) - only if created_at is present
+    // Check token expiration (30 days)
     if (sessionData.created_at) {
       const tokenAge = Date.now() - sessionData.created_at;
       if (tokenAge > 30 * 24 * 60 * 60 * 1000) {
-        return Response.json({ error: 'Sessão expirada' }, { status: 401 });
+        return Response.json({ success: false, error: 'Sessão expirada' }, { status: 401 });
       }
     }
 
-    const base44 = createClientFromRequest(req);
     const entityRef = base44.asServiceRole.entities[entity];
 
     if (!entityRef) {
-      return Response.json({ error: `Entidade '${entity}' não encontrada` }, { status: 400 });
+      return Response.json({ success: false, error: `Entidade '${entity}' não encontrada` }, { status: 400 });
     }
 
     let result;
@@ -44,7 +45,6 @@ Deno.serve(async (req) => {
     switch (operation) {
       case 'list': {
         const all = await entityRef.list(sort || '-created_date', limit || 1000);
-        // Strict filter: only return records owned by this user
         result = all.filter(r => r.owner_email === userEmail);
         break;
       }
@@ -53,13 +53,11 @@ Deno.serve(async (req) => {
         const cleanFilter = { ...filter };
         delete cleanFilter.created_by;
         const all = await entityRef.filter(cleanFilter, sort || '-created_date', limit || 1000);
-        // Strict filter: only return records owned by this user
         result = all.filter(r => r.owner_email === userEmail);
         break;
       }
 
       case 'create': {
-        // Store owner_email inside the record for future filtering
         result = await entityRef.create({ ...data, owner_email: userEmail });
         break;
       }
@@ -75,12 +73,12 @@ Deno.serve(async (req) => {
       }
 
       default:
-        return Response.json({ error: `Operação '${operation}' inválida` }, { status: 400 });
+        return Response.json({ success: false, error: `Operação '${operation}' inválida` }, { status: 400 });
     }
 
     return Response.json({ success: true, data: result });
   } catch (error) {
-    console.error('EntityProxy error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('EntityProxy error:', error.message);
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });
