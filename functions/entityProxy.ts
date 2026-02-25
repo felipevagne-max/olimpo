@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
     switch (operation) {
       case 'list': {
         const all = await entityRef.list(sort || '-created_date', limit || 1000);
+        console.log(`[list] entity=${entity} total=${all.length} userEmail="${userEmail}" sample_owner_emails=${JSON.stringify(all.slice(0,3).map(r=>r.owner_email))}`);
         result = all.filter(r => r.owner_email === userEmail);
         break;
       }
