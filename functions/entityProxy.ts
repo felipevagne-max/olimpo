@@ -1,8 +1,4 @@
-import { createClient } from 'npm:@base44/sdk@0.8.6';
-
-// Service role client - usa APP_ID para operações administrativas
-// Não depende de auth do usuário Base44 (que não é usado neste app)
-const base44 = createClient({ appId: Deno.env.get('BASE44_APP_ID') });
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -34,6 +30,8 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Use createClientFromRequest to get proper service role access
+    const base44 = createClientFromRequest(req);
     const entityRef = base44.asServiceRole.entities[entity];
 
     if (!entityRef) {
