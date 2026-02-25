@@ -44,13 +44,13 @@ export default function Habits() {
   const { data: habits = [], isLoading } = useQuery({
     queryKey: ['habits'],
     queryFn: () => entities.Habit.list(),
-    staleTime: 600000
+    staleTime: 0
   });
 
   const { data: habitLogs = [] } = useQuery({
     queryKey: ['habitLogs'],
     queryFn: () => entities.HabitLog.list(),
-    staleTime: 300000
+    staleTime: 0
   });
 
   const { data: userProfile } = useQuery({
