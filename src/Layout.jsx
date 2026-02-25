@@ -11,7 +11,6 @@ function getSession() {
 }
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import MatrixColumns from '@/components/olimpo/MatrixColumns';
 import TitleEquipEffect from '@/components/olimpo/TitleEquipEffect';
 import SplashScreen from '@/components/olimpo/SplashScreen';
 import TopBar from '@/components/olimpo/TopBar';
