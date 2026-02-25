@@ -42,17 +42,16 @@ Deno.serve(async (req) => {
 
     switch (operation) {
       case 'list': {
-        const all = await entityRef.list(sort || '-created_date', limit || 1000);
-        console.log(`[list] entity=${entity} total=${all.length} userEmail="${userEmail}" sample_owner_emails=${JSON.stringify(all.slice(0,3).map(r=>r.owner_email))}`);
-        result = all.filter(r => r.owner_email === userEmail);
+        result = await entityRef.filter({ owner_email: userEmail }, sort || '-created_date', limit || 500);
         break;
       }
 
       case 'filter': {
         const cleanFilter = { ...filter };
         delete cleanFilter.created_by;
-        const all = await entityRef.filter(cleanFilter, sort || '-created_date', limit || 1000);
-        result = all.filter(r => r.owner_email === userEmail);
+        // Always scope to owner_email
+        cleanFilter.owner_email = userEmail;
+        result = await entityRef.filter(cleanFilter, sort || '-created_date', limit || 500);
         break;
       }
 
