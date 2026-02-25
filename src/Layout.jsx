@@ -144,7 +144,6 @@ export default function Layout({ children, currentPageName }) {
         </head>
         </div>
 
-      <MatrixColumns opacity={0.15} />
       <TitleEquipEffect />
       {currentPageName !== 'Auth' && (
         <>
