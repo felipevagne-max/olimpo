@@ -1,0 +1,179 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da despesa"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Valor"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria"
+    },
+    "categoryId": {
+      "type": "string",
+      "description": "ID da categoria"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "receita",
+        "despesa"
+      ],
+      "default": "despesa",
+      "description": "Tipo: receita ou despesa"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pago",
+        "pendente",
+        "programado"
+      ],
+      "default": "pago",
+      "description": "Status do pagamento"
+    },
+    "paymentMethod": {
+      "type": "string",
+      "enum": [
+        "debito",
+        "pix",
+        "cartao",
+        "dinheiro",
+        "debit_pix"
+      ],
+      "description": "M\u00e9todo de pagamento"
+    },
+    "cardName": {
+      "type": "string",
+      "description": "Nome do cart\u00e3o (se cart\u00e3o)"
+    },
+    "installments": {
+      "type": "number",
+      "default": 1,
+      "description": "Parcelas (se cart\u00e3o)"
+    },
+    "isUnplanned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Gasto n\u00e3o previsto"
+    },
+    "isInvestment": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se \u00e9 investimento/poupan\u00e7a"
+    },
+    "planType": {
+      "type": "string",
+      "enum": [
+        "PREVISTO",
+        "IMPREVISTO"
+      ],
+      "description": "Tipo de planejamento"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do pagamento efetivo"
+    },
+    "payeeName": {
+      "type": "string",
+      "description": "Destino do pagamento (quem recebe)"
+    },
+    "isRecurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se \u00e9 gasto recorrente"
+    },
+    "recurringFrequency": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "weekly",
+        "yearly"
+      ],
+      "description": "Frequ\u00eancia de recorr\u00eancia"
+    },
+    "recurringAnchorDay": {
+      "type": "number",
+      "description": "Dia do m\u00eas para recorr\u00eancia"
+    },
+    "recurringGroupId": {
+      "type": "string",
+      "description": "ID do grupo de recorr\u00eancia"
+    },
+    "recurringEndDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de t\u00e9rmino da recorr\u00eancia"
+    },
+    "incomeSubstatus": {
+      "type": "string",
+      "enum": [
+        "RECEBIDO",
+        "PROGRAMADO",
+        "AGUARDANDO",
+        "ADIADO",
+        "PERDIDO"
+      ],
+      "description": "Substatus da receita (para tipo=receita)"
+    },
+    "payer": {
+      "type": "string",
+      "description": "Pagador da receita (para tipo=receita)"
+    },
+    "isCardBillPayment": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se \u00e9 pagamento de fatura de cart\u00e3o (n\u00e3o entra em gastos reais)"
+    },
+    "relatedCreditCardId": {
+      "type": "string",
+      "description": "ID do cart\u00e3o relacionado (se pagamento de fatura)"
+    },
+    "relatedMonthKey": {
+      "type": "string",
+      "description": "M\u00eas da fatura (YYYY-MM, se pagamento de fatura)"
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de exclus\u00e3o (soft delete)"
+    },
+    "overdue_notified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data da \u00faltima notifica\u00e7\u00e3o de atraso"
+    },
+    "investmentLocation": {
+      "type": "string",
+      "description": "Onde o investimento est\u00e1 guardado"
+    },
+    "investmentType": {
+      "type": "string",
+      "description": "Tipo do investimento"
+    },
+    "isInvestmentTransfer": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se \u00e9 sa\u00edda de aporte em investimento (n\u00e3o conta como gasto real)"
+    },
+    "linkedTransactionId": {
+      "type": "string",
+      "description": "ID da transa\u00e7\u00e3o vinculada (investimento <-> sa\u00edda)"
+    }
+  },
+  "required": [
+    "title",
+    "amount",
+    "date"
+  ]
+}

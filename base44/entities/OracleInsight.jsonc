@@ -1,0 +1,48 @@
+{
+  "name": "OracleInsight",
+  "type": "object",
+  "properties": {
+    "periodStartDate": {
+      "type": "string",
+      "format": "date",
+      "description": "In\u00edcio do per\u00edodo analisado"
+    },
+    "periodEndDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Fim do per\u00edodo analisado"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo curto do insight"
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Evid\u00eancia num\u00e9rica"
+    },
+    "recommendation": {
+      "type": "string",
+      "description": "Recomenda\u00e7\u00e3o objetiva"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium",
+      "description": "N\u00edvel de import\u00e2ncia"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se foi lido"
+    }
+  },
+  "required": [
+    "title",
+    "evidence",
+    "recommendation"
+  ]
+}

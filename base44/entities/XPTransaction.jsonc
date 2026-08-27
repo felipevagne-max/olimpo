@@ -1,0 +1,34 @@
+{
+  "name": "XPTransaction",
+  "type": "object",
+  "properties": {
+    "sourceType": {
+      "type": "string",
+      "enum": [
+        "task",
+        "habit",
+        "goal",
+        "milestone",
+        "bonus",
+        "checkin"
+      ],
+      "description": "Tipo de fonte do XP"
+    },
+    "sourceId": {
+      "type": "string",
+      "description": "ID da fonte"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Quantidade de XP (positivo ou negativo)"
+    },
+    "note": {
+      "type": "string",
+      "description": "Nota/descri\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "sourceType",
+    "amount"
+  ]
+}

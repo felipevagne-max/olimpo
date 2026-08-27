@@ -1,0 +1,18 @@
+{
+  "name": "TaskTag",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "ID da tarefa"
+    },
+    "tag_id": {
+      "type": "string",
+      "description": "ID da tag"
+    }
+  },
+  "required": [
+    "task_id",
+    "tag_id"
+  ]
+}

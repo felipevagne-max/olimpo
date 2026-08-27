@@ -1,0 +1,19 @@
+{
+  "name": "UserTitles",
+  "type": "object",
+  "properties": {
+    "equippedTitle1": {
+      "type": "string",
+      "description": "ID do t\u00edtulo equipado no slot 1"
+    },
+    "equippedTitle2": {
+      "type": "string",
+      "description": "ID do t\u00edtulo equipado no slot 2"
+    },
+    "equippedTitle3": {
+      "type": "string",
+      "description": "ID do t\u00edtulo equipado no slot 3"
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,53 @@
+{
+  "name": "CardInstallment",
+  "type": "object",
+  "properties": {
+    "purchaseId": {
+      "type": "string",
+      "description": "ID da compra m\u00e3e"
+    },
+    "installmentNumber": {
+      "type": "number",
+      "description": "N\u00famero da parcela (1, 2, 3...)"
+    },
+    "installmentAmount": {
+      "type": "number",
+      "description": "Valor da parcela"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de vencimento"
+    },
+    "monthKey": {
+      "type": "string",
+      "description": "M\u00eas de refer\u00eancia (YYYY-MM)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "PAID"
+      ],
+      "default": "OPEN",
+      "description": "Status da parcela"
+    },
+    "paidAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do pagamento"
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de exclus\u00e3o (soft delete)"
+    }
+  },
+  "required": [
+    "purchaseId",
+    "installmentNumber",
+    "installmentAmount",
+    "dueDate",
+    "monthKey"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "name": "AgendaItem",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do item na agenda (YYYY-MM-DD)"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do item"
+    },
+    "referenceType": {
+      "type": "string",
+      "enum": [
+        "transaction",
+        "task",
+        "other"
+      ],
+      "description": "Tipo da refer\u00eancia"
+    },
+    "referenceId": {
+      "type": "string",
+      "description": "ID do item relacionado"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "COMPLETED"
+      ],
+      "default": "OPEN",
+      "description": "Status do item"
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de conclus\u00e3o"
+    }
+  },
+  "required": [
+    "date",
+    "title",
+    "referenceType",
+    "referenceId"
+  ]
+}

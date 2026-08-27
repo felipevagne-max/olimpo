@@ -1,0 +1,36 @@
+{
+  "name": "UserNotification",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Tipo da notifica\u00e7\u00e3o (OVERDUE_INCOME, OVERDUE_EXPENSE, etc.)"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da notifica\u00e7\u00e3o"
+    },
+    "body": {
+      "type": "string",
+      "description": "Corpo da notifica\u00e7\u00e3o"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Tipo da entidade relacionada"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID da entidade relacionada"
+    },
+    "read_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora de leitura"
+    }
+  },
+  "required": [
+    "type",
+    "title",
+    "body"
+  ]
+}

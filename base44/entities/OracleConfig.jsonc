@@ -1,0 +1,22 @@
+{
+  "name": "OracleConfig",
+  "type": "object",
+  "properties": {
+    "tone": {
+      "type": "string",
+      "enum": [
+        "gentle",
+        "direct",
+        "firm"
+      ],
+      "default": "direct",
+      "description": "Tom do Or\u00e1culo: Gentil, Direto, Implac\u00e1vel"
+    },
+    "lastAnalysisAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima an\u00e1lise gerada"
+    }
+  },
+  "required": []
+}

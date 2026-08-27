@@ -1,0 +1,39 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do projeto"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do projeto"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "default": "active",
+      "description": "Status do projeto"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas e observa\u00e7\u00f5es do projeto"
+    },
+    "color": {
+      "type": "string",
+      "default": "#00FF66",
+      "description": "Cor do projeto"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email do dono do registro (usado para filtro multi-user)"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

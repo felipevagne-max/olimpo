@@ -1,0 +1,26 @@
+{
+  "name": "OracleMessage",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "oracle"
+      ],
+      "description": "Quem enviou a mensagem"
+    },
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado da mensagem"
+    },
+    "contextRef": {
+      "type": "string",
+      "description": "Refer\u00eancia ao snapshot de m\u00e9tricas usadas"
+    }
+  },
+  "required": [
+    "role",
+    "content"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "displayName": {
+      "type": "string",
+      "description": "Nome de exibi\u00e7\u00e3o do usu\u00e1rio"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL da foto de perfil"
+    },
+    "username_last_changed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima altera\u00e7\u00e3o do nome de usu\u00e1rio"
+    },
+    "xpTotal": {
+      "type": "number",
+      "default": 0,
+      "description": "XP total acumulado"
+    },
+    "levelIndex": {
+      "type": "number",
+      "default": 1,
+      "description": "\u00cdndice do n\u00edvel atual"
+    },
+    "levelName": {
+      "type": "string",
+      "default": "Her\u00f3i",
+      "description": "Nome do n\u00edvel atual"
+    },
+    "monthlyTargetXP": {
+      "type": "number",
+      "default": 2000,
+      "description": "Meta de XP mensal"
+    },
+    "notificationsEnabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Notifica\u00e7\u00f5es ativadas"
+    },
+    "sfxEnabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Sons de UI habilitados"
+    },
+    "allowUndoSameDay": {
+      "type": "boolean",
+      "default": true,
+      "description": "Permitir desfazer conclus\u00e3o no mesmo dia"
+    },
+    "metaEconomiaMensal": {
+      "type": "number",
+      "description": "Meta de economia mensal (R$)"
+    },
+    "planExpiresAt": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de expira\u00e7\u00e3o do plano"
+    },
+    "skipCardPurchaseConfirm": {
+      "type": "boolean",
+      "default": false,
+      "description": "N\u00e3o mostrar confirma\u00e7\u00e3o de valores do cart\u00e3o"
+    },
+    "sidebarCollapsed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Sidebar colapsada (desktop)"
+    }
+  },
+  "required": []
+}

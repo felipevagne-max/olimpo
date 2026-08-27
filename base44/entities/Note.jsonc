@@ -1,0 +1,40 @@
+{
+  "name": "Note",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "INSIGHT",
+        "MEETING"
+      ],
+      "description": "Tipo: Fa\u00edsca ou Reuni\u00e3o"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da nota"
+    },
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado principal"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Dados estruturados (reuni\u00e3o: datetime, participants, agenda, decisions, next_steps)"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se est\u00e1 fixada no topo"
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de exclus\u00e3o (soft delete)"
+    }
+  },
+  "required": [
+    "type",
+    "content"
+  ]
+}

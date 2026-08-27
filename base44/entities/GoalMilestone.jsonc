@@ -1,0 +1,30 @@
+{
+  "name": "GoalMilestone",
+  "type": "object",
+  "properties": {
+    "goalId": {
+      "type": "string",
+      "description": "ID da meta"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da etapa"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "xpReward": {
+      "type": "number",
+      "default": 30
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "goalId",
+    "title"
+  ]
+}

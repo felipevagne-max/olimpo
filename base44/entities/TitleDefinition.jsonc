@@ -1,0 +1,26 @@
+{
+  "name": "TitleDefinition",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do t\u00edtulo"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do t\u00edtulo"
+    },
+    "unlockedByDefault": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se est\u00e1 desbloqueado por padr\u00e3o"
+    },
+    "iconName": {
+      "type": "string",
+      "description": "Nome do \u00edcone"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

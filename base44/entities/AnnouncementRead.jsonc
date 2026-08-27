@@ -1,0 +1,18 @@
+{
+  "name": "AnnouncementRead",
+  "type": "object",
+  "properties": {
+    "announcement_id": {
+      "type": "string",
+      "description": "ID do recado"
+    },
+    "read_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da leitura"
+    }
+  },
+  "required": [
+    "announcement_id"
+  ]
+}

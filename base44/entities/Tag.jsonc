@@ -1,0 +1,13 @@
+{
+  "name": "Tag",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da tag"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

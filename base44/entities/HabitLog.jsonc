@@ -1,0 +1,31 @@
+{
+  "name": "HabitLog",
+  "type": "object",
+  "properties": {
+    "habitId": {
+      "type": "string",
+      "description": "ID do h\u00e1bito"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da conclus\u00e3o"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": true
+    },
+    "xpEarned": {
+      "type": "number",
+      "description": "XP ganho"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email do dono do registro"
+    }
+  },
+  "required": [
+    "habitId",
+    "date"
+  ]
+}

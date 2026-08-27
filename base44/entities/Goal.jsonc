@@ -1,0 +1,65 @@
+{
+  "name": "Goal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da meta"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "goalType": {
+      "type": "string",
+      "enum": [
+        "accumulative",
+        "checklist"
+      ],
+      "default": "accumulative"
+    },
+    "targetValue": {
+      "type": "number",
+      "description": "Valor objetivo"
+    },
+    "currentValue": {
+      "type": "number",
+      "default": 0
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unidade (p\u00e1ginas, kg, R$, etc)"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "xpOnComplete": {
+      "type": "number",
+      "default": 200
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de exclus\u00e3o (soft delete)"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email do dono do registro"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

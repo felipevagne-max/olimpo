@@ -1,0 +1,22 @@
+{
+  "name": "Announcement",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do recado (opcional)"
+    },
+    "body": {
+      "type": "string",
+      "description": "Corpo do recado"
+    },
+    "audience": {
+      "type": "string",
+      "default": "all",
+      "description": "P\u00fablico-alvo (all por padr\u00e3o)"
+    }
+  },
+  "required": [
+    "body"
+  ]
+}

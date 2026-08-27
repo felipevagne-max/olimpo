@@ -1,0 +1,32 @@
+{
+  "name": "CheckIn",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do check-in (YYYY-MM-DD)"
+    },
+    "sleepScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Pontua\u00e7\u00e3o de sono (0-10)"
+    },
+    "productivityScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Pontua\u00e7\u00e3o de produtividade (0-10)"
+    },
+    "moodScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Pontua\u00e7\u00e3o de humor (0-10)"
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

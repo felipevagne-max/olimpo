@@ -1,0 +1,92 @@
+{
+  "name": "Habit",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do h\u00e1bito"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do h\u00e1bito"
+    },
+    "frequencyType": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekdays",
+        "timesPerWeek"
+      ],
+      "default": "daily",
+      "description": "Tipo de frequ\u00eancia"
+    },
+    "weekdays": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Dias da semana (seg, ter, qua, qui, sex, sab, dom)"
+    },
+    "timesPerWeek": {
+      "type": "number",
+      "description": "Vezes por semana"
+    },
+    "timeOfDay": {
+      "type": "string",
+      "description": "Hor\u00e1rio do dia (HH:mm)"
+    },
+    "xpReward": {
+      "type": "number",
+      "default": 8,
+      "description": "XP ganho ao completar"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard",
+        "epic"
+      ],
+      "description": "Dificuldade"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria do h\u00e1bito"
+    },
+    "goalText": {
+      "type": "string",
+      "description": "Meta/quantidade (ex: 20 min, 2L)"
+    },
+    "reminderEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "reminderTime": {
+      "type": "string",
+      "description": "Hor\u00e1rio do lembrete (legado)"
+    },
+    "reminderTimes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de hor\u00e1rios de lembrete (HH:mm)"
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
+    },
+    "goalId": {
+      "type": "string",
+      "description": "ID da meta vinculada"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email do dono do registro (usado para filtro multi-user)"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

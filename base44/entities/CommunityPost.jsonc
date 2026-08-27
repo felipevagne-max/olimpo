@@ -1,0 +1,22 @@
+{
+  "name": "CommunityPost",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado do post"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "motivation",
+        "achievement",
+        "question"
+      ],
+      "default": "motivation"
+    }
+  },
+  "required": [
+    "content"
+  ]
+}
